@@ -1,0 +1,133 @@
+<script setup>
+const { resolveComponent } = useComponentRegistry()
+const props = defineProps({
+  groupObject: {
+    type: Object,
+  },
+})
+
+// const userDataEntry = defineModel('userDataEntry')
+
+function getCols(vObject) {
+  debugger
+  let lObj
+
+  lObj = vObject.controlProperties?.filter(e => e.propertyTitle === 'Cols')
+  if (lObj === null || lObj === undefined || lObj.length === 0)
+    return 12
+
+  // alert(lObj[0].data)
+
+  return lObj[0].data
+}
+
+const { $resolveAndRenderComponent } = useNuxtApp()
+
+function getControl(vAttribute) {
+  return $resolveAndRenderComponent(vAttribute)
+}
+
+const getControlswithinData = computed(() => {
+  debugger
+    
+
+  if (props.groupObject === undefined)
+    return []
+  if (props.groupObject?.FormRTObjects)
+    return props.groupObject?.FormRTObjects.Controls
+
+  if (props.groupObject?.Controls)
+    return props.groupObject?.Controls
+
+  return []
+})
+
+
+function getControlObject(vControl) {
+  if (vControl.controlType === 'Component') {
+    debugger
+    vControl.ComponentInfo = vControl.dataPath.replace('FormName.', '') 
+  }
+
+  if (props.groupObject?.FormRTObjects?.ComponentInfo)
+      vControl.ComponentInfo = props.groupObject?.FormRTObjects?.ComponentInfo
+
+  return vControl
+}
+
+// function getControlswithinData() {
+// // props.groupObject?.FormRTObjects ? props.groupObject?.FormRTObjects.Controls : props.groupObject.Controls"
+//   if (props.groupObject?.FormRTObjects)
+//     return props.groupObject?.FormRTObjects.Controls
+
+//   if (props.groupObject.Controls)
+//     return props.groupObject.Controls
+
+//   return []
+// }
+</script>
+<template>
+  <!-- {{ groupObject }} -->
+  <!-- {{ getControlswithinData }} -->
+  <!-- {{ props.groupObject?.FormRTObjects.Controls[0].controlType === 'Component' }} -->
+    <!-- {{ getCols(control) }} -->
+      <!-- {{ props.groupObject.Controls }} -->
+        <!-- {{ props.groupObject.FormRTObjects.Controls }} -->
+<!-- {{ props.groupObject?.FormRTObjects.Controls[0].controlType }} -->
+   <!-- {{ props.groupObject?.FormRTObjects.ComponentInfo }} -->
+  <VRow class="pa-3">
+  <template v-for="control in getControlswithinData" :key="control.id" >
+    <VCol
+      v-if="control?.controlProperties?.some(p => p.propertyTitle === 'StartOnNextLine' && p.data === 'true')"
+      style="flex-basis: 100%; padding: 0; block-size: 0;"
+    />
+    
+    <VDivider
+      v-if="control?.controlProperties?.some(p => p.propertyTitle === 'HorizontalLineBefore' && p.data === 'true')"
+      :thickness="1"
+      class="border-opacity-75 mt-2 mb-3 mr-3"
+      style="border-color: gray;"
+    ></VDivider> 
+    <!-- {{ control.dataPath }} -->
+  <VCol
+    :cols="getCols(control)"
+    class="pl-0 ml-0 pr-2"
+  >
+  <!-- {{ control.controlType }} -->
+      <component
+        :is="resolveComponent(control.controlType)"
+        v-model:groupObject="control.Name"
+        :FormParameters = props.groupObject.FormParameters
+        :group-object="getControlObject(control)"
+        type="control.Datatype"
+        :vbind1="control.vbind"
+    />
+  </VCol>
+
+</template>
+</VRow>
+</template>
+
+<style>
+.flex-container {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: left !important;
+}
+
+.wrap {
+  flex-wrap: wrap;
+}
+
+.v-toolbar__content {
+  block-size: 50px;
+}
+
+.flex-item {
+  position: relative;
+  box-sizing: border-box;
+  flex: auto;
+  flex-basis: 10%;
+  inline-size: 100%;
+}
+</style>

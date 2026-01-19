@@ -1,0 +1,2250 @@
+{
+   "controls": [
+      {
+         "ControlName": "Tabs",
+         "controlType": "Tabs",
+         "controlProperties": [
+            {
+               "propertyTitle": "Name",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 15,
+               "Defaultvalue": "Tabs",
+               "ChangedBy": "",
+               "data": "Tabs"
+            },
+            {
+               "propertyTitle": "Cols",
+               "controlType": "TextBox",
+               "groupBy": "UI",
+               "dataType": "Number",
+               "size": 2,
+               "Defaultvalue": "12",
+               "ChangedBy": "",
+               "data": "12",
+               "keepThisPropertyAtRuntime": "true"
+            },
+            {
+               "propertyTitle": "Title",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 15,
+               "Defaultvalue": "Form Title",
+               "ChangedBy": "",
+               "data": "",
+               "keepThisPropertyAtRuntime": "true"
+            }
+         ]
+      },
+      {
+         "ControlName": "NoControl",
+         "controlType": "NoControl",
+         "controlProperties": [
+            {
+               "propertyTitle": "Cols",
+               "controlType": "TextBox",
+               "groupBy": "UI",
+               "dataType": "Number",
+               "size": 2,
+               "Defaultvalue": "3",
+               "ChangedBy": "",
+               "data": ""
+            }
+         ]
+      },
+      {
+         "ControlName": "ComponentName",
+         "controlType": "Component",
+         "controlProperties": [
+            {
+               "propertyTitle": "Name",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 25,
+               "mandatory": "true",
+               "Defaultvalue": "Name",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Title",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 15,
+               "mandatory": "true",
+               "Defaultvalue": "Component Title",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "ComponentType",
+               "controlType": "ComponentDropDown",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 15,
+               "mandatory": "true",
+               "Defaultvalue": "Component Title",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Cols",
+               "controlType": "TextBox",
+               "groupBy": "UI",
+               "dataType": "Number",
+               "size": 2,
+               "Defaultvalue": "3",
+               "ChangedBy": "",
+               "keepThisPropertyAtRuntime": "true",
+               "data": ""
+            }
+         ]
+      },
+      {
+         "ControlName": "FormName",
+         "controlType": "Form",
+         "controlProperties": [
+            {
+               "propertyTitle": "Name",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 25,
+               "mandatory": "true",
+               "Defaultvalue": "Name",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Title",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 15,
+               "mandatory": "true",
+               "Defaultvalue": "Form Title",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Description",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 75,
+               "Defaultvalue": "Form description",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Table Name",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "mandatory": "true",
+               "Defaultvalue": "TableName",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "FormType",
+               "controlType": "DropDown",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "mandatory": "true",
+               "DropDownValues": [
+                  {
+                     "id": 1,
+                     "value": "FormContainer"
+                  },
+                  {
+                     "id": 2,
+                     "value": "Control"
+                  },
+                  {
+                     "id": 3,
+                     "value": "RateType"
+                  },
+                  {
+                     "id": 4,
+                     "value": "RateCondition"
+                  },
+                  {
+                     "id": 5,
+                     "value": "RateDefinition"
+                  }
+               ],
+               "Defaultvalue": {
+                  "id": 1,
+                  "value": "FormContainer"
+               },
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "MandatoryStyle",
+               "controlType": "DropDown",
+               "groupBy": "UI",
+               "dataType": "Text",
+               "DropDownValues": [
+                  {
+                     "id": 1,
+                     "value": "Astrix"
+                  },
+                  {
+                     "id": 2,
+                     "value": "Only Optional"
+                  }
+               ],
+               "Defaultvalue": {
+                  "id": 1,
+                  "value": "Astrix"
+               },
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "ColorForMandatory",
+               "controlType": "TextBox",
+               "groupBy": "UI",
+               "dataType": "Text",
+               "mandatory": "true",
+               "Defaultvalue": "",
+               "ChangedBy": "",
+               "data": ""
+            }
+         ]
+      },
+      {
+         "ControlName": "TextBox1",
+         "controlType": "TextBox",
+         "controlProperties": [
+            {
+               "propertyTitle": "Name",
+               "controlType": "TextBox",
+               "keepThisPropertyAtRuntime": "true",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 25,
+               "Defaultvalue": "Name12",
+               "ChangedBy": "",
+               "data": "",
+               "rules": [
+                  "v => !!v || \\'Name is required\\'"
+               ]
+            },
+            {
+               "propertyTitle": "Align",
+               "controlType": "DropDown",
+               "groupBy": "UI",
+               "dataType": "Number",
+               "DropDownValues": [
+                  {
+                     "id": 1,
+                     "value": "center"
+                  },
+                  {
+                     "id": 2,
+                     "value": "Left"
+                  },
+                  {
+                     "id": 3,
+                     "value": "Justify"
+                  }
+               ],
+               "Defaultvalue": {
+                  "id": 2,
+                  "value": "Left"
+               },
+               "ChangedBy": "",
+               "data": "",
+               "keepThisPropertyAtRuntime": "true"
+            },
+            {
+               "propertyTitle": "Datatype",
+               "controlType": "DropDown",
+               "groupBy": "UI",
+               "dataType": "Number",
+               "DropDownValues": [
+                  {
+                     "id": 1,
+                     "value": "text"
+                  },
+                  {
+                     "id": 2,
+                     "value": "number"
+                  },
+                  {
+                     "id": 3,
+                     "value": "email"
+                  },
+                  {
+                     "id": 4,
+                     "value": "date"
+                  }
+               ],
+               "Defaultvalue": {
+                  "id": 1,
+                  "value": "text"
+               },
+               "ChangedBy": "",
+               "data": {}
+            },
+            {
+               "propertyTitle": "TextCase",
+               "controlType": "DropDown",
+               "groupBy": "UI",
+               "dataType": "Boolean",
+               "keepThisPropertyAtRuntime": "true",
+               "DropDownValues": [
+                  {
+                     "id": 1,
+                     "value": "Upper"
+                  },
+                  {
+                     "id": 2,
+                     "value": "Lower"
+                  },
+                  {
+                     "id": 3,
+                     "value": "Normal"
+                  }
+               ],
+               "Defaultvalue": {
+                  "id": 3,
+                  "value": "Normal"
+               },
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Cols",
+               "controlType": "TextBox",
+               "groupBy": "UI",
+               "dataType": "Number",
+               "keepThisPropertyAtRuntime": "true",
+               "size": 2,
+               "Defaultvalue": "3",
+               "ChangedBy": "",
+               "data": "3",
+               "type": "number",
+               "rules": [
+                  "v => !!v || \\'Name is required\\'",
+                  "v => (v <= 12 && v >= 3) || \\'Value should be between 3 and 12\\'"
+               ]
+            },
+            {
+               "propertyTitle": "Mandatory",
+               "controlType": "DropDown",
+               "groupBy": "UI",
+               "dataType": "Boolean",
+               "keepThisPropertyAtRuntime": "true",
+               "DropDownValues": [
+                  {
+                     "id": 1,
+                     "value": "true"
+                  },
+                  {
+                     "id": 2,
+                     "value": "false"
+                  }
+               ],
+               "Defaultvalue": {
+                  "id": 2,
+                  "value": "false"
+               },
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Label",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 25,
+               "ChangedBy": "",
+               "data": "",
+               "vbindEvenIfEmptyData": "",
+               "vbindOutPutAttribute": "label"
+            },
+            {
+               "propertyTitle": "Place holder",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 25,
+               "ChangedBy": "",
+               "data": "",
+               "vbindOutPutAttribute": "Placeholder"
+            },
+            {
+               "propertyTitle": "Color",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 25,
+               "ChangedBy": "",
+               "data": "",
+               "vbindEvenIfEmptyData": "style.background-color : ",
+               "vbindOutPutAttribute": "style.background-color"
+            },
+            {
+               "propertyTitle": "Size",
+               "controlType": "TextBox",
+               "groupBy": "UI",
+               "dataType": "Text",
+               "size": 3,
+               "ChangedBy": "",
+               "data": "",
+               "vbindOutPutAttribute": "maxlength"
+            },
+            {
+               "propertyTitle": "show in List",
+               "controlType": "CheckBox",
+               "groupBy": "Grid list details",
+               "dataType": "Boolean",
+               "ObjectName": "ListHeader",
+               "ObjectItemCode": "title",
+               "Defaultvalue": "false",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "StartOnNextLine",
+               "controlType": "CheckBox",
+               "groupBy": "UI",
+               "dataType": "Boolean",
+               "keepThisPropertyAtRuntime": "true",
+               "Defaultvalue": "false",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "HorizontalLineBefore",
+               "controlType": "CheckBox",
+               "groupBy": "UI",
+               "dataType": "Boolean",
+               "keepThisPropertyAtRuntime": "true",
+               "Defaultvalue": "false",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Title",
+               "controlType": "TextBox",
+               "groupBy": "Grid list details",
+               "dataType": "Text",
+               "ObjectName": "ListHeader",
+               "ObjectItemCode": "title",
+               "Defaultvalue": "Column",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Key",
+               "controlType": "TextBox",
+               "groupBy": "Grid list details",
+               "dataType": "Text",
+               "ObjectName": "ListHeader",
+               "ObjectItemCode": "key",
+               "Defaultvalue": "Key",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Column Size",
+               "controlType": "TextBox",
+               "groupBy": "Grid list details",
+               "dataType": "Number",
+               "ObjectName": "ListHeader",
+               "ObjectItemCode": "width",
+               "Defaultvalue": "10",
+               "ChangedBy": "",
+               "data": "10"
+            },
+            {
+               "propertyTitle": "Column Sequence",
+               "controlType": "TextBox",
+               "groupBy": "Grid list details",
+               "dataType": "Number",
+               "Defaultvalue": "1",
+               "ChangedBy": "",
+               "data": "1"
+            },
+            {
+               "propertyTitle": "Searchable",
+               "controlType": "CheckBox",
+               "groupBy": "Grid list details",
+               "dataType": "Boolean",
+               "Defaultvalue": "true",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "ColumnName",
+               "controlType": "TextBox",
+               "groupBy": "DataBase",
+               "dataType": "Text",
+               "Defaultvalue": "ColumnName",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "UniqueKey",
+               "controlType": "TextBox",
+               "groupBy": "DataBase",
+               "dataType": "Text",
+               "Defaultvalue": "",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "DBMinSize",
+               "controlType": "TextBox",
+               "groupBy": "DataBase",
+               "dataType": "Number",
+               "Defaultvalue": "0",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "DBMaxSize",
+               "controlType": "TextBox",
+               "groupBy": "DataBase",
+               "dataType": "Number",
+               "Defaultvalue": "",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Rules",
+               "controlType": "RuleManagement",
+               "groupBy": "Rules",
+               "dataType": "Array",
+               "keepThisPropertyAtRuntime": "true",
+               "vbindOutPutAttribute": "rules",
+               "Defaultvalue": [],
+               "ChangedBy": "",
+               "data": []
+            }
+         ]
+      },
+      {
+         "ControlName": "DropDown1",
+         "controlType": "DropDown",
+         "controlProperties": [
+            {
+               "propertyTitle": "Name",
+               "controlType": "TextBox",
+               "keepThisPropertyAtRuntime": "true",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 15,
+               "Defaultvalue": "Name12",
+               "ChangedBy": "",
+               "data": "",
+               "rules": [
+                  "v => !!v || \\'Name is required\\'"
+               ]
+            },
+            {
+               "propertyTitle": "Align",
+               "controlType": "DropDown",
+               "groupBy": "UI",
+               "dataType": "Number",
+               "DropDownValues": [
+                  {
+                     "id": 1,
+                     "value": "center"
+                  },
+                  {
+                     "id": 2,
+                     "value": "Left"
+                  },
+                  {
+                     "id": 3,
+                     "value": "Justify"
+                  }
+               ],
+               "Defaultvalue": {
+                  "id": 2,
+                  "value": "Left"
+               },
+               "ChangedBy": "",
+               "data": "",
+               "keepThisPropertyAtRuntime": "true"
+            },
+            {
+               "propertyTitle": "Datatype",
+               "controlType": "DropDown",
+               "groupBy": "UI",
+               "dataType": "Number",
+               "DropDownValues": [
+                  {
+                     "id": 1,
+                     "value": "text"
+                  },
+                  {
+                     "id": 2,
+                     "value": "number"
+                  },
+                  {
+                     "id": 3,
+                     "value": "email"
+                  }
+               ],
+               "Defaultvalue": {
+                  "id": 1,
+                  "value": "text"
+               },
+               "ChangedBy": "",
+               "data": {}
+            },
+            {
+               "propertyTitle": "TextCase",
+               "controlType": "DropDown",
+               "groupBy": "UI",
+               "dataType": "Boolean",
+               "keepThisPropertyAtRuntime": "true",
+               "DropDownValues": [
+                  {
+                     "id": 1,
+                     "value": "Upper"
+                  },
+                  {
+                     "id": 2,
+                     "value": "Lower"
+                  },
+                  {
+                     "id": 3,
+                     "value": "Normal"
+                  }
+               ],
+               "Defaultvalue": {
+                  "id": 3,
+                  "value": "Normal"
+               },
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Cols",
+               "controlType": "TextBox",
+               "groupBy": "UI",
+               "dataType": "Number",
+               "keepThisPropertyAtRuntime": "true",
+               "size": 2,
+               "Defaultvalue": "3",
+               "ChangedBy": "",
+               "data": "3",
+               "type": "number",
+               "rules": [
+                  "v => !!v || \\'Name is required\\'",
+                  "v => (v <= 12 && v >= 3) || \\'Value should be between 3 and 12\\'"
+               ]
+            },
+            {
+               "propertyTitle": "Mandatory",
+               "controlType": "DropDown",
+               "groupBy": "UI",
+               "dataType": "Boolean",
+               "keepThisPropertyAtRuntime": "true",
+               "DropDownValues": [
+                  {
+                     "id": 1,
+                     "value": "true"
+                  },
+                  {
+                     "id": 2,
+                     "value": "false"
+                  }
+               ],
+               "Defaultvalue": {
+                  "id": 2,
+                  "value": "false"
+               },
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Label",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 25,
+               "ChangedBy": "",
+               "data": "",
+               "vbindEvenIfEmptyData": "",
+               "vbindOutPutAttribute": "label"
+            },
+            {
+               "propertyTitle": "Place holder",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 25,
+               "ChangedBy": "",
+               "data": "",
+               "vbindOutPutAttribute": "Placeholder"
+            },
+            {
+               "propertyTitle": "Color",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 25,
+               "ChangedBy": "",
+               "data": "",
+               "vbindEvenIfEmptyData": "style.background-color : ",
+               "vbindOutPutAttribute": "style.background-color"
+            },
+            {
+               "propertyTitle": "Size",
+               "controlType": "TextBox",
+               "groupBy": "UI",
+               "dataType": "Text",
+               "size": 3,
+               "ChangedBy": "",
+               "data": "",
+               "vbindOutPutAttribute": "maxlength"
+            },
+            {
+               "propertyTitle": "show in List",
+               "controlType": "CheckBox",
+               "groupBy": "Grid list details",
+               "dataType": "Boolean",
+               "ObjectName": "ListHeader",
+               "ObjectItemCode": "title",
+               "Defaultvalue": "false",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Title",
+               "controlType": "TextBox",
+               "groupBy": "Grid list details",
+               "dataType": "Text",
+               "ObjectName": "ListHeader",
+               "ObjectItemCode": "title",
+               "Defaultvalue": "Column",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Key",
+               "controlType": "TextBox",
+               "groupBy": "Grid list details",
+               "dataType": "Text",
+               "ObjectName": "ListHeader",
+               "ObjectItemCode": "key",
+               "Defaultvalue": "Key",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Column Size",
+               "controlType": "TextBox",
+               "groupBy": "Grid list details",
+               "dataType": "Number",
+               "ObjectName": "ListHeader",
+               "ObjectItemCode": "width",
+               "Defaultvalue": "10",
+               "ChangedBy": "",
+               "data": "10"
+            },
+            {
+               "propertyTitle": "Column Sequence",
+               "controlType": "TextBox",
+               "groupBy": "Grid list details",
+               "dataType": "Number",
+               "Defaultvalue": "1",
+               "ChangedBy": "",
+               "data": "1"
+            },
+            {
+               "propertyTitle": "Searchable",
+               "controlType": "CheckBox",
+               "groupBy": "Grid list details",
+               "dataType": "Boolean",
+               "Defaultvalue": "true",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "ColumnName",
+               "controlType": "TextBox",
+               "groupBy": "DataBase",
+               "dataType": "Text",
+               "Defaultvalue": "ColumnName",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "UniqueKey",
+               "controlType": "TextBox",
+               "groupBy": "DataBase",
+               "dataType": "Text",
+               "Defaultvalue": "",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "WhereClause",
+               "controlType": "TextBox",
+               "groupBy": "DataBase",
+               "dataType": "Text",
+               "Defaultvalue": "",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "DefaultValue",
+               "controlType": "TextBox",
+               "keepThisPropertyAtRuntime": "true",
+               "groupBy": "DataBase",
+               "dataType": "Text",
+               "Defaultvalue": "",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "SortBy",
+               "controlType": "TextBox",
+               "groupBy": "DataBase",
+               "dataType": "Text",
+               "Defaultvalue": "",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "SearchTableName",
+               "controlType": "TextBox",
+               "groupBy": "DataBase",
+               "dataType": "Text",
+               "Defaultvalue": "",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "SearchColumnNames",
+               "controlType": "TextBox",
+               "groupBy": "DataBase",
+               "dataType": "Text",
+               "Defaultvalue": "",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Rules",
+               "controlType": "RuleManagement",
+               "groupBy": "Rules",
+               "dataType": "Array",
+               "keepThisPropertyAtRuntime": "true",
+               "vbindOutPutAttribute": "rules",
+               "Defaultvalue": [],
+               "ChangedBy": "",
+               "data": []
+            },
+            {
+               "propertyTitle": "Type",
+               "controlType": "DropDown",
+               "groupBy": "Main",
+               "dataType": "Number",
+               "DropDownValues": [
+                  {
+                     "id": 1,
+                     "value": "AutoComplete"
+                  },
+                  {
+                     "id": 2,
+                     "value": "Combo"
+                  },
+                  {
+                     "id": 3,
+                     "value": "Select"
+                  }
+               ],
+               "Defaultvalue": {
+                  "id": 3,
+                  "value": "Select"
+               },
+               "ChangedBy": "",
+               "data": {},
+               "keepThisPropertyAtRuntime": "true"
+            },
+            {
+               "propertyTitle": "Multiselect",
+               "controlType": "CheckBox",
+               "groupBy": "Main",
+               "dataType": "Boolean",
+               "Defaultvalue": "false",
+               "ChangedBy": "",
+               "data": "",
+               "keepThisPropertyAtRuntime": "true"
+            }
+         ]
+      },
+      {
+         "ControlName": "GroupData1",
+         "controlType": "GroupData",
+         "controlProperties": [
+            {
+               "propertyTitle": "Name",
+               "controlType": "TextBox",
+               "keepThisPropertyAtRuntime": "true",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 15,
+               "Defaultvalue": "Name12",
+               "ChangedBy": "",
+               "data": "",
+               "rules": [
+                  "v => !!v || \\'Name is required\\'"
+               ]
+            },
+            {
+               "propertyTitle": "Align",
+               "controlType": "DropDown",
+               "groupBy": "UI",
+               "dataType": "Number",
+               "DropDownValues": [
+                  {
+                     "id": 1,
+                     "value": "center"
+                  },
+                  {
+                     "id": 2,
+                     "value": "Left"
+                  },
+                  {
+                     "id": 3,
+                     "value": "Justify"
+                  }
+               ],
+               "Defaultvalue": {
+                  "id": 2,
+                  "value": "Left"
+               },
+               "ChangedBy": "",
+               "data": "",
+               "keepThisPropertyAtRuntime": "true"
+            },
+            {
+               "propertyTitle": "Datatype",
+               "controlType": "DropDown",
+               "groupBy": "UI",
+               "dataType": "Number",
+               "DropDownValues": [
+                  {
+                     "id": 1,
+                     "value": "text"
+                  },
+                  {
+                     "id": 2,
+                     "value": "number"
+                  },
+                  {
+                     "id": 3,
+                     "value": "email"
+                  }
+               ],
+               "Defaultvalue": {
+                  "id": 1,
+                  "value": "text"
+               },
+               "ChangedBy": "",
+               "data": {}
+            },
+            {
+               "propertyTitle": "TextCase",
+               "controlType": "DropDown",
+               "groupBy": "UI",
+               "dataType": "Boolean",
+               "keepThisPropertyAtRuntime": "true",
+               "DropDownValues": [
+                  {
+                     "id": 1,
+                     "value": "Upper"
+                  },
+                  {
+                     "id": 2,
+                     "value": "Lower"
+                  },
+                  {
+                     "id": 3,
+                     "value": "Normal"
+                  }
+               ],
+               "Defaultvalue": {
+                  "id": 3,
+                  "value": "Normal"
+               },
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Cols",
+               "controlType": "TextBox",
+               "groupBy": "UI",
+               "dataType": "Number",
+               "keepThisPropertyAtRuntime": "true",
+               "size": 2,
+               "Defaultvalue": "3",
+               "ChangedBy": "",
+               "data": "3",
+               "type": "number",
+               "rules": [
+                  "v => !!v || \\'Name is required\\'",
+                  "v => (v <= 12 && v >= 3) || \\'Value should be between 3 and 12\\'"
+               ]
+            },
+            {
+               "propertyTitle": "Mandatory",
+               "controlType": "DropDown",
+               "groupBy": "UI",
+               "dataType": "Boolean",
+               "keepThisPropertyAtRuntime": "true",
+               "DropDownValues": [
+                  {
+                     "id": 1,
+                     "value": "true"
+                  },
+                  {
+                     "id": 2,
+                     "value": "false"
+                  }
+               ],
+               "Defaultvalue": {
+                  "id": 2,
+                  "value": "false"
+               },
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Label",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 25,
+               "ChangedBy": "",
+               "data": "",
+               "vbindEvenIfEmptyData": "",
+               "vbindOutPutAttribute": "label"
+            },
+            {
+               "propertyTitle": "Place holder",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 25,
+               "ChangedBy": "",
+               "data": "",
+               "vbindOutPutAttribute": "Placeholder"
+            },
+            {
+               "propertyTitle": "Color",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 25,
+               "ChangedBy": "",
+               "data": "",
+               "vbindEvenIfEmptyData": "style.background-color : ",
+               "vbindOutPutAttribute": "style.background-color"
+            },
+            {
+               "propertyTitle": "Size",
+               "controlType": "TextBox",
+               "groupBy": "UI",
+               "dataType": "Text",
+               "size": 3,
+               "ChangedBy": "",
+               "data": "",
+               "vbindOutPutAttribute": "maxlength"
+            },
+            {
+               "propertyTitle": "show in List",
+               "controlType": "CheckBox",
+               "groupBy": "Grid list details",
+               "dataType": "Boolean",
+               "ObjectName": "ListHeader",
+               "ObjectItemCode": "title",
+               "Defaultvalue": "false",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Title",
+               "controlType": "TextBox",
+               "groupBy": "Grid list details",
+               "dataType": "Text",
+               "ObjectName": "ListHeader",
+               "ObjectItemCode": "title",
+               "Defaultvalue": "Column",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Key",
+               "controlType": "TextBox",
+               "groupBy": "Grid list details",
+               "dataType": "Text",
+               "ObjectName": "ListHeader",
+               "ObjectItemCode": "key",
+               "Defaultvalue": "Key",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Column Size",
+               "controlType": "TextBox",
+               "groupBy": "Grid list details",
+               "dataType": "Number",
+               "ObjectName": "ListHeader",
+               "ObjectItemCode": "width",
+               "Defaultvalue": "10",
+               "ChangedBy": "",
+               "data": "10"
+            },
+            {
+               "propertyTitle": "Column Sequence",
+               "controlType": "TextBox",
+               "groupBy": "Grid list details",
+               "dataType": "Number",
+               "Defaultvalue": "1",
+               "ChangedBy": "",
+               "data": "1"
+            },
+            {
+               "propertyTitle": "Searchable",
+               "controlType": "CheckBox",
+               "groupBy": "Grid list details",
+               "dataType": "Boolean",
+               "Defaultvalue": "true",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "ColumnName",
+               "controlType": "TextBox",
+               "groupBy": "DataBase",
+               "dataType": "Text",
+               "Defaultvalue": "ColumnName",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "UniqueKey",
+               "controlType": "TextBox",
+               "groupBy": "DataBase",
+               "dataType": "Text",
+               "Defaultvalue": "",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "WhereClause",
+               "controlType": "TextBox",
+               "groupBy": "DataBase",
+               "dataType": "Text",
+               "Defaultvalue": "",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "GroupSource",
+               "controlType": "TextBox",
+               "groupBy": "DataBase",
+               "dataType": "Text",
+               "Defaultvalue": "",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "DefaultValue",
+               "controlType": "TextBox",
+               "keepThisPropertyAtRuntime": "true",
+               "groupBy": "DataBase",
+               "dataType": "Text",
+               "Defaultvalue": "",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "SortBy",
+               "controlType": "TextBox",
+               "groupBy": "DataBase",
+               "dataType": "Text",
+               "Defaultvalue": "",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Rules",
+               "controlType": "RuleManagement",
+               "groupBy": "Rules",
+               "dataType": "Array",
+               "keepThisPropertyAtRuntime": "true",
+               "vbindOutPutAttribute": "rules",
+               "Defaultvalue": [],
+               "ChangedBy": "",
+               "data": []
+            },
+            {
+               "propertyTitle": "Type",
+               "controlType": "DropDown",
+               "groupBy": "Main",
+               "dataType": "Number",
+               "DropDownValues": [
+                  {
+                     "id": 1,
+                     "value": "AutoComplete"
+                  },
+                  {
+                     "id": 2,
+                     "value": "Combo"
+                  },
+                  {
+                     "id": 3,
+                     "value": "Select"
+                  }
+               ],
+               "Defaultvalue": {
+                  "id": 3,
+                  "value": "Select"
+               },
+               "ChangedBy": "",
+               "data": {},
+               "keepThisPropertyAtRuntime": "true"
+            },
+            {
+               "propertyTitle": "Multiselect",
+               "controlType": "CheckBox",
+               "groupBy": "Main",
+               "dataType": "Boolean",
+               "Defaultvalue": "false",
+               "ChangedBy": "",
+               "data": "",
+               "keepThisPropertyAtRuntime": "true"
+            }
+         ]
+      },
+      {
+         "ControlName": "AutoComplete",
+         "controlType": "AutoComplete",
+         "controlProperties": [
+            {
+               "propertyTitle": "Name",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 15,
+               "Defaultvalue": "Name12",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Align",
+               "controlType": "DropDown",
+               "groupBy": "UI",
+               "dataType": "Number",
+               "DropDownValues": [
+                  {
+                     "id": 1,
+                     "value": "Center"
+                  },
+                  {
+                     "id": 2,
+                     "value": "Left"
+                  },
+                  {
+                     "id": 3,
+                     "value": "Justify"
+                  }
+               ],
+               "Defaultvalue": {
+                  "id": 2,
+                  "value": "Left"
+               },
+               "ChangedBy": "",
+               "data": {}
+            },
+            {
+               "propertyTitle": "Rows",
+               "controlType": "TextBox",
+               "groupBy": "UI",
+               "dataType": "Number",
+               "size": 2,
+               "Defaultvalue": "4",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Cols",
+               "controlType": "TextBox",
+               "groupBy": "UI",
+               "dataType": "Number",
+               "keepThisPropertyAtRuntime": "true",
+               "size": 2,
+               "Defaultvalue": "3",
+               "ChangedBy": "",
+               "data": "3",
+               "type": "number",
+               "rules": [
+                  "v => !!v || \\'Name is required\\'",
+                  "v => (v <= 12 && v >= 3) || \\'Value should be between 3 and 12\\'"
+               ]
+            },
+            {
+               "propertyTitle": "Label",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 25,
+               "ChangedBy": "",
+               "data": "",
+               "vbindOutPutAttribute": "label"
+            },
+            {
+               "propertyTitle": "Place holder",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 25,
+               "ChangedBy": "",
+               "data": "",
+               "vbindOutPutAttribute": "Placeholder"
+            },
+            {
+               "propertyTitle": "backgroundColor",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 25,
+               "ChangedBy": "",
+               "data": "",
+               "vbindOutPutAttribute": "style.background-color"
+            },
+            {
+               "propertyTitle": "Type",
+               "controlType": "DropDown",
+               "groupBy": "Main",
+               "dataType": "Number",
+               "DropDownValues": [
+                  {
+                     "id": 1,
+                     "value": "AutoComplete"
+                  },
+                  {
+                     "id": 2,
+                     "value": "Combo"
+                  },
+                  {
+                     "id": 3,
+                     "value": "Select"
+                  }
+               ],
+               "Defaultvalue": {
+                  "id": 3,
+                  "value": "Select"
+               },
+               "ChangedBy": "",
+               "data": {},
+               "keepThisPropertyAtRuntime": "true"
+            },
+            {
+               "propertyTitle": "Multiselect",
+               "controlType": "CheckBox",
+               "groupBy": "Main",
+               "dataType": "Boolean",
+               "Defaultvalue": "false",
+               "ChangedBy": "",
+               "data": "",
+               "keepThisPropertyAtRuntime": "true"
+            },
+            {
+               "propertyTitle": "ColumnName",
+               "controlType": "TextBox",
+               "groupBy": "DataBase",
+               "dataType": "Text",
+               "Defaultvalue": "ColumnName",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "SearchTableName",
+               "controlType": "TextBox",
+               "groupBy": "DataBase",
+               "dataType": "Text",
+               "Defaultvalue": "",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "SearchColumnNames",
+               "controlType": "TextBox",
+               "groupBy": "DataBase",
+               "dataType": "Text",
+               "Defaultvalue": "",
+               "ChangedBy": "",
+               "data": ""
+            }
+         ]
+      },
+      {
+         "ControlName": "Tab",
+         "controlType": "Tab",
+         "controlProperties": [
+            {
+               "propertyTitle": "Name",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 15,
+               "Defaultvalue": "Name12",
+               "ChangedBy": "",
+               "data": "TabName"
+            },
+            {
+               "propertyTitle": "Title",
+               "controlType": "TextBox",
+               "groupBy": "UI",
+               "dataType": "Text",
+               "size": 15,
+               "Defaultvalue": "Title",
+               "ChangedBy": "",
+               "data": "Tab Title"
+            },
+            {
+               "propertyTitle": "Cols",
+               "controlType": "TextBox",
+               "groupBy": "UI",
+               "dataType": "Number",
+               "size": 2,
+               "Defaultvalue": "12",
+               "ChangedBy": "",
+               "data": "12"
+            }
+         ]
+      },
+      {
+         "ControlName": "GroupBox",
+         "controlType": "GroupBox",
+         "controlProperties": [
+            {
+               "propertyTitle": "Name",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 15,
+               "Defaultvalue": "Name12",
+               "ChangedBy": "",
+               "data": "",
+               "keepThisPropertyAtRuntime": "true"
+            },
+            {
+               "propertyTitle": "Cols",
+               "controlType": "TextBox",
+               "groupBy": "UI",
+               "dataType": "Text",
+               "size": 15,
+               "Defaultvalue": "12",
+               "ChangedBy": "",
+               "data": "",
+               "keepThisPropertyAtRuntime": "true"
+            },
+            {
+               "propertyTitle": "Title",
+               "controlType": "TextBox",
+               "groupBy": "UI",
+               "dataType": "Text",
+               "size": 15,
+               "Defaultvalue": "Group Box Title",
+               "ChangedBy": "",
+               "data": "",
+               "keepThisPropertyAtRuntime": "true"
+            },
+            {
+               "propertyTitle": "Start Expanded",
+               "controlType": "CheckBox",
+               "groupBy": "UI",
+               "dataType": "Boolean",
+               "Defaultvalue": "false",
+               "ChangedBy": "",
+               "data": "",
+               "keepThisPropertyAtRuntime": "true"
+            }
+         ]
+      },
+      {
+         "ControlName": "DataTable1",
+         "controlType": "GridTable",
+         "controlProperties": [
+            {
+               "propertyTitle": "Name",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 15,
+               "Defaultvalue": "Name12",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "HeaderCaption",
+               "controlType": "TextBox",
+               "groupBy": "UI",
+               "dataType": "Text",
+               "size": 25,
+               "Defaultvalue": "Header",
+               "keepThisPropertyAtRuntime": "true",
+               "ChangedBy": "",
+               "data": "",
+               "rules": [
+                  "v => !!v || \\'Name is required\\'"
+               ]
+            },
+            {
+               "propertyTitle": "Height",
+               "controlType": "TextBox",
+               "groupBy": "UI",
+               "dataType": "Number",
+               "size": 2,
+               "Defaultvalue": "25",
+               "ChangedBy": "",
+               "data": "",
+               "rules": [
+                  "v => !!v || \\'Name is required\\'"
+               ]
+            },
+            {
+               "propertyTitle": "Cols",
+               "controlType": "TextBox",
+               "groupBy": "UI",
+               "dataType": "Number",
+               "keepThisPropertyAtRuntime": "true",
+               "size": 2,
+               "Defaultvalue": "3",
+               "ChangedBy": "",
+               "data": "3",
+               "type": "number",
+               "rules": [
+                  "v => !!v || \\'Name is required\\'",
+                  "v => (v <= 12 && v >= 3) || \\'Value should be between 3 and 12\\'"
+               ]
+            },
+            {
+               "propertyTitle": "hide-footer",
+               "controlType": "DropDown",
+               "groupBy": "UI",
+               "dataType": "Number",
+               "DropDownValues": [
+                  {
+                     "id": "true",
+                     "value": "true"
+                  },
+                  {
+                     "id": "false",
+                     "value": "false"
+                  }
+               ],
+               "Defaultvalue": {
+                  "id": "false",
+                  "value": "false"
+               },
+               "ChangedBy": "",
+               "data": "",
+               "addElementToObject": "hide-footer"
+            },
+            {
+               "propertyTitle": "Table Name",
+               "controlType": "TextBox",
+               "groupBy": "DataBase",
+               "dataType": "Text",
+               "Defaultvalue": "TableNameRahim",
+               "ChangedBy": "",
+               "data": ""
+            }
+         ],
+         "Controls": []
+      },
+      {
+         "ControlName": "GridHeader",
+         "controlType": "GridHeader",
+         "controlProperties": [
+            {
+               "propertyTitle": "Title",
+               "ElementType": "Header",
+               "controlType": "TextBox",
+               "groupBy": "Header",
+               "dataType": "Text",
+               "size": 25,
+               "Defaultvalue": "No Column Caption",
+               "ChangedBy": "",
+               "vbindOutPutAttribute": "title",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Width",
+               "ElementType": "Header",
+               "controlType": "TextBox",
+               "groupBy": "Header",
+               "dataType": "Number",
+               "size": 4,
+               "Defaultvalue": "25",
+               "ChangedBy": "",
+               "vbindOutPutAttribute": "width",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Align",
+               "controlType": "DropDown",
+               "groupBy": "UI",
+               "dataType": "Number",
+               "DropDownValues": [
+                  {
+                     "id": "start",
+                     "value": "Start"
+                  },
+                  {
+                     "id": "end",
+                     "value": "End"
+                  }
+               ],
+               "Defaultvalue": {
+                  "id": "start",
+                  "value": "Start"
+               },
+               "ChangedBy": "",
+               "data": "",
+               "vbindOutPutAttribute": "align"
+            }
+         ]
+      },
+      {
+         "ControlName": "Pricing",
+         "controlType": "Pricing",
+         "controlProperties": [
+            {
+               "propertyTitle": "Name",
+               "controlType": "TextBox",
+               "keepThisPropertyAtRuntime": "true",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 25,
+               "Defaultvalue": "Name12",
+               "ChangedBy": "",
+               "data": "",
+               "rules": [
+                  "v => !!v || \\'Name is required\\'"
+               ]
+            },
+            {
+               "propertyTitle": "Align",
+               "controlType": "DropDown",
+               "groupBy": "UI",
+               "dataType": "Number",
+               "DropDownValues": [
+                  {
+                     "id": 1,
+                     "value": "center"
+                  },
+                  {
+                     "id": 2,
+                     "value": "Left"
+                  },
+                  {
+                     "id": 3,
+                     "value": "Justify"
+                  }
+               ],
+               "Defaultvalue": {
+                  "id": 2,
+                  "value": "Left"
+               },
+               "ChangedBy": "",
+               "data": "",
+               "keepThisPropertyAtRuntime": "true"
+            },
+            {
+               "propertyTitle": "Datatype",
+               "controlType": "DropDown",
+               "groupBy": "UI",
+               "dataType": "Number",
+               "DropDownValues": [
+                  {
+                     "id": 1,
+                     "value": "text"
+                  },
+                  {
+                     "id": 2,
+                     "value": "number"
+                  },
+                  {
+                     "id": 3,
+                     "value": "email"
+                  }
+               ],
+               "Defaultvalue": {
+                  "id": 1,
+                  "value": "text"
+               },
+               "ChangedBy": "",
+               "data": {}
+            },
+            {
+               "propertyTitle": "TextCase",
+               "controlType": "DropDown",
+               "groupBy": "UI",
+               "dataType": "Boolean",
+               "keepThisPropertyAtRuntime": "true",
+               "DropDownValues": [
+                  {
+                     "id": 1,
+                     "value": "Upper"
+                  },
+                  {
+                     "id": 2,
+                     "value": "Lower"
+                  },
+                  {
+                     "id": 3,
+                     "value": "Normal"
+                  }
+               ],
+               "Defaultvalue": {
+                  "id": 3,
+                  "value": "Normal"
+               },
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Cols",
+               "controlType": "TextBox",
+               "groupBy": "UI",
+               "dataType": "Number",
+               "keepThisPropertyAtRuntime": "true",
+               "size": 2,
+               "Defaultvalue": "3",
+               "ChangedBy": "",
+               "data": "3",
+               "type": "number",
+               "rules": [
+                  "v => !!v || \\'Name is required\\'",
+                  "v => (v <= 12 && v >= 3) || \\'Value should be between 3 and 12\\'"
+               ]
+            },
+            {
+               "propertyTitle": "Mandatory",
+               "controlType": "DropDown",
+               "groupBy": "UI",
+               "dataType": "Boolean",
+               "keepThisPropertyAtRuntime": "true",
+               "DropDownValues": [
+                  {
+                     "id": 1,
+                     "value": "true"
+                  },
+                  {
+                     "id": 2,
+                     "value": "false"
+                  }
+               ],
+               "Defaultvalue": {
+                  "id": 2,
+                  "value": "false"
+               },
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Label",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 25,
+               "ChangedBy": "",
+               "data": "",
+               "vbindEvenIfEmptyData": "",
+               "vbindOutPutAttribute": "label"
+            },
+            {
+               "propertyTitle": "Place holder",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 25,
+               "ChangedBy": "",
+               "data": "",
+               "vbindOutPutAttribute": "Placeholder"
+            },
+            {
+               "propertyTitle": "Color",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 25,
+               "ChangedBy": "",
+               "data": "",
+               "vbindEvenIfEmptyData": "style.background-color : ",
+               "vbindOutPutAttribute": "style.background-color"
+            },
+            {
+               "propertyTitle": "Size",
+               "controlType": "TextBox",
+               "groupBy": "UI",
+               "dataType": "Text",
+               "size": 3,
+               "ChangedBy": "",
+               "data": "",
+               "vbindOutPutAttribute": "maxlength"
+            },
+            {
+               "propertyTitle": "show in List",
+               "controlType": "CheckBox",
+               "groupBy": "Grid list details",
+               "dataType": "Boolean",
+               "ObjectName": "ListHeader",
+               "ObjectItemCode": "title",
+               "Defaultvalue": "false",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "StartOnNextLine",
+               "controlType": "CheckBox",
+               "groupBy": "UI",
+               "dataType": "Boolean",
+               "keepThisPropertyAtRuntime": "true",
+               "Defaultvalue": "false",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "HorizontalLineBefore",
+               "controlType": "CheckBox",
+               "groupBy": "UI",
+               "dataType": "Boolean",
+               "keepThisPropertyAtRuntime": "true",
+               "Defaultvalue": "false",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Title",
+               "controlType": "TextBox",
+               "groupBy": "Grid list details",
+               "dataType": "Text",
+               "ObjectName": "ListHeader",
+               "ObjectItemCode": "title",
+               "Defaultvalue": "Column",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Key",
+               "controlType": "TextBox",
+               "groupBy": "Grid list details",
+               "dataType": "Text",
+               "ObjectName": "ListHeader",
+               "ObjectItemCode": "key",
+               "Defaultvalue": "Key",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Column Size",
+               "controlType": "TextBox",
+               "groupBy": "Grid list details",
+               "dataType": "Number",
+               "ObjectName": "ListHeader",
+               "ObjectItemCode": "width",
+               "Defaultvalue": "10",
+               "ChangedBy": "",
+               "data": "10"
+            },
+            {
+               "propertyTitle": "Column Sequence",
+               "controlType": "TextBox",
+               "groupBy": "Grid list details",
+               "dataType": "Number",
+               "Defaultvalue": "1",
+               "ChangedBy": "",
+               "data": "1"
+            },
+            {
+               "propertyTitle": "Searchable",
+               "controlType": "CheckBox",
+               "groupBy": "Grid list details",
+               "dataType": "Boolean",
+               "Defaultvalue": "true",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "ColumnName",
+               "controlType": "TextBox",
+               "groupBy": "DataBase",
+               "dataType": "Text",
+               "Defaultvalue": "ColumnName",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "UniqueKey",
+               "controlType": "TextBox",
+               "groupBy": "DataBase",
+               "dataType": "Text",
+               "Defaultvalue": "",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "DBMinSize",
+               "controlType": "TextBox",
+               "groupBy": "DataBase",
+               "dataType": "Number",
+               "Defaultvalue": "0",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "DBMaxSize",
+               "controlType": "TextBox",
+               "groupBy": "DataBase",
+               "dataType": "Number",
+               "Defaultvalue": "",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Rules",
+               "controlType": "RuleManagement",
+               "groupBy": "Rules",
+               "dataType": "Array",
+               "keepThisPropertyAtRuntime": "true",
+               "vbindOutPutAttribute": "rules",
+               "Defaultvalue": [],
+               "ChangedBy": "",
+               "data": []
+            }
+         ]
+      },
+      {
+         "ControlName": "RateDefinition",
+         "controlType": "RateDefinition",
+         "controlProperties": [
+            {
+               "propertyTitle": "Name",
+               "controlType": "TextBox",
+               "keepThisPropertyAtRuntime": "true",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 25,
+               "Defaultvalue": "Name12",
+               "ChangedBy": "",
+               "data": "",
+               "rules": [
+                  "v => !!v || \\'Name is required\\'"
+               ]
+            },
+            {
+               "propertyTitle": "Align",
+               "controlType": "DropDown",
+               "groupBy": "UI",
+               "dataType": "Number",
+               "DropDownValues": [
+                  {
+                     "id": 1,
+                     "value": "center"
+                  },
+                  {
+                     "id": 2,
+                     "value": "Left"
+                  },
+                  {
+                     "id": 3,
+                     "value": "Justify"
+                  }
+               ],
+               "Defaultvalue": {
+                  "id": 2,
+                  "value": "Left"
+               },
+               "ChangedBy": "",
+               "data": "",
+               "keepThisPropertyAtRuntime": "true"
+            },
+            {
+               "propertyTitle": "Datatype",
+               "controlType": "DropDown",
+               "groupBy": "UI",
+               "dataType": "Number",
+               "DropDownValues": [
+                  {
+                     "id": 1,
+                     "value": "text"
+                  },
+                  {
+                     "id": 2,
+                     "value": "number"
+                  },
+                  {
+                     "id": 3,
+                     "value": "email"
+                  }
+               ],
+               "Defaultvalue": {
+                  "id": 1,
+                  "value": "text"
+               },
+               "ChangedBy": "",
+               "data": {}
+            },
+            {
+               "propertyTitle": "TextCase",
+               "controlType": "DropDown",
+               "groupBy": "UI",
+               "dataType": "Boolean",
+               "keepThisPropertyAtRuntime": "true",
+               "DropDownValues": [
+                  {
+                     "id": 1,
+                     "value": "Upper"
+                  },
+                  {
+                     "id": 2,
+                     "value": "Lower"
+                  },
+                  {
+                     "id": 3,
+                     "value": "Normal"
+                  }
+               ],
+               "Defaultvalue": {
+                  "id": 3,
+                  "value": "Normal"
+               },
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Cols",
+               "controlType": "TextBox",
+               "groupBy": "UI",
+               "dataType": "Number",
+               "keepThisPropertyAtRuntime": "true",
+               "size": 2,
+               "Defaultvalue": "3",
+               "ChangedBy": "",
+               "data": "3",
+               "type": "number",
+               "rules": [
+                  "v => !!v || \\'Name is required\\'",
+                  "v => (v <= 12 && v >= 3) || \\'Value should be between 3 and 12\\'"
+               ]
+            },
+            {
+               "propertyTitle": "Mandatory",
+               "controlType": "DropDown",
+               "groupBy": "UI",
+               "dataType": "Boolean",
+               "keepThisPropertyAtRuntime": "true",
+               "DropDownValues": [
+                  {
+                     "id": 1,
+                     "value": "true"
+                  },
+                  {
+                     "id": 2,
+                     "value": "false"
+                  }
+               ],
+               "Defaultvalue": {
+                  "id": 2,
+                  "value": "false"
+               },
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Label",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 25,
+               "ChangedBy": "",
+               "data": "",
+               "vbindEvenIfEmptyData": "",
+               "vbindOutPutAttribute": "label"
+            },
+            {
+               "propertyTitle": "Place holder",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 25,
+               "ChangedBy": "",
+               "data": "",
+               "vbindOutPutAttribute": "Placeholder"
+            },
+            {
+               "propertyTitle": "Color",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 25,
+               "ChangedBy": "",
+               "data": "",
+               "vbindEvenIfEmptyData": "style.background-color : ",
+               "vbindOutPutAttribute": "style.background-color"
+            },
+            {
+               "propertyTitle": "Size",
+               "controlType": "TextBox",
+               "groupBy": "UI",
+               "dataType": "Text",
+               "size": 3,
+               "ChangedBy": "",
+               "data": "",
+               "vbindOutPutAttribute": "maxlength"
+            },
+            {
+               "propertyTitle": "show in List",
+               "controlType": "CheckBox",
+               "groupBy": "Grid list details",
+               "dataType": "Boolean",
+               "ObjectName": "ListHeader",
+               "ObjectItemCode": "title",
+               "Defaultvalue": "false",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "StartOnNextLine",
+               "controlType": "CheckBox",
+               "groupBy": "UI",
+               "dataType": "Boolean",
+               "keepThisPropertyAtRuntime": "true",
+               "Defaultvalue": "false",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "HorizontalLineBefore",
+               "controlType": "CheckBox",
+               "groupBy": "UI",
+               "dataType": "Boolean",
+               "keepThisPropertyAtRuntime": "true",
+               "Defaultvalue": "false",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Title",
+               "controlType": "TextBox",
+               "groupBy": "Grid list details",
+               "dataType": "Text",
+               "ObjectName": "ListHeader",
+               "ObjectItemCode": "title",
+               "Defaultvalue": "Column",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Key",
+               "controlType": "TextBox",
+               "groupBy": "Grid list details",
+               "dataType": "Text",
+               "ObjectName": "ListHeader",
+               "ObjectItemCode": "key",
+               "Defaultvalue": "Key",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Column Size",
+               "controlType": "TextBox",
+               "groupBy": "Grid list details",
+               "dataType": "Number",
+               "ObjectName": "ListHeader",
+               "ObjectItemCode": "width",
+               "Defaultvalue": "10",
+               "ChangedBy": "",
+               "data": "10"
+            },
+            {
+               "propertyTitle": "Column Sequence",
+               "controlType": "TextBox",
+               "groupBy": "Grid list details",
+               "dataType": "Number",
+               "Defaultvalue": "1",
+               "ChangedBy": "",
+               "data": "1"
+            },
+            {
+               "propertyTitle": "Searchable",
+               "controlType": "CheckBox",
+               "groupBy": "Grid list details",
+               "dataType": "Boolean",
+               "Defaultvalue": "true",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "ColumnName",
+               "controlType": "TextBox",
+               "groupBy": "DataBase",
+               "dataType": "Text",
+               "Defaultvalue": "ColumnName",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "UniqueKey",
+               "controlType": "TextBox",
+               "groupBy": "DataBase",
+               "dataType": "Text",
+               "Defaultvalue": "",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "DBMinSize",
+               "controlType": "TextBox",
+               "groupBy": "DataBase",
+               "dataType": "Number",
+               "Defaultvalue": "0",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "DBMaxSize",
+               "controlType": "TextBox",
+               "groupBy": "DataBase",
+               "dataType": "Number",
+               "Defaultvalue": "",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Rules",
+               "controlType": "RuleManagement",
+               "groupBy": "Rules",
+               "dataType": "Array",
+               "keepThisPropertyAtRuntime": "true",
+               "vbindOutPutAttribute": "rules",
+               "Defaultvalue": [],
+               "ChangedBy": "",
+               "data": []
+            }
+         ]
+      }
+   ]
+}
