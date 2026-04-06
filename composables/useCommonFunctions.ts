@@ -4,8 +4,8 @@ import { userDataInternalstore } from '@/store/userDataStore'
 const muserDataInternalstore = userDataInternalstore()
 
 export function useUpdateObject99(obj, path) {
-  
-  debugger
+
+  //debugger
   let lobj = obj
   console.log('useUpdateObject', lobj)
   const getObjectData = () =>
@@ -15,7 +15,7 @@ export function useUpdateObject99(obj, path) {
     const keys = path.split('.')
     const lastKey = keys.pop()
     const nested = keys.reduce((o, key) => (o[key] = o[key] || {}), lobj)
-    console.log('nested', nested, 'nested values',  value)
+    console.log('nested', nested, 'nested values', value)
     nested[lastKey] = value
   }
 
@@ -23,24 +23,24 @@ export function useUpdateObject99(obj, path) {
     get: getObjectData,
     set: setObjectData,
   })
-  console.log('return value',  dataValue)
+  console.log('return value', dataValue)
   return { dataValue }
 }
 
 
 export function useUpdateObject(obj, groupObject, rowIndex = null) {
-  debugger
+  //debugger
   let path = groupObject.value.dataPath
-    if (groupObject.value.ComponentInfo) {
-      // alert(groupObject.value.ComponentInfo)
-    const dotIndex = groupObject.value.dataPath.lastIndexOf(".")
-    groupObject.value.dataPath = 
-    dotIndex !== -1
-    ? groupObject.value.dataPath.slice(0, dotIndex + 1) + groupObject?.value.ComponentInfo + "." + groupObject.value.dataPath.slice(dotIndex + 1)
-    : groupObject.value.dataPath
+  if (groupObject.value.ComponentInfo) {
+    // alert(groupObject.value.ComponentInfo)
+    const dotIndex = groupObject?.value.dataPath?.lastIndexOf(".")
+    groupObject.value.dataPath =
+      dotIndex !== -1
+        ? groupObject.value.dataPath.slice(0, dotIndex + 1) + groupObject?.value.ComponentInfo + "." + groupObject.value.dataPath.slice(dotIndex + 1)
+        : groupObject.value.dataPath
 
     path = groupObject.value.dataPath
-    }
+  }
 
 
   const getObjectData = () =>

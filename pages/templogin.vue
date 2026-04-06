@@ -54,7 +54,7 @@ const login = () => {
               :type="showPassword ? 'text' : 'password'"
               variant="outlined"
               rounded="lg"
-              :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
+              :append-inner-icon="showPassword ? 'mdi:eye-off' : 'mdi:eye'"
               @click:append-inner="showPassword = !showPassword"
             />
 

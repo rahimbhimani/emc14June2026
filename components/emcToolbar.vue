@@ -20,7 +20,7 @@ const isConfirmDialogVisible = ref(false)
 function getControl(vAttribute) {
   const lPageDetails = ref(GetPageInformation(vAttribute))
 
-  console.log('tesrr', lPageDetails.value)
+  // console.log('tesrr', lPageDetails.value)
 
   return resolveComponent(lPageDetails.value)
 }
@@ -29,7 +29,7 @@ function GetPageInformation(vAttribute) {
   const lPageComponent = ref('')
 
   switch (vAttribute) {
-    case 'create' : case 'edit':
+    case 'create': case 'edit':
       switch (currentMaster.value) {
         case 'ScreenConfigure':
           lPageComponent.value = 'emcDTcreatescreendesign'
@@ -77,9 +77,9 @@ async function GetDetailData() {
 
   mErrorOnPage.value = false
 
-  
+
   mFormInputData.data = [{ _id: SelectedRows.value[0]._id }]
-alert(mFormInputData.data)
+  alert(mFormInputData.data)
   // mFormInputData.data.push({ _id: SelectedRows.value[0]._id })
   // alert('rahim2')
 
@@ -224,9 +224,9 @@ async function btnMoveToSave() {
   console.log('btnMoveToSave', muserDataStore.data.FormData.DataObject)
 
   // const { valid } = formRef.value.validate() // Validate form
-  
+
   const lObj = await useEmcInsert(currentMaster.value, currentMaster.value === 'ScreenConfigure' ? screenDesignStore : muserDataStore.data?.FormData.UserEntryObjects.FormName)
-  
+
   if (lObj?.status.value === 'success')
     informUser('success', 'Data Created sucessfully')
 
@@ -297,34 +297,21 @@ function perforFunction(vAction) {
 
   <!-- {{ muserDataStore }} -->
   <!-- {{ muserDataStore }} -->
-<!--   
+  <!--   
     {{ currentMaster }}
     {{ muserDataStore.data.FormData.UserEntryObjects }}
   -->
 
   <!-- {{ currentMaster }} -->
-  <ConfirmAction
-    v-model:isDialogVisible="isConfirmDialogVisible"
+  <ConfirmAction v-model:isDialogVisible="isConfirmDialogVisible"
     confirmation-question="Selected records will be deleted, do you wish to continue ?"
-    cancel-msg="Unsubscription Cancelled!!"
-    cancel-title="Cancelled"
-    confirm-msg="Your subscription cancelled successfully."
-    confirm-title="Unsubscribed!"
-    @confirm="handleDelete"
-  />
-  <VToolbar
-    style="background-color: transparent;"
-    density="compact"
-    class="pa-0 ma-0"
-  >
-    <VBtn
-      v-for="inividualControl in vConfToolbar.sort((firstItem, secondItem) => firstItem.order - secondItem.order)"
-      :key="inividualControl.index"
-      color="#5865f2"
-      density="comfortable"
+    cancel-msg="Unsubscription Cancelled!!" cancel-title="Cancelled"
+    confirm-msg="Your subscription cancelled successfully." confirm-title="Unsubscribed!" @confirm="handleDelete" />
+  <VToolbar style="background-color: transparent;" density="compact" class="pa-0 ma-0">
+    <VBtn v-for="inividualControl in vConfToolbar.sort((firstItem, secondItem) => firstItem.order - secondItem.order)"
+      :key="inividualControl.index" color="#5865f2" density="comfortable"
       :disabled="pageLoading === true ? true : disbleButton(inividualControl.text)"
-      @click="perforFunction(inividualControl.text)"
-    >
+      @click="perforFunction(inividualControl.text)">
       <template #prepend>
         <VIcon icon="ri-add-line" />
         <!-- <VIcon :icon="image1"></VIcon> -->
@@ -336,35 +323,23 @@ function perforFunction(vAction) {
 
     <VSpacer />
 
-    <VBtn
-      :color="mFormInputData.searchCriteria?.length > 0 ? '#008000' : 'red'"
-      @click="filterpanelexpanded = !filterpanelexpanded"
-    >
-      <VIcon
-        size="18px"
-        color="green"
-      >
-        {{ mFormInputData.searchCriteria.length > 0 ? $vuetify.icons.aliases.emcfilter : $vuetify.icons.aliases.emcfilteroff }}
+    <VBtn :color="mFormInputData.searchCriteria?.length > 0 ? '#008000' : 'red'"
+      @click="filterpanelexpanded = !filterpanelexpanded">
+      <VIcon size="18px" color="green">
+        {{ mFormInputData.searchCriteria.length > 0 ? $vuetify.icons.aliases.emcfilter :
+          $vuetify.icons.aliases.emcfilteroff
+        }}
       </VIcon>
     </VBtn>
   </VToolbar>
-  <div
-    v-if="mErrorOnPage === true"
-    style="display: flex;align-items: center; justify-content: center; block-size: 300px; inline-size: 100%;"
-  >
+  <div v-if="mErrorOnPage === true"
+    style="display: flex;align-items: center; justify-content: center; block-size: 300px; inline-size: 100%;">
     <VContainer>
-      <VRow
-        no-gutters
-        justify="center"
-        style="display: flex;align-items: center; justify-content: center;"
-      >
-        <VCol style="display: flex;align-items: center; justify-content: center; background-color: transparent; color: transparent;">
+      <VRow no-gutters justify="center" style="display: flex;align-items: center; justify-content: center;">
+        <VCol
+          style="display: flex;align-items: center; justify-content: center; background-color: transparent; color: transparent;">
           <VBtn style="background-color: transparent !important;">
-            <VIcon
-              size="18px"
-              style="background-color: red;"
-              class="mr-4"
-            >
+            <VIcon size="18px" style="background-color: red;" class="mr-4">
               {{ $vuetify.icons.aliases.emcdelete }}
             </VIcon>
             <H2 style="color: maroon;">
@@ -376,45 +351,29 @@ function perforFunction(vAction) {
     </VContainer>
   </div>
 
-  <div
-    v-if="mCurrentFunction === 'list' && currentMaster !== '' && mOutPutFormData.FormData !== undefined"
-    class="ma-0 pa-0"
-  >
+  <div v-if="mCurrentFunction === 'list' && currentMaster !== '' && mOutPutFormData.FormData !== undefined"
+    class="ma-0 pa-0">
 
-    <div v-show="filterpanelexpanded === true ">
+    <div v-show="filterpanelexpanded === true">
       <div v-show="mErrorOnPage === false">
-        <EmcSearchbar
-          v-model:outputSearchCriteria="mFormInputData.searchCriteria"
-          v-model:filterpanelexpanded="filterpanelexpanded"
-          v-model:loading="pageLoading"
-        />
+        <EmcSearchbar v-model:outputSearchCriteria="mFormInputData.searchCriteria"
+          v-model:filterpanelexpanded="filterpanelexpanded" v-model:loading="pageLoading" />
       </div>
     </div>
   </div>
 
   <div>
-    
-    <component
-      :is="getControl(mCurrentFunction)"
-      v-model:vmaster="currentMaster"
-      v-model:PaginationParameters="mFormInputData.PageParameters"
-      v-model:SelectedRows="SelectedRows"
-      v-model:dataObject="muserDataStore.data.FormData.DataObject"
-      v-model:loading="pageLoading"
+
+    <component :is="getControl(mCurrentFunction)" v-model:vmaster="currentMaster"
+      v-model:PaginationParameters="mFormInputData.PageParameters" v-model:SelectedRows="SelectedRows"
+      v-model:dataObject="muserDataStore.data.FormData.DataObject" v-model:loading="pageLoading"
       :OutputDataForList="mErrorOnPage === true ? null : mOutPutFormData.FormData.GridData"
-      :ListHeaders="mErrorOnPage === true ? null : mOutPutFormData.FormData.ListHeaders"
-      @selectionchanged="listData"
-    />
+      :ListHeaders="mErrorOnPage === true ? null : mOutPutFormData.FormData.ListHeaders" @selectionchanged="listData" />
   </div>
   <!-- </NuxtPage> -->
-  <VSnackbar
-    v-model="isSnackbarVisible.show"
-    location="top center"
-    :color="isSnackbarVisible.error !== false ? 'error' : 'success'"
-    variant="elevated"
-    :timeout="2000"
-    density="compact"
-  >
+  <VSnackbar v-model="isSnackbarVisible.show" location="top center"
+    :color="isSnackbarVisible.error !== false ? 'error' : 'success'" variant="elevated" :timeout="2000"
+    density="compact">
     <div style="text-align: center;">
       {{ isSnackbarVisible.message }}
     </div>

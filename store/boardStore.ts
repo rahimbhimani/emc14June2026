@@ -1,7 +1,7 @@
 import { useStorage } from '@vueuse/core'
 import { defineStore } from 'pinia'
-import { v4 as uuid } from 'uuid'
 import boardData from './board.json'
+const uuid = () => crypto.randomUUID()
 
 export const useBoardStore = defineStore('boardStore', () => {
   const board = useStorage('board', boardData)

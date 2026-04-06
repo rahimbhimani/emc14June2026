@@ -1,5 +1,4 @@
 <script setup>
-import { v4 as uuid } from 'uuid'
 import { userDataInternalstore } from '@/store/userDataStore'
 const { resolveComponent } = useComponentRegistry()
 const props = defineProps({
@@ -12,7 +11,7 @@ const props = defineProps({
   FormParameters: {
     type: Object,
   },
-  InputData:{
+  InputData: {
     type: Object,
   },
 })
@@ -47,24 +46,25 @@ watch(() => props.showdialog, visible => {
       // alert(error)
       console.error('Error parsing rules:', error)
     }
-  }})
+  }
+})
 
 function getControlObject(vControl) {
-  
-  
-//   if (props.groupObject?.FormRTObjects?.Controls){
-//     if (props.groupObject?.FormRTObjects.Controls[0].controlType === 'Component'){
-//       const dotIndex = vControl.dataPath.indexOf(".")
-// // alert(vControl.dataPath.slice(0, dotIndex + 1) + props.groupObject?.FormRTObjects.Controls[0].ControlName + "." + vControl.dataPath.slice(dotIndex + 1))
 
-//       vControl.dataPath =
-//       (dotIndex !== -1
-//         ? vControl.dataPath.slice(0, dotIndex + 1) + props.groupObject?.FormRTObjects.Controls[0].ControlName + "." + vControl.dataPath.slice(dotIndex + 1)
-//         : vControl.dataPath)}
-//       return vControl
-//   }
-// alert(vControl.dataPath)
-    return vControl
+
+  //   if (props.groupObject?.FormRTObjects?.Controls){
+  //     if (props.groupObject?.FormRTObjects.Controls[0].controlType === 'Component'){
+  //       const dotIndex = vControl.dataPath.indexOf(".")
+  // // alert(vControl.dataPath.slice(0, dotIndex + 1) + props.groupObject?.FormRTObjects.Controls[0].ControlName + "." + vControl.dataPath.slice(dotIndex + 1))
+
+  //       vControl.dataPath =
+  //       (dotIndex !== -1
+  //         ? vControl.dataPath.slice(0, dotIndex + 1) + props.groupObject?.FormRTObjects.Controls[0].ControlName + "." + vControl.dataPath.slice(dotIndex + 1)
+  //         : vControl.dataPath)}
+  //       return vControl
+  //   }
+  // alert(vControl.dataPath)
+  return vControl
 
   if (vControl.controlType === 'Component') {
     debugger
@@ -72,7 +72,7 @@ function getControlObject(vControl) {
   }
 
   if (props.groupObject?.FormRTObjects?.ComponentInfo)
-      vControl.ComponentInfo = props.groupObject?.FormRTObjects?.ComponentInfo
+    vControl.ComponentInfo = props.groupObject?.FormRTObjects?.ComponentInfo
 
   return vControl
 }
@@ -142,7 +142,7 @@ function save() {
   // alert('rahim')
   // emit('insertmultipledata', { ColnameWithinGrid: 'Fern', light: 'Low', height: '20cm', petFriendly: 'Yes', price: 20, key: 'ColnameWithinGrid' })
   // const path = getDeepestObjectPath(muserDataStore.data.FormData.UserEntryObjects)
- 
+
   emit('dataToAddEditInGrid', muserDataStore.data.FormData.UserEntryObjects)
   lshowdialog.value = false
 }
@@ -157,7 +157,7 @@ function getdataforedit() {
   if (muserDataStore.data.FormData.UserEntryObjects.FormName)
     muserDataStore.data.FormData.UserEntryObjects.FormName.GridTable0 = props.InputData
 
-  const ll = { $id: "userDataInternalstore", data: { FormData: { Name: "", DataObject: {}, flattenData: [ {} ], UserEntryObjects: { FormName: { GridTable0: props.InputData } } } }, _isOptionsAPI: false }
+  const ll = { $id: "userDataInternalstore", data: { FormData: { Name: "", DataObject: {}, flattenData: [{}], UserEntryObjects: { FormName: { GridTable0: props.InputData } } } }, _isOptionsAPI: false }
   // const ll = { "$id": "userDataInternalstore", "data": { "FormData": { "Name": "", "DataObject": {}, "flattenData": [ {} ], "UserEntryObjects": { "FormName": { "GridTable0": { "ColnameWithinGrid": "qqqqq", "secondcolumn": "rrrrr" } } } } }, "_isOptionsAPI": false }
   return ll
 }
@@ -180,15 +180,11 @@ function getdataforedit() {
               <!-- {{ muserDataStore.data.FormData.UserEntryObjects }} -->
               <!-- {{ props.InputData }} -->
               <!-- {{ muserDataStore.data.FormData.UserEntryObjects }} -->
-                <!-- {{ muserDataStore }} -->
-              <VCol
-                v-for="(control, index) in props.groupObject.Controls"
-                :key="index"
-                :cols="getCols(control)"
-                style="align-self: flex-start;"
-              >
-              
-                  <!-- <component
+              <!-- {{ muserDataStore }} -->
+              <VCol v-for="(control, index) in props.groupObject.Controls" :key="index" :cols="getCols(control)"
+                style="align-self: flex-start;">
+
+                <!-- <component
                     :is="getControl(control.controlType)"
                     v-model:groupObject="control.Name"
                     v-model:inputdata="muserDataStore"
@@ -207,25 +203,19 @@ function getdataforedit() {
                     :vbind1="getvbind(control.vbind)"
                 /> -->
                 <!-- {{ props.groupObject }} -->
-                  <!-- {{ muserDataStore }} -->
-                <component
-                  :is="resolveComponent(control.controlType)"
-                  v-model:groupObject="control.Name"
-                  v-model:inputdata="muserDataStore"
-                  :FormParameters = props.FormParameters
-                  :group-object="control"
-                  type="control.Datatype"
-                  :vbind1="getvbind(control.vbind)"
-                />
+                <!-- {{ muserDataStore }} -->
+                <component :is="resolveComponent(control.controlType)" v-model:groupObject="control.Name"
+                  v-model:inputdata="muserDataStore" :FormParameters=props.FormParameters :group-object="control"
+                  type="control.Datatype" :vbind1="getvbind(control.vbind)" />
               </VCol>
             </VRow>
           </slot>
         </VCardText>
         <VDivider />
         <VCardActions class="bg-surface-light">
-          <VBtn text="Cancel" variant="plain" @click="lshowdialog = false"/>
+          <VBtn text="Cancel" variant="plain" @click="lshowdialog = false" />
           <VSpacer />
-          <VBtn text="Save" @click="save"/>
+          <VBtn text="Save" @click="save" />
         </VCardActions>
       </VCard>
     </template>

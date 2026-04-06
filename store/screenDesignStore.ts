@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
-import { v4 as uuid } from 'uuid'
 import boardData from '../static/data/controlproperties.json'
+const uuid = () => crypto.randomUUID()
 
 export const useScreenDesignStore = defineStore('screenDesignStore', () => {
   // const refAllcontrols = useStorage('screenDesignStore', boardData);
@@ -10,6 +10,52 @@ export const useScreenDesignStore = defineStore('screenDesignStore', () => {
   /**
    * Tasks
    */
+
+  // ✅ put this at TOP of screenDesignStore.ts (outside defineStore)
+  function findControlById(root: any, id: string) {
+    debugger
+    console.log("✅ root ControlName:", root?.ControlName);
+    console.log("✅ root id:", root?.id);
+    console.log("✅ searching for id:", id);
+
+    const stack = [root];
+    let steps = 0;
+
+    while (stack.length) {
+      const node = stack.pop();
+      steps++;
+
+      if (!node) continue;
+
+      if (Array.isArray(node)) {
+        stack.push(...node)
+        continue
+      }
+
+      // show first few nodes for proof
+      if (steps < 10) {
+        console.log("STEP:", steps, "node.ControlName:", node.ControlName, "node.id:", node.id);
+      }
+
+      if (String(node.id) === String(id)) {
+        console.log("✅ FOUND at step:", steps);
+        console.log("✅ FOUND ControlName:", node.ControlName);
+        console.log("✅ FOUND controlType:", node.controlType);
+        return node;
+      }
+
+      if (Array.isArray(node.Controls)) {
+        stack.push(...node.Controls);
+      }
+    }
+
+    console.log("❌ NOT FOUND. Total scanned nodes:", steps);
+    return null;
+  }
+
+
+
+
   const getTask = computed(() => {
     return taskId => {
       for (const column of board.value.columns) {
@@ -90,7 +136,7 @@ export const useScreenDesignStore = defineStore('screenDesignStore', () => {
 
     lVarr.forEach(item => {
       let arrObj = []
-      console.log('ListHeaderShowList',item.controlProperties[item.controlProperties.findIndex(e => e.propertyTitle === 'show in List')].data)
+      console.log('ListHeaderShowList', item.controlProperties[item.controlProperties.findIndex(e => e.propertyTitle === 'show in List')].data)
       if ((item.controlProperties[item.controlProperties.findIndex(e => e.propertyTitle === 'show in List')].data) === true) {
         // alert('rahim')
         const lObj = Object.assign({})
@@ -236,28 +282,8 @@ export const useScreenDesignStore = defineStore('screenDesignStore', () => {
     lObjToAddTo[vGroupObjectName] == undefined ? lObjToAddTo[vGroupObjectName] = [addObject(vControlToAd, vAddToProperties)] : lObjToAddTo[vGroupObjectName].push(addObject(vControlToAd, vAddToProperties))
   }
 
-  function findControlById(obj, targetId) {
-    // If the current object has an id property that matches the targetId, return it
-    if (obj && obj.id === targetId)
-      return obj
 
-    // Iterate over all properties of the object
-    for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
-        const value = obj[key]
 
-        // If the value is an object or array, recursively search inside it
-        if (typeof value === 'object' && value !== null) {
-          const found = findControlById(value, targetId)
-          if (found)
-            return found
-        }
-      }
-    }
-
-    // Return null if the target id is not found in the current object
-    return null
-  }
 
   function addGenericControl(vArrayOfParents, vControlToAd, vGroupObjectName, vAddToProperties = '') {
     debugger
@@ -267,8 +293,15 @@ export const useScreenDesignStore = defineStore('screenDesignStore', () => {
     let lObjToAddTo = board.value[board.value.findIndex(e => e.controlType === 'Form')]
 
     // Sample usage
-    if (vArrayOfParents !== '')
-      lObjToAddTo = findControlById(board.value, vArrayOfParents)
+    if (vArrayOfParents !== '') {
+      const parentId = typeof vArrayOfParents === 'object' ? vArrayOfParents?.id : vArrayOfParents
+      lObjToAddTo = findControlById(board.value, parentId)
+    }
+
+    if (!lObjToAddTo) {
+      console.error('addGenericControl: parent not found', vArrayOfParents)
+      return
+    }
 
     console.log(lObjToAddTo)
 
@@ -318,19 +351,20 @@ export const useScreenDesignStore = defineStore('screenDesignStore', () => {
 
   function getObjectFromTemplate(vObjectName) {
     let lObj = boardData.controls.find(e => e.controlType === vObjectName)
-    console.log('rahim bhimani is here gg', lObj.controlProperties.filter(e => e.dataType === 'Array'))
-
-    lObj.controlProperties.filter(e => e.dataType === 'Array').forEach(lelem => { 
-      lelem.data = JSON.parse(JSON.stringify([])) 
-      lelem.Defaultvalue = JSON.parse(JSON.stringify([])) })
+    // console.log('rahim bhimani is here gg', lObj.controlProperties.filter(e => e.dataType === 'Array'))
+    console.log('rahim bhimani is here gg', lObj)
+    lObj.controlProperties.filter(e => e.dataType === 'Array').forEach(lelem => {
+      lelem.data = JSON.parse(JSON.stringify([]))
+      lelem.Defaultvalue = JSON.parse(JSON.stringify([]))
+    })
     // const newArray = ruleManagement.map(obj => JSON.parse(JSON.stringify(obj)));
-  //   lObj
-  //   .filter(lArray => lArray.dataType === 'Array') // Filters rules with value > 10
-  //   .forEach(lelem => {
-  //     lelem.data = []
-  // })
+    //   lObj
+    //   .filter(lArray => lArray.dataType === 'Array') // Filters rules with value > 10
+    //   .forEach(lelem => {
+    //     lelem.data = []
+    // })
 
-  return lObj
+    return lObj
 
   }
 
@@ -339,12 +373,12 @@ export const useScreenDesignStore = defineStore('screenDesignStore', () => {
 
     // alert('rahim')
     console.log('updateControlBefore130425')
-    
+
     let lControlToAdd = getObjectFromTemplate(vControlToAd)
-    
+
     console.log('IControl909', lControlToAdd)
     console.log('vAddToProperties', vAddToProperties)
-    
+
     if (vControlToAd === 'Component')
       lControlToAdd['ComponentDetails'] = vAddToProperties
 
@@ -378,12 +412,14 @@ export const useScreenDesignStore = defineStore('screenDesignStore', () => {
     // }
   }
 
-  function mergeObjects(vID){
+  function mergeObjects(vID) {
     debugger
-    const originalObject = findObjectById(board, vID)
+    const originalObject = findControlById(board.value[0], vID)
     const newObject = getObjectFromTemplate(originalObject.controlType)
-    const mergedObject = mergeObjectsInternal(originalObject, newObject)
 
+    console.log('newObject', newObject)
+    const mergedObject = mergeObjectsInternal(originalObject, newObject)
+    console.log('mergedObject', mergedObject)
     // const mergedObject = mergeObjectsInternal(originalObject, newObject)
     replaceObjectById(board.value, vID, mergedObject)
     return mergedObject
@@ -414,19 +450,19 @@ export const useScreenDesignStore = defineStore('screenDesignStore', () => {
       }
       return false; // If no match found
     }
-  
+
     // Trigger the search and replacement
     return searchAndReplace(data);
   }
 
   function mergeObjectsInternal(originalObject, newObject) {
-  
+
     Object.keys(newObject).forEach(key => {
       if (key === "controlProperties") {
         // Handle the merging of controlProperties array
         const newProperties = newObject.controlProperties || []
         let originalProperties = originalObject.controlProperties || []
-        
+
         // Map original properties by their propertyTitle for quick lookup
         const originalMap = new Map(
           originalProperties.map(prop => [prop.propertyTitle, prop])
@@ -462,10 +498,10 @@ export const useScreenDesignStore = defineStore('screenDesignStore', () => {
   //       // Handle merging of controlProperties array
   //       const originalProperties = originalObject.controlProperties || [];
   //       const newProperties = newObject.controlProperties || [];
-  
+
   //       // Create a Map from newProperties for quick lookup by propertyTitle
   //       const newMap = new Map(newProperties.map(prop => [prop.propertyTitle, prop]));
-  
+
   //       // Filter originalProperties to include only those present in newProperties
   //       const mergedProperties = originalProperties
   //         .filter(originalProp => newMap.has(originalProp.propertyTitle))
@@ -477,52 +513,28 @@ export const useScreenDesignStore = defineStore('screenDesignStore', () => {
   //             data: originalProp.data || newProp.data, // Original `data` prevails if present
   //           };
   //         });
-  
+
   //       // Add any new properties from newProperties not already in originalProperties
   //       newProperties.forEach(newProp => {
   //         if (!mergedProperties.some(prop => prop.propertyTitle === newProp.propertyTitle)) {
   //           mergedProperties.push(newProp);
   //         }
   //       });
-  
+
   //       // Update originalObject's controlProperties
   //       originalObject.controlProperties = mergedProperties;
-  
+
   //     } else {
   //       // Merge or add other root-level properties
   //       originalObject[key] = newObject[key];
   //     }
   //   });
-  
+
   //   return originalObject;
   // }
 
 
-  function findObjectById(data, id) {
-    function search(data) {
-      // If the input data is an array, iterate through it
-      if (Array.isArray(data)) {
-        for (const item of data) {
-          const result = search(item);
-          if (result) return result;
-        }
-      }
-      // If the input data is an object
-      else if (typeof data === "object" && data !== null) {
-        if (data.id === id) return data; // Return the matching object if `id` matches
-        for (const key in data) {
-          if (data.hasOwnProperty(key)) {
-            const result = search(data[key]);
-            if (result) return result;
-          }
-        }
-      }
-      return null; // If no match is found
-    }
-  
-    // Search for the object with the matching id
-    return search(data);
-  }
+
 
   function deleteElementById(data, idToDelete) {
     // Check if current element matches the target ID
@@ -537,13 +549,13 @@ export const useScreenDesignStore = defineStore('screenDesignStore', () => {
     // Traverse through all keys to find nested arrays and objects
     for (const key in data) {
       if (Array.isArray(data[key]) && key !== 'controlProperties') {
-      // If the key is an array, map over it and recursively apply the function
+        // If the key is an array, map over it and recursively apply the function
         data[key] = data[key]
           .map(child => deleteElementById(child, idToDelete))
           .filter(child => child !== null) // Remove null (deleted) elements
       }
       else if (typeof data[key] === 'object' && data[key] !== null && key !== 'controlProperties') {
-      // If the key is an object, apply recursion to that object
+        // If the key is an object, apply recursion to that object
         data[key] = deleteElementById(data[key], idToDelete)
       }
     }
@@ -619,8 +631,8 @@ export const useScreenDesignStore = defineStore('screenDesignStore', () => {
     return { ...lControlToAdd }
   }
 
-  function updateObject(vObjectIdToUpdate){
-    
+  function updateObject(vObjectIdToUpdate) {
+
 
   }
 
@@ -746,7 +758,7 @@ export const useScreenDesignStore = defineStore('screenDesignStore', () => {
   }
 
   function findObjectsWithElement(data, vElement, results = []) {
-  // debugger
+    // debugger
     if (Array.isArray(data)) {
       // If data is an array, recursively search through each object in the array
       data.forEach(item => findObjectsWithElement(item, vElement, results))

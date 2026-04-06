@@ -25,6 +25,7 @@ export default defineNuxtConfig({
     '@core/scss/template/index.scss',
     '@styles/styles.scss',
     '@/plugins/iconify/icons.css',
+    '@mdi/font/css/materialdesignicons.css',
   ],
 
   /*
@@ -106,7 +107,7 @@ export default defineNuxtConfig({
 
   // ℹ️ Disable source maps until this is resolved: https://github.com/vuetifyjs/vuetify-loader/issues/290
   sourcemap: {
-    server: false,
+    server: true,
     client: false,
   },
 
@@ -128,7 +129,18 @@ export default defineNuxtConfig({
   },
 
   vite: {
+    server: {
+      hmr: {
+        port: 24679,
+        clientPort: 24679,
+      },
+    },
+
     define: { 'process.env': {} },
+
+    ssr: {
+      noExternal: true,
+    },
 
     resolve: {
       alias: {

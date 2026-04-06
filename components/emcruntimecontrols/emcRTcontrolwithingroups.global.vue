@@ -9,7 +9,7 @@ const props = defineProps({
 // const userDataEntry = defineModel('userDataEntry')
 
 function getCols(vObject) {
-  debugger
+  //debugger
   let lObj
 
   lObj = vObject.controlProperties?.filter(e => e.propertyTitle === 'Cols')
@@ -28,8 +28,8 @@ function getControl(vAttribute) {
 }
 
 const getControlswithinData = computed(() => {
-  debugger
-    
+  //debugger
+
 
   if (props.groupObject === undefined)
     return []
@@ -45,12 +45,12 @@ const getControlswithinData = computed(() => {
 
 function getControlObject(vControl) {
   if (vControl.controlType === 'Component') {
-    debugger
-    vControl.ComponentInfo = vControl.dataPath.replace('FormName.', '') 
+    //debugger
+    vControl.ComponentInfo = vControl.dataPath.replace('FormName.', '')
   }
 
   if (props.groupObject?.FormRTObjects?.ComponentInfo)
-      vControl.ComponentInfo = props.groupObject?.FormRTObjects?.ComponentInfo
+    vControl.ComponentInfo = props.groupObject?.FormRTObjects?.ComponentInfo
 
   return vControl
 }
@@ -70,42 +70,29 @@ function getControlObject(vControl) {
   <!-- {{ groupObject }} -->
   <!-- {{ getControlswithinData }} -->
   <!-- {{ props.groupObject?.FormRTObjects.Controls[0].controlType === 'Component' }} -->
-    <!-- {{ getCols(control) }} -->
-      <!-- {{ props.groupObject.Controls }} -->
-        <!-- {{ props.groupObject.FormRTObjects.Controls }} -->
-<!-- {{ props.groupObject?.FormRTObjects.Controls[0].controlType }} -->
-   <!-- {{ props.groupObject?.FormRTObjects.ComponentInfo }} -->
-  <VRow class="pa-3">
-  <template v-for="control in getControlswithinData" :key="control.id" >
-    <VCol
-      v-if="control?.controlProperties?.some(p => p.propertyTitle === 'StartOnNextLine' && p.data === 'true')"
-      style="flex-basis: 100%; padding: 0; block-size: 0;"
-    />
-    
-    <VDivider
-      v-if="control?.controlProperties?.some(p => p.propertyTitle === 'HorizontalLineBefore' && p.data === 'true')"
-      :thickness="1"
-      class="border-opacity-75 mt-2 mb-3 mr-3"
-      style="border-color: gray;"
-    ></VDivider> 
-    <!-- {{ control.dataPath }} -->
-  <VCol
-    :cols="getCols(control)"
-    class="pl-0 ml-0 pr-2"
-  >
-  <!-- {{ control.controlType }} -->
-      <component
-        :is="resolveComponent(control.controlType)"
-        v-model:groupObject="control.Name"
-        :FormParameters = props.groupObject.FormParameters
-        :group-object="getControlObject(control)"
-        type="control.Datatype"
-        :vbind1="control.vbind"
-    />
-  </VCol>
+  <!-- {{ getCols(control) }} -->
+  <!-- {{ props.groupObject.Controls }} -->
+  <!-- {{ props.groupObject.FormRTObjects.Controls }} -->
+  <!-- {{ props.groupObject?.FormRTObjects.Controls[0].controlType }} -->
+  <!-- {{ props.groupObject?.FormRTObjects.ComponentInfo }} -->
+  <VCol class="flex-container wrap pl-0 ml-0 mt-0 pt-0" :cols="12">
+    <template v-for="control in getControlswithinData" :key="control.id">
+      <VCol class="ml-0 pl-0"
+        v-if="control?.controlProperties?.some(p => p.propertyTitle === 'StartOnNextLine' && p.data === 'true')" />
 
-</template>
-</VRow>
+      <VDivider
+        v-if="control?.controlProperties?.some(p => p.propertyTitle === 'HorizontalLineBefore' && p.data === 'true')"
+        :thickness="1" class="border-opacity-75 mt-2 mb-3 mr-3" style="border-color: gray;"></VDivider>
+      <!-- {{ control.dataPath }} -->
+      <VCol :cols="getCols(control)" class="ma-0">
+        <!-- {{ control.controlType }} -->
+        <component :is="resolveComponent(control.controlType)" v-model:groupObject="control.Name"
+          :FormParameters=props.groupObject.FormParameters :group-object="getControlObject(control)"
+          type="control.Datatype" :vbind1="control.vbind" />
+      </VCol>
+
+    </template>
+  </VCol>
 </template>
 
 <style>

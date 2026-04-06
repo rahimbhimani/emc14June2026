@@ -43,11 +43,15 @@ export default NuxtAuthHandler({
        * in token which then will be available in the `session()` callback
        */
       if (user) {
+        token.id = user.id
+        token.name = user.fullName || user.name
         token.username = user.username
         token.fullName = user.fullName
         token.avatar = user.avatar
         token.abilityRules = user.abilityRules
         token.role = user.role
+        token.organizationId = user.organizationId
+        token.organizationCode = user.organizationCode
       }
 
       return token
@@ -55,11 +59,15 @@ export default NuxtAuthHandler({
     async session({ session, token }) {
       // Add custom params to user in session which are added in `jwt()` callback via `token` parameter
       if (session.user) {
+        session.user.id = token.id
+        session.user.name = token.fullName || token.name
         session.user.username = token.username
         session.user.fullName = token.fullName
         session.user.avatar = token.avatar
         session.user.abilityRules = token.abilityRules
         session.user.role = token.role
+        session.user.organizationId = token.organizationId
+        session.user.organizationCode = token.organizationCode
       }
 
       return session

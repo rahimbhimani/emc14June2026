@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, watch, inject } from 'vue'
 import { userDataStore } from '@/store/userDataStore'
+import { inject, ModelRef, ref, watch } from 'vue'
 
 /* -------------------------------------------------
    Props / Injects
@@ -47,6 +47,8 @@ const rows = ref<
     selectedItem: { id: number | string; code: string } | null
   }>
 >([])
+
+
 
 /* -------------------------------------------------
    Fetch API data
@@ -107,10 +109,12 @@ function removeRow(index: number) {
 </script>
 
 <template>
+<!-- RAHIM
+{{rows}} -->
   <!-- {{ apiOptions }} -->
   <!-- {{rows}}
-  <hr/>
-  {{ RTData.dataValue.value?.rows }} -->
+  <hr/>-->
+  {{ RTData }} 
   <VCard variant="outlined">
     <VCardTitle class="text-subtitle-3 font-weight-bold">
       {{ groupObject.controlProperties.find(e => e.propertyTitle === 'Label').data }}
@@ -178,7 +182,7 @@ function removeRow(index: number) {
 
         <template #item.actions="{ index }">
           <VIcon
-            icon="mdi-delete"
+            icon="mdi:delete"
             color="red"
             class="cursor-pointer"
             @click="removeRow(index)"

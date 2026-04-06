@@ -1,3 +1,3 @@
 <template>
-  <div>Test Page</div>
+  <div><EmcRTImage/></div>
 </template>

@@ -15,15 +15,16 @@ const redirects: RouteRecordRaw[] = [
         const { data: sessionData } = useAuth()
 
         const userRole = sessionData.value?.user.role
+        // console.log('User Role:', userRole)
+        // if (userRole === 'admin')
+        //   return { name: 'dashboards-crm' }
+        // if (userRole === 'client')
+        //   return { name: 'access-control' }
+        // if (userRole === 'sales')
+        //   return { name: 'dashboards-crm' }
 
-        if (userRole === 'admin')
-          return { name: 'dashboards-crm' }
-        if (userRole === 'client')
-          return { name: 'access-control' }
-        if (userRole === 'sales')
-          return { name: 'dashboards-crm' }
-
-        return { name: 'login', query: to.query }
+        // return { name: 'dashboards-crm' }
+        // return { name: 'login', query: to.query }
       },
     },
     component: h('div'),

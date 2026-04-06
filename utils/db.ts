@@ -4,7 +4,7 @@ import { connect } from 'mongoose'
 const connectDB = async () => {
   try {
     const l1 = await connect(useRuntimeConfig().mongodbUri)
-    console.log(l1)
+    // console.log(l1)
     const l2 = await l1.connection
 
     return l2
@@ -16,7 +16,7 @@ const connectDB = async () => {
     // const collection = mongoose.connection.collection('User')
     // const cursor = await collection.find()
 
-    console.log('rahim connection sucess')
+    // console.log('rahim connection sucess')
 
     // console.log(await cursor.toArray())
   }

@@ -28,19 +28,38 @@ export const db: DB = {
   users: [
     {
       id: 1,
-      fullName: 'John Doe',
+      fullName: 'Jack Smith',
       username: 'admin@demo.com',
       password: 'admin',
 
       avatar: avatar1,
       email: 'admin@demo.com',
+
       role: 'admin',
       abilityRules: [
         {
+          action: 'read',
+          subject: 'Auth',
+        },
+        {
+          action: 'read',
+          subject: 'AclDemo',
+        },
+        {
           action: 'manage',
-          subject: 'all',
+          subject: 'emcSubAdmin',
+        },
+        {
+          action: 'manage',
+          subject: 'emcCurrency',
+        },
+        {
+          action: 'manage',
+          subject: 'emcCurrencyMgmt',
         },
       ],
+      organizationId: 12313,
+      organizationCode: 'ORG000001'
     },
     {
       id: 2,
@@ -50,6 +69,7 @@ export const db: DB = {
 
       avatar: avatar2,
       email: 'client@demo.com',
+
       role: 'client',
       abilityRules: [
         {
@@ -61,6 +81,8 @@ export const db: DB = {
           subject: 'AclDemo',
         },
       ],
+      organizationId: 12313,
+      organizationCode: 'ORG000001',
     },
     {
       id: 3,
@@ -85,6 +107,84 @@ export const db: DB = {
           subject: 'emcSubAdmin',
         },
       ],
+      organizationId: 12313,
+      organizationCode: 'ORG000001',
+    },
+    {
+      id: 4,
+      fullName: 'Customs User',
+      username: 'customs@emc.com',
+      password: 'customs',
+
+      avatar: avatar2,
+      email: 'customs@emc.com',
+      role: 'customs',
+      abilityRules: [
+        {
+          action: 'read',
+          subject: 'emcCurrency',
+        },
+        {
+          action: 'read',
+          subject: 'emcCurrencyMgmt',
+        },
+      ],
+      organizationId: 12313,
+      organizationCode: 'ORG000001',
+    },
+    {
+      id: 5,
+      fullName: 'Sarah Johnson',
+      username: 'crew@emc.com',
+      password: 'crew',
+
+      avatar: avatar1,
+      email: 'crew@emc.com',
+      role: 'crew',
+      abilityRules: [
+        {
+          action: 'read',
+          subject: 'Transaction',
+        },
+      ],
+      organizationId: 12313,
+      organizationCode: 'ORG000001',
+    },
+    {
+      id: 6,
+      fullName: 'System Administrator',
+      username: 'administrator@emc.com',
+      password: 'administrator',
+
+      avatar: avatar2,
+      email: 'administrator@emc.com',
+      role: 'administrator',
+      abilityRules: [
+        {
+          action: 'read',
+          subject: 'emcCurrencyMgmt',
+        },
+      ],
+      organizationId: 12313,
+      organizationCode: 'ORG000001',
+    },
+    {
+      id: 7,
+      fullName: 'IFS User',
+      username: 'ifs@emc.com',
+      password: 'ifs',
+
+      avatar: avatar1,
+      email: 'ifs@emc.com',
+      role: 'ifs',
+      abilityRules: [
+        {
+          action: 'read',
+          subject: 'emcCurrencyMgmt',
+        },
+      ],
+      organizationId: 12313,
+      organizationCode: 'ORG000001',
     },
   ],
 }

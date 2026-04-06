@@ -8,7 +8,7 @@ let FormData = reactive({ formName: '', InputData: {}, UserEnteredData: {} })
 let FormParameters = defineModel('FormParameters')
 // const test = ref(null)
 async function getControlsData() {
-  debugger
+  //debugger
   try {
     // alert('1')
     // test.value = await useEmcGetControlsData(vmaster.value)
@@ -21,12 +21,12 @@ async function getControlsData() {
     // muserDataStore.value.data.FormData.DataObject = FormData.value !== undefined || FormData.value !== null ? FormData.value.FormRTObjects : ''
   }
   catch (error) {
-  // Code to handle the error
+    // Code to handle the error
     alert("error")
     loading.value = false
   }
   finally {
-  // Code that will always run, whether an error occurs or not (optional)
+    // Code that will always run, whether an error occurs or not (optional)
     loading.value = false
   }
 }
@@ -57,19 +57,12 @@ onMounted(async () => {
 <template>
   <!-- RAHIM I am here -->
 
-  <div
-    v-if="FormData"
-    class="ml-3"
-  >
+  <VCol v-if="FormData" class="pa-2" style="background-color: transparent;">
     <!-- {{ loading }} -->
-    <VSkeletonLoader
-      type="table-row-divider, table-tbody"
-      :loading="loading"
-      style="background-color: transparent;"
-    >
-    
-        <!-- {{ FormData[0] }} -->
+    <VSkeletonLoader type="table-row-divider, table-tbody" :loading="loading" style="background-color: transparent;">
+
+      <!-- {{ FormData[0] }} -->
       <EmcRTcontrolwithingroups :group-object="FormData[0]" />
     </VSkeletonLoader>
-  </div>
+  </VCol>
 </template>

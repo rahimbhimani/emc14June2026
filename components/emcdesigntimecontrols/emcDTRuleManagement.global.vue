@@ -3,7 +3,7 @@
    <!-- {{ rules }} -->
    <div class="text-right">
         <v-btn
-          prepend-icon="mdi-file-plus"
+          prepend-icon="mdi:file-plus"
           @click="newItem"
           density="compact"
           color="light blue"
@@ -22,8 +22,8 @@
   >
 
     <template #item.actions="{ item }">
-      <v-icon class="me-2" size="small" @click="editItem(item)">mdi-pencil</v-icon>
-      <v-icon size="small" @click="deleteItem(item)">mdi-delete</v-icon>
+      <v-icon class="me-2" size="small" @click="editItem(item)">mdi:pencil</v-icon>
+      <v-icon size="small" @click="deleteItem(item)">mdi:delete</v-icon>
     </template>
     <template #bottom>
     </template>
@@ -62,8 +62,7 @@
 
 <script setup>
 
-import is from '@sindresorhus/is'
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 const formRule = ref(null)
 const dialog = ref(false)
 

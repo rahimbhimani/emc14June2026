@@ -49,7 +49,7 @@ function ClearClicked() {
   screenDesignStore.deleteControl(props.groupObject.id, '', 'Controls', props.AdditionalPropertiesForControl === undefined ? '' : props.AdditionalPropertiesForControl)
 }
 
-const items = ['Select Control', 'TextBox', 'Pricing', 'Grid', 'GroupData', 'DropDown', 'DataTable', 'Component', 'RateDefinition']
+const items = ['Select Control', 'TextBox', 'Pricing', 'GridTable', 'GroupData', 'DropDown', 'DataTable', 'Component', 'RateDefinition', 'Image']
 
 const componentItems = ['FormContainer', 'ControlContainer', 'RateType', 'RateCondition']
 
@@ -61,16 +61,16 @@ const filteredControls = computed(() => {
 
 <template>
 
-  <div style="align-object:left">
+  <div style="align-object: left;">
     <VSelect
       v-model="controlSelected"
       :items="items"
       single-line
       label="Select Control"
       density="comfortable"
-      :prepend-inner-icon="controlSelected === 'Select Control' || controlSelected === '' ? '' : 'mdi-wrench'"
+      :prepend-inner-icon="controlSelected === 'Select Control' || controlSelected === '' ? '' : 'mdi:wrench'"
       clearable
-      :post-icon="controlSelected === 'Select Control' || controlSelected === '' ? '' : 'mdi-wrench11'"
+      :post-icon="controlSelected === 'Select Control' || controlSelected === '' ? '' : 'mdi:wrench11'"
       @click:clear="ClearClicked"
     />
   </div>

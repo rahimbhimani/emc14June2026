@@ -294,7 +294,7 @@ const formattedData = computed(() => {
   return extractControlsWithIdAndLevel(props.ControlData);
 });
 
-let lObj = ref('rahim')
+let lObj = ref('')
 function UpdateControlData() {
   // lObj.value = SelectedControl.value
   debugger
@@ -334,13 +334,13 @@ function UpdateControlData() {
         v-if="SelectedControl.IsFormvalid?.valid !== false && SelectedControl.id !== undefined"
         style="color: green;float: inline-end;"
       >
-        mdi-check
+        mdi:check
       </VIcon>
       <VIcon
         v-if="SelectedControl.id === undefined"
         style="color: lightblue;float: inline-end;"
       >
-        mdi-clock
+        mdi:clock
       </VIcon>
 <!-- {{ SelectedControl.controlProperties }} -->
       <VAutocomplete

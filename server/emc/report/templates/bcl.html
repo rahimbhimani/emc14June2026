@@ -1,0 +1,45 @@
+<h2>BOND CARGO LIST (BCL)</h2>
+
+<p>
+Flight: {{meta.flightNumber}} <br />
+Date: {{meta.date}}
+</p>
+
+{{#each data}}
+
+<hr />
+
+<h3>Container: {{this.label}}</h3>
+
+<p>
+Seal No: {{this.seals.[0].sealNumber}} <br />
+Remarks: {{this.seals.[0].remarks}} <br />
+Compliance: {{this.compliance.status}}
+</p>
+
+<table border="1" cellspacing="0" cellpadding="5">
+  <thead>
+    <tr>
+      <th>AWB</th>
+      <th>PCS</th>
+      <th>Weight</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    {{#each this.cargo}}
+    <tr>
+      <td>{{this.awb}}</td>
+      <td>{{this.pieces}}</td>
+      <td>{{this.weight}}</td>
+    </tr>
+    {{/each}}
+  </tbody>
+</table>
+
+<p>
+<b>Total PCS:</b> {{this.totalPieces}} <br />
+<b>Total Weight:</b> {{this.totalWeight}}
+</p>
+
+{{/each}}

@@ -174,7 +174,7 @@ const onCheckboxChange = (checked: boolean, item: any) => {
           <VCol
             v-if="SelectedRows?.length > 0"
             cols="2"
-            class="pa-0 ma-0"
+            class="pa-4 ma-0"
           >
             Selected rows : {{ SelectedRows.length }}
           </VCol>

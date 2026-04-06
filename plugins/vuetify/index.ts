@@ -37,7 +37,7 @@ export default defineNuxtPlugin(nuxtApp => {
   }
 
   const optionTheme = deepMerge({ themes }, cookieThemeValues)
-  console.log('🔥 VUETIFY ICONS LOADED:', icons)
+  // console.log('🔥 VUETIFY ICONS LOADED:', icons)
   const vuetify = createVuetify({
     ssr: true,
     aliases: {

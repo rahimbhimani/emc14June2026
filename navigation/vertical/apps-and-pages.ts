@@ -1,8 +1,14 @@
 export default [
-  { heading: 'Apps & Pages' },
+  {
+    heading: 'Apps & Pages',
+    action: 'read',
+    subject: 'AppsPages',
+  },
   {
     title: 'Ecommerce',
     icon: { icon: 'ri-shopping-bag-3-line' },
+    action: 'read',
+    subject: 'AppsPages',
     children: [
       {
         title: 'Dashboard',

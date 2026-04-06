@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useConfigStore } from '@core/stores/config'
-import type { ThemeSwitcherTheme } from '@layouts/types'
+import { useConfigStore } from '@core/stores/config';
+import type { ThemeSwitcherTheme } from '@layouts/types';
 
 const props = defineProps<{
   themes: ThemeSwitcherTheme[]
@@ -24,31 +24,13 @@ watch(
   <IconBtn>
     <VIcon :icon="props.themes.find(t => t.name === configStore.theme)?.icon" />
 
-    <VTooltip
-      activator="parent"
-      open-delay="1000"
-      scroll-strategy="close"
-    >
+    <VTooltip activator="parent" open-delay="1000" scroll-strategy="close">
       <span class="text-capitalize">{{ configStore.theme }}</span>
     </VTooltip>
-    <VMenu
-      activator="parent"
-      offset="15px"
-      width="160"
-    >
-      <VList
-        v-model:selected="selectedItem"
-        mandatory
-      >
-        <VListItem
-          v-for="{ name, icon } in props.themes"
-          :key="name"
-          :value="name"
-          :prepend-icon="icon"
-          color="primary"
-
-          @click="() => { configStore.theme = name }"
-        >
+    <VMenu activator="parent" offset="15px" width="160">
+      <VList v-model:selected="selectedItem" mandatory>
+        <VListItem v-for="{ name, icon } in props.themes" :key="name" :value="name" :prepend-icon="icon" color="primary"
+          @click="() => { configStore.theme = name }">
           <VListItemTitle class="text-capitalize">
             {{ name }}
           </VListItemTitle>

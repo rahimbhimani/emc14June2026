@@ -1,6 +1,6 @@
 export type Actions = 'create' | 'read' | 'update' | 'delete' | 'manage'
 
-export type Subjects = 'Auth' | 'Admin' | 'AclDemo' | 'emcSubAdmin' | 'all' 
+export type Subjects = 'Auth' | 'Admin' | 'AclDemo' | 'emcSubAdmin' | 'all'
 
 export interface UserAbilityRule {
   action: Actions
@@ -16,6 +16,8 @@ export interface User {
   email: string
   role: string
   abilityRules: UserAbilityRule[]
+  organizationId: number
+  organizationCode?: string
 }
 
 export interface UserOut {

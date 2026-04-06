@@ -28,7 +28,7 @@ const filterNavItems = (items) => {
 
       // Determine required subject: explicit `item.subject` or default to 'Admin'
       const requiredSubject = item.subject ?? 'Admin'
-      console.log('item.subject',item.subject)
+      console.log('item.subject', item.subject)
       const rules = sessionData.value?.user?.abilityRules || []
       const hasSubject = rules.some(r => {
         const subj = String(r.subject).toLowerCase()
@@ -36,18 +36,18 @@ const filterNavItems = (items) => {
         console.log('target', target, 'subject', subj)
         return subj === target || subj === 'all'
       })
-      console.log('hassubject', hasSubject)
+      // console.log('hassubject', hasSubject)
       if (!hasSubject)
         return null
-      console.log('item.children',item.children)
+      // console.log('item.children', item.children)
       // If item has children, filter them recursively
       if (item.children && Array.isArray(item.children)) {
         const children = filterNavItems(item.children)
-        console.log('withinchildren',children)
+        // console.log('withinchildren', children)
         if (children.length === 0) return null
         return { ...item, children }
       }
-console.log('final return',item)
+      // console.log('final return',item)
       return item
     })
     .filter(Boolean)
@@ -63,18 +63,14 @@ const filteredNavItems = computed(() => {
 </script>
 
 <template>
-  
+
   <VerticalNavLayout :nav-items="filteredNavItems">
     <!-- {{ filteredNavItems }} -->
-  <!-- {{ sessionData?.user?.abilityRules }} -->
+    <!-- {{ sessionData?.user?.abilityRules }} -->
     <!-- 👉 navbar -->
     <template #navbar="{ toggleVerticalOverlayNavActive }">
       <div class="d-flex h-100 align-center">
-        <IconBtn
-          id="vertical-nav-toggle-btn"
-          class="ms-n2 d-lg-none"
-          @click="toggleVerticalOverlayNavActive(true)"
-        >
+        <IconBtn id="vertical-nav-toggle-btn" class="ms-n2 d-lg-none" @click="toggleVerticalOverlayNavActive(true)">
           <VIcon icon="ri-menu-line" />
         </IconBtn>
 
@@ -84,10 +80,8 @@ const filteredNavItems = computed(() => {
         <EmcCustomerDetailsOnTopPanel></EmcCustomerDetailsOnTopPanel>
         <VSpacer />
 
-        <NavBarI18n
-          v-if="themeConfig.app.i18n.enable && themeConfig.app.i18n.langConfig?.length"
-          :languages="themeConfig.app.i18n.langConfig"
-        />
+        <NavBarI18n v-if="themeConfig.app.i18n.enable && themeConfig.app.i18n.langConfig?.length"
+          :languages="themeConfig.app.i18n.langConfig" />
         <NavbarThemeSwitcher />
         <NavbarShortcuts />
         <NavBarNotifications class="me-2" />

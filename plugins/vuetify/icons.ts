@@ -87,7 +87,31 @@ export const iconify = {
         ? aliases[props.icon]
         : props.icon
 
-    // 3️⃣ Render class-based icon (ri-*)
+    // 3️⃣ Handle image URLs or paths (jpg, png, gif, svg, webp, etc.)
+    if (typeof resolvedIcon === 'string' && /\.(jpg|jpeg|png|gif|svg|webp|bmp|ico)$/i.test(resolvedIcon)) {
+      return h('img', {
+        src: resolvedIcon,
+        alt: props.icon as string,
+        style: {
+          width: '100%',
+          height: '100%',
+          objectFit: 'contain',
+        },
+      })
+    }
+
+    // 4️⃣ Handle iconify icons with mdi: prefix
+    if (typeof resolvedIcon === 'string' && resolvedIcon.startsWith('mdi:')) {
+      const iconName = resolvedIcon.replace('mdi:', 'mdi-')
+      return h(
+        props.tag ?? 'i',
+        {
+          class: `mdi ${iconName}`,
+        },
+      )
+    }
+
+    // 5️⃣ Render class-based icon (ri-*)
     return h(
       props.tag ?? 'i',
       {

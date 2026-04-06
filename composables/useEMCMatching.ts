@@ -116,5 +116,5 @@ export function useDBRecordMatcher() {
     return bestRecord ? [bestRecord] : []
   }
 
-  return { matchDBRecords, enableDebug, log }
+  return { matchDBRecords, enableDebug, log , getValueByPath}
 }

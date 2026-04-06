@@ -13,7 +13,7 @@
       style = "justify-content: center">
       <div class="text-center">
         <v-btn
-          prepend-icon="mdi-pencil"
+          prepend-icon="mdi:pencil"
           @click="newItem"
         >
           New Rule
@@ -23,8 +23,8 @@
     </template>
 
     <template #item.actions="{ item }">
-      <v-icon class="me-2" size="small" @click="editItem(item)">mdi-pencil</v-icon>
-      <v-icon size="small" @click="deleteItem(item)">mdi-delete</v-icon>
+      <v-icon class="me-2" size="small" @click="editItem(item)">mdi:pencil</v-icon>
+      <v-icon size="small" @click="deleteItem(item)">mdi:delete</v-icon>
     </template>
     <template #bottom>
     </template>
