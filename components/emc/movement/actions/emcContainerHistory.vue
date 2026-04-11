@@ -66,7 +66,7 @@ onMounted(loadData)
 </script>
 
 <template>
-  HISTORY
+  HISTORY do not use this component yet, it's a WIP
   <v-card class="history-drawer">
 
     <div class="drawer-header">

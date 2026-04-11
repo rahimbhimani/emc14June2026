@@ -1,7 +1,14 @@
 import mongoose from "mongoose"
 
-export default defineEventHandler(async (event) => {
+function getValueByPath(obj: any, path: string) {
+  if (!obj || !path) return undefined
 
+  return path
+    .split(".")
+    .reduce((acc, key) => acc?.[key], obj)
+}
+
+export default defineEventHandler(async (event) => {
   const body = await readBody(event)
 
   const { organizationId, type } = body || {}
@@ -15,9 +22,9 @@ export default defineEventHandler(async (event) => {
 
   const db = mongoose.connection.db
 
-  /* ======================================================
+  /* ==========================================
      LOAD CONFIG
-  ====================================================== */
+  ========================================== */
 
   const config = await db
     .collection("emcOrganizationContainerConfig")
@@ -27,72 +34,35 @@ export default defineEventHandler(async (event) => {
     })
 
   if (!config) {
-    return { success: true, instances: [] }
-  }
-
-  const collectionName = config.storage.collection
-
-  /* ======================================================
-     LOAD INSTANCES
-  ====================================================== */
-
-  const instances = await db
-    .collection(collectionName)
-    .find({ [config.storage.organizationKey]: organizationId })
-    .toArray()
-
-  if (!instances.length) {
-    return { success: true, instances: [] }
-  }
-
-  /* ======================================================
-     LOAD CHILD CONFIG (IMPORTANT)
-  ====================================================== */
-
-  const childRule = config.canContainRules?.[0]
-
-  let childConfig: any = null
-  let childCollection = null
-
-  if (childRule) {
-    childConfig = await db
-      .collection("emcOrganizationContainerConfig")
-      .findOne({
-        organizationId,
-        type: childRule.childType
-      })
-
-    childCollection = childConfig?.storage?.collection
-  }
-
-  /* ======================================================
-     BUILD CHILD MAP (Flight → Trolley)
-  ====================================================== */
-
-  const childMap = new Map()
-
-  if (childCollection) {
-
-    const children = await db
-      .collection(childCollection)
-      .find({ organizationId })
-      .toArray()
-
-    for (const child of children) {
-
-      const parent = child.parentIDX
-
-      if (!childMap.has(parent)) {
-        childMap.set(parent, [])
-      }
-
-      childMap.get(parent).push(child.IDX)
+    return {
+      success: true,
+      instances: []
     }
   }
 
-  /* ======================================================
-     INVENTORY AGG (TROLLEY LEVEL)
-  ====================================================== */
+  /* ==========================================
+     LOAD MAIN INSTANCES
+  ========================================== */
+
+  const instances = await db
+    .collection(config.storage.collection)
+    .find({
+      [config.storage.organizationKey]:
+        organizationId
+    })
+    .toArray()
+
+  if (!instances.length) {
+    return {
+      success: true,
+      instances: []
+    }
+  }
+
+  /* ==========================================
+     INVENTORY AGGREGATION
+     per containerIDX
+  ========================================== */
 
   const inventoryAgg = await db
     .collection("emcContainerInventory")
@@ -103,85 +73,167 @@ export default defineEventHandler(async (event) => {
       {
         $group: {
           _id: {
-            containerIDX: "$containerIDX",
-            productIDX: "$productIDX"
+            containerIDX:
+              "$containerIDX",
+            productIDX:
+              "$productIDX"
           },
-          qty: { $sum: "$quantity" }
+          qty: {
+            $sum: "$quantity"
+          }
         }
       }
     ])
     .toArray()
 
-  /* ======================================================
-     BUILD INVENTORY MAP (PER CONTAINER)
-  ====================================================== */
-
   const inventoryMap = new Map()
 
-  for (const inv of inventoryAgg) {
+  for (const row of inventoryAgg) {
+    const containerIDX =
+      row._id.containerIDX
 
-    const cIDX = inv._id.containerIDX
+    if (!inventoryMap.has(containerIDX)) {
+      inventoryMap.set(
+        containerIDX,
+        {
+          itemCount: 0,
+          totalQty: 0
+        }
+      )
+    }
 
-    if (!inventoryMap.has(cIDX)) {
-      inventoryMap.set(cIDX, {
-        itemCount: 0,
-        totalQty: 0
+    const target =
+      inventoryMap.get(containerIDX)
+
+    target.itemCount += 1
+    target.totalQty += Number(
+      row.qty || 0
+    )
+  }
+
+  /* ==========================================
+     BUILD CHILD MAPS (MULTI TYPE)
+  ========================================== */
+
+  const childMaps: any[] = []
+
+  for (const rule of config.canContainRules ||
+    []) {
+    const childType = rule.childType
+
+    const childConfig = await db
+      .collection(
+        "emcOrganizationContainerConfig"
+      )
+      .findOne({
+        organizationId,
+        type: childType
+      })
+
+    if (!childConfig) continue
+
+    const childRows = await db
+      .collection(
+        childConfig.storage.collection
+      )
+      .find({
+        [childConfig.storage
+          .organizationKey]:
+          organizationId
+      })
+      .toArray()
+
+    const map = new Map()
+
+    for (const child of childRows) {
+      const parentIDX =
+        child.parentIDX
+
+      if (!parentIDX) continue
+
+      const childIDX =
+        getValueByPath(
+          child,
+          childConfig.storage
+            .primaryKey || "IDX"
+        )
+
+      if (!childIDX) continue
+
+      if (!map.has(parentIDX)) {
+        map.set(parentIDX, [])
+      }
+
+      map.get(parentIDX).push({
+        childIDX,
+        childType
       })
     }
 
-    const entry = inventoryMap.get(cIDX)
-
-    entry.itemCount += 1
-    entry.totalQty += inv.qty
+    childMaps.push(map)
   }
 
-  /* ======================================================
-     ENRICH INSTANCES (FIXED)
-  ====================================================== */
+  /* ==========================================
+     ENRICH MAIN INSTANCES
+  ========================================== */
 
-  for (const container of instances) {
+  const mainPK =
+    config.storage.primaryKey || "IDX"
+
+  for (const row of instances) {
+    const rowIDX =
+      getValueByPath(row, mainPK)
 
     let itemCount = 0
     let totalQty = 0
+    let linkedCount = 0
 
-    /* =========================================
-       DIRECT INVENTORY (if exists)
-    ========================================= */
-
-    const direct = inventoryMap.get(container.IDX)
+    /* direct inventory */
+    const direct =
+      inventoryMap.get(rowIDX)
 
     if (direct) {
       itemCount += direct.itemCount
       totalQty += direct.totalQty
     }
 
-    /* =========================================
-       CHILD INVENTORY (KEY FIX)
-    ========================================= */
+    /* all child maps */
+    for (const map of childMaps) {
+      const linked =
+        map.get(rowIDX) || []
 
-    const children = childMap.get(container.IDX) || []
+      linkedCount += linked.length
 
-    for (const childIDX of children) {
+      for (const child of linked) {
+        const childInv =
+          inventoryMap.get(
+            child.childIDX
+          )
 
-      const childInv = inventoryMap.get(childIDX)
+        if (childInv) {
+          itemCount +=
+            childInv.itemCount
 
-      if (childInv) {
-        itemCount += childInv.itemCount
-        totalQty += childInv.totalQty
+          totalQty +=
+            childInv.totalQty
+        }
       }
     }
 
-    container.inventorySummary = {
+    row.inventorySummary = {
       itemCount,
       totalQty
     }
 
-    container.inventoryCount = totalQty
+    row.childSummary = {
+      count: linkedCount
+    }
+
+    row.inventoryCount = totalQty
   }
 
   return {
     success: true,
     instances
   }
-
 })

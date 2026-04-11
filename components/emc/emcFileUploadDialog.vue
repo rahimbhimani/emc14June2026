@@ -132,11 +132,9 @@ async function confirmUpload() {
       confirm: true
     }
   })
-
-  result.value = res
-
+  debugger
   // 🔥 ONLY AFTER SUCCESS → SEND DATA BACK
-  emit("applied", res?.result?.data || previewData.value)
+  emit("applied", res?.result?.result?.data || previewData.value)
 }
 
 // ================= CLICK ERROR =================
@@ -163,6 +161,10 @@ function getRowProps(item: any) {
   }
 }
 
+onUnmounted(() => {
+  resetUpload()
+})
+
 // ================= RESET =================
 function resetUpload() {
   file.value = null
@@ -179,13 +181,12 @@ function resetUpload() {
   <v-dialog v-model="dialog" max-width="1100">
     <!-- {{ result }} -->
     <!-- {{ previewData }} -->
-    {{ props.uploadId }}
-    {{ props.modelValue }}
+
     <v-card>
 
       <!-- TITLE -->
       <v-card-title class="text-h6">
-        Upload
+        Upload - {{ props.uploadId }}
       </v-card-title>
 
       <v-card-text>

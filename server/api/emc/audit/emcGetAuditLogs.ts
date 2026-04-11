@@ -1,21 +1,44 @@
 import mongoose from "mongoose"
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(
+  async (event) => {
 
-  const { organizationId, containerType, containerIDX } =
-    await readBody(event)
+    const {
+      organizationId
+    } = await readBody(event)
 
-  const db = mongoose.connection.db
+    if (!organizationId) {
+      throw createError({
+        statusCode: 400,
+        statusMessage:
+          "organizationId is required"
+      })
+    }
 
-  const logs = await db.collection("emcAuditLogs")
-    .find({
-      organizationId,
-      entityType: containerType,
-      entityIDX: containerIDX
-    })
-    .sort({ timestamp: -1 })
-    .toArray()
+    const db =
+      mongoose.connection.db
 
-  return { success: true, logs }
+    /* ==========================================
+       Return broad audit dataset.
+       Filtering/relevance happens in
+       emcContainerHistory.vue
+       Existing frontend logic preserved.
+    ========================================== */
 
-})
+    const logs = await db
+      .collection("emcAuditLogs")
+      .find({
+        organizationId
+      })
+      .sort({
+        timestamp: -1
+      })
+      .limit(500)
+      .toArray()
+
+    return {
+      success: true,
+      logs
+    }
+  }
+)

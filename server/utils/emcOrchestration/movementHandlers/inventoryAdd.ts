@@ -1,5 +1,4 @@
 export async function inventoryAdd(params: any) {
-
   const {
     db,
     session,
@@ -10,22 +9,25 @@ export async function inventoryAdd(params: any) {
     quantity
   } = params
 
-  await db.collection("emcContainerInventory")
-    .updateOne(
-      {
-        organizationId,
+  await db.collection("emcContainerInventory").updateOne(
+    {
+      organizationId,
+      containerIDX,
+      productIDX
+    },
+    {
+      $inc: { quantity: Number(quantity || 0) },
+      $set: {
         containerType,
-        containerIDX,
-        productIDX
+        updatedAt: new Date()
       },
-      {
-        $inc: { quantity },
-        $set: { updatedAt: new Date() }
-      },
-      {
-        upsert: true,
-        session
+      $setOnInsert: {
+        createdAt: new Date()
       }
-    )
-
+    },
+    {
+      upsert: true,
+      session
+    }
+  )
 }

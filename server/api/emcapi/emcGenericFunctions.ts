@@ -1166,7 +1166,7 @@ async function insertData(collection, body, res) {
       // console.log(.log('inside check true', res)
       return res;
     }
-    const dataToInsert = UpdateSystemFields(body.data);
+    const dataToInsert = await UpdateSystemFields(body.data);
     const result = await collection.insertOne(dataToInsert);
     // // console.log(.log('inserted data',result)
     if (result.acknowledged) {
@@ -1202,15 +1202,18 @@ async function UpdateSystemFields(data) {
   const updatedData = { ...data };
   const currentDate = new Date();
 
-  const _Credentials = {
-    IDX: (await generateId(currentUser.organizationCode, await getProperty('Table Name'))).id,
-    parentIDX: null,
-    parentType: null,
-    organizationId: currentUser.organizationId,
-    organizationCode: currentUser.organizationCode,
-  };
+  if (!updatedData._Credentials) {
+    const _Credentials = {
+      IDX: (await generateId(currentUser.organizationCode, await getProperty('Table Name'))).id,
+      parentIDX: null,
+      parentType: null,
+      organizationId: currentUser.organizationId,
+      organizationCode: currentUser.organizationCode,
+    };
 
-  updatedData._Credentials = _Credentials;
+    updatedData._Credentials = _Credentials;
+
+  }
 
   if (!updatedData._Credentials.createdAt) {
     updatedData._Credentials.createdAt = currentDate;
