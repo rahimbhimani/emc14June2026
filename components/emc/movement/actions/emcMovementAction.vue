@@ -14,6 +14,15 @@ function handleUploadApplied(data: any) {
   uploadDialog.value = false
 }
 
+function getInventoryMode(group: any) {
+
+  return (
+    group?.actionConfig?.ui?.inventoryMode ||
+    props.actionConfig?.ui?.inventoryMode ||
+    "edit"
+  )
+}
+
 function applyUploadData(type: string, rows: any[]) {
   const group = groupedChildren.value[type]
   if (!group) return
@@ -26,6 +35,7 @@ function applyUploadData(type: string, rows: any[]) {
     })
     return
   }
+
 
   const keyPath = group.config?.storage?.primaryKey || "IDX"
   const existingItems = group.items || []
@@ -473,9 +483,13 @@ async function confirmMovement() {
 
             <template #item.qty="{ item }">
               <div class="qty-wrap">
-                <v-text-field v-model.number="quantityMap[type][item.IDX]" type="number" min="0"
-                  :max="item.totalAvailable || 0" density="compact" variant="outlined" hide-details class="qty-box"
-                  single-line />
+                <v-text-field v-if="getInventoryMode(group) === 'edit'" v-model.number="quantityMap[type][item.IDX]"
+                  type="number" min="0" :max="item.totalAvailable || 0" density="compact" variant="outlined"
+                  hide-details class="qty-box" single-line />
+
+                <v-chip v-else-if="getInventoryMode(group) === 'readonly'" size="small" color="primary" variant="tonal">
+                  {{ quantityMap[type]?.[item.IDX] || item.currentQuantity || 0 }}
+                </v-chip>
               </div>
             </template>
           </v-data-table>

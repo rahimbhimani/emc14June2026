@@ -55,12 +55,26 @@ const tracks = () => {
 }
 
 const states = () => {
-
   if (!selectedTrack.value) return []
 
-  return (
+  const rawStates =
     config.value?.lifecycles?.[selectedTrack.value]?.states || []
-  )
+
+  return rawStates.map((s: any) => {
+    // If already object
+    if (typeof s === "object") {
+      return {
+        title: s.label || s.code,
+        value: s.code || s.value
+      }
+    }
+
+    // If string
+    return {
+      title: s,
+      value: s
+    }
+  })
 }
 
 /* =====================================
@@ -115,7 +129,8 @@ async function confirm() {
     }
 
     console.log("CHANGE_STATUS PAYLOAD", requestPayload)
-
+    console.log("Selected Track:", selectedTrack.value)
+    console.log("Selected Status:", selectedStatus.value)
     await $fetch(
       "/api/emc/movement/emcExecuteAction",
       {
@@ -157,7 +172,7 @@ async function confirm() {
 
       <!-- STATUS -->
 
-      <v-select v-model="selectedStatus" :items="states()" item-title="label" item-value="code" label="Select Status"
+      <v-select v-model="selectedStatus" :items="states()" item-title="title" item-value="value" label="Select Status"
         density="comfortable" :disabled="!selectedTrack" />
 
       <!-- REASON -->

@@ -198,23 +198,26 @@ function lifecycleColor(container: any) {
 }
 
 function getLatestCompliance(container: any) {
+  const list =
+    container?.lifecycle?.complianceStatus || []
 
-  const list = container.lifecycle?.complianceStatus || []
-  if (!Array.isArray(list)) return null
+  if (!Array.isArray(list) || !list.length) {
+    return null
+  }
 
-  const type =
-    container.lifecycle?.operational === "SEALED"
-      ? "SEAL"
-      : container.lifecycle?.operational === "LOADED"
-        ? "BCL"
-        : container.lifecycle?.operational
+  const active = list.filter(
+    (x: any) =>
+      x &&
+      x.referenceNumber
+  )
 
-  const filtered = list.filter((i: any) => i.type === type)
+  if (!active.length) {
+    return null
+  }
 
-  return filtered.length
-    ? filtered[filtered.length - 1]
-    : null
-
+  return active[
+    active.length - 1
+  ]
 }
 
 async function generateReport() {
@@ -336,13 +339,18 @@ async function generateReport() {
 
                   <!-- LIFECYCLE -->
                   <v-chip size="small" class="mt-2" :color="lifecycleColor(container)" variant="flat">
-                    {{ container.lifecycle?.[selectedConfig.display?.primaryLifecycle] || "No lifecycle" }}
+                    {{
+                      container.lifecycle?.[
+                      selectedConfig.display?.primaryLifecycle
+                      ] || "No lifecycle"
+                    }}
                   </v-chip>
 
-                  <!-- COMPLIANCE -->
-                  <v-chip v-if="getLatestCompliance(container)" color="red" size="small" variant="tonal" class="mt-1">
-                    [ {{ getLatestCompliance(container)?.referenceNumber }} ]
-                  </v-chip>
+                  <div v-if="getLatestCompliance(container)?.referenceNumber" class="reference-number">
+                    {{
+                      getLatestCompliance(container)?.referenceNumber
+                    }}
+                  </div>
 
                 </div>
 
@@ -438,6 +446,13 @@ async function generateReport() {
   flex-direction: column;
   justify-content: space-between;
   padding: 16px;
+}
+
+.reference-number {
+  color: #1565c0;
+  font-size: 13px;
+  font-weight: 600;
+  margin-block-start: 6px;
 }
 
 .card-header {

@@ -11,9 +11,7 @@ const props = defineProps({
 const emit = defineEmits(["close", "completed"])
 
 const organizationId = 12313
-
 const loading = ref(false)
-
 const tab = ref("available")
 
 /* ==========================
@@ -24,7 +22,7 @@ const sealNumber = ref("")
 const sealRemarks = ref("")
 
 const groupedChildren = ref<any>({})
-const inventoryItems = ref<any[]>([])
+const inventoryItems = ref<any>({})
 
 const quantityMap = ref<Record<string, number>>({})
 const movementMap = ref<Record<string, any>>({})
@@ -36,15 +34,31 @@ let sourceStrategy =
   props.actionConfig?.orchestration?.sourceStrategy || "NONE"
 
 /* ======================================================
+HELPERS
+====================================================== */
+
+function getInventoryMode(group: any) {
+  return (
+    group?.actionConfig?.ui?.inventoryMode ||
+    props.actionConfig?.ui?.inventoryMode ||
+    "edit"
+  )
+}
+
+function badgeValue(row: any) {
+  if (row.quantity !== undefined) return row.quantity
+  if (row.itemCount !== undefined) return row.itemCount
+  return null
+}
+
+/* ======================================================
 LOAD MOVEMENT DATA
 ====================================================== */
 
 async function loadMovement() {
-
   loading.value = true
 
   try {
-
     const res: any = await $fetch(
       "/api/emc/movement/emcPrepareMovement",
       {
@@ -61,18 +75,15 @@ async function loadMovement() {
     sourceStrategy =
       res.orchestration?.sourceStrategy || "NONE"
 
-    groupedChildren.value = res.groupedChildren || {}
+    groupedChildren.value =
+      res.groupedChildren || {}
 
     initializeSelections()
-
-  }
-  catch (err) {
+  } catch (err) {
     console.error("movement load error", err)
-  }
-  finally {
+  } finally {
     loading.value = false
   }
-
 }
 
 /* ======================================================
@@ -80,9 +91,7 @@ LOAD CURRENT INVENTORY
 ====================================================== */
 
 async function loadInventory() {
-
   try {
-
     const res: any = await $fetch(
       "/api/emc/emcInventory/emcRetrieveInventory",
       {
@@ -95,13 +104,11 @@ async function loadInventory() {
       }
     )
 
-    inventoryItems.value = res.items || []
-
-  }
-  catch (err) {
+    inventoryItems.value =
+      res.items || {}
+  } catch (err) {
     console.error("inventory load error", err)
   }
-
 }
 
 onMounted(async () => {
@@ -118,60 +125,63 @@ function isAssignedHere(item: any) {
 }
 
 function isAssignedElsewhere(item: any) {
-  return item.parentIDX && item.parentIDX !== props.master.IDX
+  return (
+    item.parentIDX &&
+    item.parentIDX !== props.master.IDX
+  )
 }
 
 function initializeSelections() {
-
   const selected: string[] = []
 
-  const trolleys = groupedChildren.value?.Trolley?.items || []
+  for (const type in groupedChildren.value) {
+    const rows =
+      groupedChildren.value?.[type]?.items || []
 
-  for (const item of trolleys) {
-
-    if (item.parentIDX === props.master.IDX) {
-      selected.push(item.IDX)
+    for (const item of rows) {
+      if (item.parentIDX === props.master.IDX) {
+        selected.push(item.IDX)
+      }
     }
-
   }
 
   selectedContainers.value = selected
-
 }
 
-/* ======================================================
-USER SELECTION
-====================================================== */
-
 function toggleContainer(idx: string) {
-
-  if (!selectedUserContainers.value.includes(idx))
+  if (
+    !selectedUserContainers.value.includes(idx)
+  ) {
     selectedUserContainers.value.push(idx)
-  else
+  } else {
     selectedUserContainers.value =
-      selectedUserContainers.value.filter(i => i !== idx)
-
+      selectedUserContainers.value.filter(
+        i => i !== idx
+      )
+  }
 }
 
 /* ======================================================
 MULTI SOURCE QTY
 ====================================================== */
 
-function setSourceQty(productIDX: string, sourceIDX: string, qty: number) {
-
-  if (!movementMap.value[productIDX])
+function setSourceQty(
+  productIDX: string,
+  sourceIDX: string,
+  qty: number
+) {
+  if (!movementMap.value[productIDX]) {
     movementMap.value[productIDX] = {}
+  }
 
   movementMap.value[productIDX][sourceIDX] = qty
-
 }
 
 /* ======================================================
-CONFIRM MOVEMENT
+CONFIRM
 ====================================================== */
 
 async function confirmMovement() {
-
   if (!sealNumber.value) {
     alert("Seal Number is required")
     return
@@ -180,16 +190,13 @@ async function confirmMovement() {
   loading.value = true
 
   try {
-
     const containers: any = {}
 
     for (const type in groupedChildren.value) {
-
       const group = groupedChildren.value[type]
       const config = group.config
 
       if (config.inventoryManaged) {
-
         const quantities = quantityMap.value
         const sources = movementMap.value
 
@@ -197,55 +204,46 @@ async function confirmMovement() {
           Object.keys(quantities).length ||
           Object.keys(sources).length
         ) {
-
           containers[type] = {}
 
-          if (Object.keys(quantities).length)
-            containers[type].quantities = quantities
-
-          if (Object.keys(sources).length)
-            containers[type].sources = sources
-
-        }
-
-      }
-      else {
-
-        if (selectedUserContainers.value.length) {
-
-          containers[type] = {
-            children: selectedUserContainers.value
+          if (Object.keys(quantities).length) {
+            containers[type].quantities =
+              quantities
           }
 
+          if (Object.keys(sources).length) {
+            containers[type].sources =
+              sources
+          }
         }
-
+      } else {
+        if (
+          selectedUserContainers.value.length
+        ) {
+          containers[type] = {
+            children:
+              selectedUserContainers.value
+          }
+        }
       }
-
     }
 
     const payload = {
-
       organizationId,
-
       actionId: props.actionId,
-
       destination: {
         type: props.containerType,
         idx: props.master.IDX
       },
-
       containers,
-
       input: {
         sealNumber: sealNumber.value,
         remarks: sealRemarks.value
       },
-
       userContext: {
         userId: "USR-001",
         role: "MANAGER"
       }
-
     }
 
     await $fetch(
@@ -256,67 +254,61 @@ async function confirmMovement() {
       }
     )
 
-    /* =========================
-    REFRESH DATA
-    ========================= */
-
     await loadMovement()
     await loadInventory()
 
     quantityMap.value = {}
     movementMap.value = {}
-
     selectedUserContainers.value = []
 
     sealNumber.value = ""
     sealRemarks.value = ""
+
     emit("completed")
-  }
-  catch (err) {
+  } catch (err) {
     console.error("movement failed", err)
-  }
-  finally {
+  } finally {
     loading.value = false
   }
-
 }
-
 </script>
 
 <template>
-  lETS SEAL IT
   <v-card class="movement-drawer">
 
     <!-- HEADER -->
 
     <div class="drawer-header">
-
       <div class="title">
-        {{ actionConfig?.label || actionId }} → {{ master?.IDX }}
+        {{ actionConfig?.label || actionId }}
+        →
+        {{ master?.IDX }}
       </div>
 
       <v-btn icon="mdi:close" variant="text" @click="emit('close')" />
-
     </div>
 
     <!-- TABS -->
 
     <v-tabs v-model="tab">
-      <v-tab value="available">Seal Details</v-tab>
-      <v-tab value="inventory">Current Inventory</v-tab>
+      <v-tab value="available">
+        Seal Details
+      </v-tab>
+
+      <v-tab value="inventory">
+        Current Inventory
+      </v-tab>
     </v-tabs>
 
     <v-window v-model="tab">
 
-      <!-- ======================================
-      TAB 1 : AVAILABLE
-      ====================================== -->
+      <!-- TAB 1 -->
 
       <v-window-item value="available">
 
         <div class="drawer-content">
 
-          <!-- SEAL INFORMATION -->
+          <!-- Seal Info -->
 
           <v-card class="mb-6 pa-4">
 
@@ -325,78 +317,93 @@ async function confirmMovement() {
             </div>
 
             <v-row>
-
               <v-col cols="12">
-
                 <v-text-field v-model="sealNumber" label="Seal Number" density="compact" required />
-
               </v-col>
 
               <v-col cols="12">
-
                 <v-textarea v-model="sealRemarks" label="Remarks" density="compact" rows="2" />
-
               </v-col>
-
             </v-row>
 
           </v-card>
 
-          <!-- EXISTING MOVEMENT UI -->
+          <!-- Dynamic Groups -->
 
           <div v-for="(group, type) in groupedChildren" :key="type" class="mb-6">
-
             <h3 class="section-title">
               {{ group.config?.label || type }}
             </h3>
 
-            <!-- INVENTORY PRODUCTS -->
+            <!-- Inventory -->
 
             <div v-if="group.config.inventoryManaged">
-
               <v-row class="font-weight-bold mb-2">
-
-                <v-col cols="4">Product</v-col>
-                <v-col cols="2">Source</v-col>
-                <v-col cols="2">Available</v-col>
-                <v-col cols="2">In Container</v-col>
-                <v-col cols="2">Load</v-col>
-
+                <v-col cols="4">
+                  Item
+                </v-col>
+                <v-col cols="2">
+                  Source
+                </v-col>
+                <v-col cols="2">
+                  Available
+                </v-col>
+                <v-col cols="2">
+                  In Container
+                </v-col>
+                <v-col cols="2">
+                  Qty
+                </v-col>
               </v-row>
 
               <v-card v-for="item in group.items" :key="item.IDX" class="product-card">
-
                 <v-row align="center">
 
                   <v-col cols="4">
-                    {{ item.tbProduct?.Name || item.IDX }}
+                    {{ item.Name || item.IDX }}
                   </v-col>
 
                   <v-col cols="2">
-                    {{ item.sources?.[0]?.containerIDX || "-" }}
+                    {{
+                      item.sources?.[0]
+                        ?.containerIDX || "-"
+                    }}
                   </v-col>
 
                   <v-col cols="2">
-                    {{ item.sources?.[0]?.available || 0 }}
+                    {{
+                      item.sources?.[0]
+                        ?.available || 0
+                    }}
                   </v-col>
 
                   <v-col cols="2">
-                    {{ item.currentQuantity || 0 }}
+                    {{
+                      item.currentQuantity || 0
+                    }}
                   </v-col>
 
                   <v-col cols="2">
 
-                    <v-text-field v-model.number="quantityMap[item.IDX]" type="number" density="compact" label="Load" />
+                    <v-text-field v-if="getInventoryMode(group) === 'edit'" v-model.number="quantityMap[item.IDX]"
+                      type="number" density="compact" label="Qty" />
+
+                    <v-chip v-else-if="getInventoryMode(group) === 'readonly'" size="small" color="primary"
+                      variant="tonal">
+                      {{
+                        quantityMap[item.IDX] ??
+                        item.currentQuantity ??
+                        0
+                      }}
+                    </v-chip>
 
                   </v-col>
 
                 </v-row>
-
               </v-card>
-
             </div>
 
-            <!-- STRUCTURAL CONTAINERS -->
+            <!-- Structural -->
 
             <v-list v-else>
 
@@ -406,7 +413,7 @@ async function confirmMovement() {
                   :model-value="isAssignedHere(item)" @update:model-value="toggleContainer(item.IDX)" hide-details />
 
                 <v-list-item-title>
-                  {{ item.tbTrolley?.tbMain?.Name || item.IDX }}
+                  {{ item.Name || item.IDX }}
                 </v-list-item-title>
 
               </v-list-item>
@@ -416,50 +423,15 @@ async function confirmMovement() {
           </div>
 
         </div>
-
       </v-window-item>
 
-      <!-- ======================================
-      TAB 2 : CURRENT INVENTORY
-      ====================================== -->
+      <!-- TAB 2 -->
 
       <v-window-item value="inventory">
 
         <div class="drawer-content">
 
-          <div v-for="(items, type) in inventoryItems" :key="type" class="inventory-section">
-
-            <div class="section-title">
-
-              {{ type }}
-
-              <v-chip size="small" class="ml-2" color="primary" variant="tonal">
-                {{ items.length }}
-              </v-chip>
-
-            </div>
-
-            <v-list density="compact">
-
-              <v-list-item v-for="row in items" :key="row.idx" class="inventory-row">
-
-                <v-list-item-title>
-                  {{ row.label }}
-                </v-list-item-title>
-
-                <template #append>
-
-                  <v-chip v-if="row.quantity !== undefined" color="green" size="small" variant="tonal">
-                    {{ row.quantity }}
-                  </v-chip>
-
-                </template>
-
-              </v-list-item>
-
-            </v-list>
-
-          </div>
+          <emcInventoryViewer :items="inventoryItems" :loading="loading" />
 
         </div>
 
@@ -478,7 +450,6 @@ async function confirmMovement() {
     </div>
 
   </v-card>
-
 </template>
 
 <style scoped>

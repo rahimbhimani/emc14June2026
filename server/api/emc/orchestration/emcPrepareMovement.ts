@@ -40,10 +40,7 @@ function getTitleFromListView(listView: any, config: any) {
     : null
 }
 
-function getPrimaryKeyValue(
-  row: any,
-  config: any
-) {
+function getPrimaryKeyValue(row: any, config: any) {
   const keyPath =
     config?.storage?.primaryKey || "IDX"
 
@@ -90,20 +87,8 @@ export default async function emcPrepareMovement(
 
   const db = mongoose.connection.db
 
-  if (!db) {
-    throw new Error(
-      "Database connection not ready"
-    )
-  }
-
-  /* ==========================================
-     DESTINATION CONFIG
-  ========================================== */
-
   const destinationConfig = await db
-    .collection(
-      "emcOrganizationContainerConfig"
-    )
+    .collection("emcOrganizationContainerConfig")
     .findOne({
       organizationId,
       type: destinationType
@@ -141,16 +126,13 @@ export default async function emcPrepareMovement(
 
   const groupedChildren: any = {}
 
-  /* ==========================================
-     DESTINATION ROW
-  ========================================== */
-
   const destinationRow = await db
     .collection(
       destinationConfig.storage.collection
     )
     .findOne({
-      organizationId,
+      [destinationConfig.storage.organizationKey]:
+        organizationId,
       [destinationConfig.storage.primaryKey]:
         destinationIDX
     })
@@ -158,27 +140,16 @@ export default async function emcPrepareMovement(
   const parentIDX =
     destinationRow?.parentIDX || null
 
-  /* ==========================================
-     INVENTORY LOAD ONCE
-  ========================================== */
-
   const allInventory = await db
     .collection("emcContainerInventory")
     .find({ organizationId })
     .toArray()
 
-  /* ==========================================
-     LOOP CHILD TYPES
-  ========================================== */
-
-  for (const rule of destinationConfig.canContainRules ||
-    []) {
+  for (const rule of destinationConfig.canContainRules || []) {
     const childType = rule.childType
 
     const childConfig = await db
-      .collection(
-        "emcOrganizationContainerConfig"
-      )
+      .collection("emcOrganizationContainerConfig")
       .findOne({
         organizationId,
         type: childType
@@ -192,34 +163,26 @@ export default async function emcPrepareMovement(
     if (
       isInventoryManaged &&
       !allowInventory
-    ) {
-      continue
-    }
+    ) continue
 
     if (
       !isInventoryManaged &&
       !allowStructural
-    ) {
-      continue
-    }
+    ) continue
 
     const childRows = await db
       .collection(
         childConfig.storage.collection
       )
       .find({
-        [childConfig.storage
-          .organizationKey]:
+        [childConfig.storage.organizationKey]:
           organizationId
       })
       .toArray()
 
     const items: any[] = []
 
-    /* ======================================
-       INVENTORY MANAGED
-    ====================================== */
-
+    /* INVENTORY */
     if (isInventoryManaged) {
       const currentMap = new Map()
       const parentMap = new Map()
@@ -235,23 +198,18 @@ export default async function emcPrepareMovement(
         ) {
           currentMap.set(
             inv.productIDX,
-            (currentMap.get(
-              inv.productIDX
-            ) || 0) + qty
+            (currentMap.get(inv.productIDX) || 0) + qty
           )
         }
 
         if (
-          sourceStrategy ===
-          "PARENT" &&
+          sourceStrategy === "PARENT" &&
           parentIDX &&
           inv.containerIDX === parentIDX
         ) {
           parentMap.set(
             inv.productIDX,
-            (parentMap.get(
-              inv.productIDX
-            ) || 0) + qty
+            (parentMap.get(inv.productIDX) || 0) + qty
           )
         }
       }
@@ -301,16 +259,14 @@ export default async function emcPrepareMovement(
           totalInventory
 
         if (
-          sourceStrategy ===
-          "PARENT"
+          sourceStrategy === "PARENT"
         ) {
           totalAvailable =
             parentMap.get(IDX) || 0
         }
 
         if (
-          sourceStrategy ===
-          "CONTAINERTYPE"
+          sourceStrategy === "CONTAINERTYPE"
         ) {
           totalAvailable = 0
           sources = []
@@ -323,9 +279,7 @@ export default async function emcPrepareMovement(
             if (
               inv.productIDX !== IDX ||
               qty <= 0
-            ) {
-              continue
-            }
+            ) continue
 
             totalAvailable += qty
 
@@ -352,10 +306,7 @@ export default async function emcPrepareMovement(
       }
     }
 
-    /* ======================================
-       STRUCTURAL
-    ====================================== */
-
+    /* STRUCTURAL */
     if (!isInventoryManaged) {
       let filteredRows = childRows
 
@@ -373,20 +324,13 @@ export default async function emcPrepareMovement(
             (row: any) => {
               for (const track in visibilityRule.allowedLifecycle) {
                 const allowed =
-                  visibilityRule
-                    .allowedLifecycle[
-                  track
-                  ]
+                  visibilityRule.allowedLifecycle[track]
 
                 const current =
-                  row.lifecycle?.[
-                  track
-                  ]
+                  row.lifecycle?.[track]
 
                 if (
-                  !allowed.includes(
-                    current
-                  )
+                  !allowed.includes(current)
                 ) {
                   return false
                 }
@@ -401,8 +345,7 @@ export default async function emcPrepareMovement(
         filteredRows.filter(
           (row: any) =>
             !row.parentIDX ||
-            row.parentIDX ===
-            destinationIDX
+            row.parentIDX === destinationIDX
         )
 
       for (const row of filteredRows) {
@@ -437,11 +380,9 @@ export default async function emcPrepareMovement(
           Name,
           itemCount,
           assignedHere:
-            row.parentIDX ===
-            destinationIDX,
+            row.parentIDX === destinationIDX,
           parentIDX:
-            row.parentIDX ||
-            null
+            row.parentIDX || null
         })
       }
     }
@@ -454,16 +395,16 @@ export default async function emcPrepareMovement(
           childConfig.label ||
           childType,
         showItemCount:
-          childConfig.ui
-            ?.showItemCount !==
-          false
+          childConfig.ui?.showItemCount !== false
       },
+      actionConfig: actionDef,
       items
     }
   }
 
   return {
     groupedChildren,
-    orchestration
+    orchestration,
+    actionConfig: actionDef
   }
 }

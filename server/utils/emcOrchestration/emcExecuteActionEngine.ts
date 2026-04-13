@@ -1,15 +1,18 @@
 import mongoose from "mongoose"
-
+import { generateReferenceNumber } from "../emcGenerateReference"
 /* ======================================================
    GENERIC VALUE RESOLVER
 ====================================================== */
 function getValue(obj: any, path: string) {
   if (!obj || !path) return undefined
-  return path.split(".").reduce((acc, key) => acc?.[key], obj)
+
+  return path
+    .split(".")
+    .reduce((acc, key) => acc?.[key], obj)
 }
 
 /* ======================================================
-   GENERIC DISPLAY NAME RESOLVER (NO HARDCODE)
+   GENERIC DISPLAY NAME RESOLVER
 ====================================================== */
 function resolveDisplayName(
   row: any,
@@ -17,7 +20,6 @@ function resolveDisplayName(
 ) {
   if (!row) return ""
 
-  /* Common direct fields */
   const candidates = [
     "Name",
     "title",
@@ -31,7 +33,6 @@ function resolveDisplayName(
     if (value) return value
   }
 
-  /* Config-driven title */
   const titleRule =
     config?.ui?.listView?.find(
       (x: any) => x.isTitle
@@ -63,7 +64,9 @@ function resolveDisplayName(
 /* ======================================================
    INVENTORY HELPERS
 ====================================================== */
-async function addInventory(params: any) {
+async function addInventory(
+  params: any
+) {
   const {
     db,
     session,
@@ -162,8 +165,7 @@ async function reduceInventory(
   )
 
   for (const row of rows) {
-    if (remaining <= 0)
-      break
+    if (remaining <= 0) break
 
     const available =
       Number(
@@ -184,8 +186,7 @@ async function reduceInventory(
         { _id: row._id },
         {
           $inc: {
-            quantity:
-              -deduct
+            quantity: -deduct
           },
           $set: {
             updatedAt:
@@ -264,7 +265,9 @@ async function resolveAndReduceSources(
   if (
     sourceStrategy ===
     "NONE"
-  ) return
+  ) {
+    return
+  }
 
   if (
     sourceStrategy ===
@@ -294,33 +297,26 @@ async function resolveAndReduceSources(
       quantity || 0
     )
 
-    const total =
-      rows.reduce(
-        (
-          sum: number,
-          row: any
-        ) =>
-          sum +
-          Number(
-            row.quantity ||
-            0
-          ),
-        0
-      )
+    const total = rows.reduce(
+      (
+        sum: number,
+        row: any
+      ) =>
+        sum +
+        Number(
+          row.quantity || 0
+        ),
+      0
+    )
 
-    if (
-      total < remaining
-    ) {
+    if (total < remaining) {
       throw new Error(
         `Insufficient stock for ${productIDX}`
       )
     }
 
     for (const row of rows) {
-      if (
-        remaining <= 0
-      )
-        break
+      if (remaining <= 0) break
 
       const available =
         Number(
@@ -374,6 +370,7 @@ export default async function emcExecuteActionEngine(
 
   const destType =
     destination?.type
+
   const destIDX =
     destination?.idx
 
@@ -482,11 +479,13 @@ export default async function emcExecuteActionEngine(
 
     const inventoryAudit: any[] =
       []
-    const assignmentAudit: any[] =
-      []
+
+    const assignmentAudit: any[] = []
+
+    let generatedReference: any = null
 
     /* ==========================================
-       PROCESS EACH CHILD TYPE
+       PROCESS CHILD TYPES
     ========================================== */
 
     for (const containerType in containers) {
@@ -526,9 +525,9 @@ export default async function emcExecuteActionEngine(
           .organizationKey ||
         "organizationId"
 
-      /* =====================================
+      /* ======================================
          INVENTORY
-      ===================================== */
+      ====================================== */
 
       if (
         isInventoryManaged
@@ -538,12 +537,11 @@ export default async function emcExecuteActionEngine(
           {}
 
         for (const productIDX in quantities) {
-          const qty =
-            Number(
-              quantities[
-              productIDX
-              ] || 0
-            )
+          const qty = Number(
+            quantities[
+            productIDX
+            ] || 0
+          )
 
           if (qty <= 0)
             continue
@@ -588,8 +586,10 @@ export default async function emcExecuteActionEngine(
                   childCollection
                 )
                 .findOne({
-                  organizationId,
-                  IDX: productIDX
+                  [orgKey]:
+                    organizationId,
+                  [keyPath]:
+                    productIDX
                 })
 
             productName =
@@ -608,9 +608,9 @@ export default async function emcExecuteActionEngine(
         }
       }
 
-      /* =====================================
+      /* ======================================
          STRUCTURAL
-      ===================================== */
+      ====================================== */
 
       else {
         const selected =
@@ -650,7 +650,6 @@ export default async function emcExecuteActionEngine(
               )
           )
 
-        /* REMOVE */
         for (const row of currentlyAssigned) {
           const rowIDX =
             getValue(
@@ -662,8 +661,9 @@ export default async function emcExecuteActionEngine(
             !removed.includes(
               rowIDX
             )
-          )
+          ) {
             continue
+          }
 
           await db
             .collection(
@@ -700,25 +700,27 @@ export default async function emcExecuteActionEngine(
             )
 
           assignmentAudit.push({
-            type: containerType,
+            type:
+              containerType,
             action:
               "UNASSIGNED",
             idx: rowIDX,
-            name: resolveDisplayName(
-              row,
-              childConfig
-            )
+            name:
+              resolveDisplayName(
+                row,
+                childConfig
+              )
           })
         }
 
-        /* ADD */
         for (const childIDX of selected) {
           if (
             currentIDXs.includes(
               childIDX
             )
-          )
+          ) {
             continue
+          }
 
           const existing =
             await db
@@ -765,14 +767,16 @@ export default async function emcExecuteActionEngine(
             )
 
           assignmentAudit.push({
-            type: containerType,
+            type:
+              containerType,
             action:
               "ASSIGNED",
             idx: childIDX,
-            name: resolveDisplayName(
-              existing,
-              childConfig
-            )
+            name:
+              resolveDisplayName(
+                existing,
+                childConfig
+              )
           })
         }
       }
@@ -795,6 +799,27 @@ export default async function emcExecuteActionEngine(
     }
 
     if (
+      actionId ===
+      "CHANGE_STATUS" &&
+      input?.track &&
+      input?.status
+    ) {
+      const oldValue =
+        previousLifecycle?.[
+        input.track
+        ]
+
+      lifecycleUpdates[
+        input.track
+      ] = input.status
+
+      historyEntry[
+        input.track
+      ] = {
+        from: oldValue,
+        to: input.status
+      }
+    } else if (
       actionDef?.tracks
     ) {
       for (const t of actionDef.tracks) {
@@ -810,8 +835,7 @@ export default async function emcExecuteActionEngine(
         historyEntry[
           t.track
         ] = {
-          from:
-            oldValue,
+          from: oldValue,
           to: t.to
         }
       }
@@ -892,6 +916,141 @@ export default async function emcExecuteActionEngine(
         },
         { session }
       )
+
+    /* =====================================
+       REFERENCE DATA (BCL ETC)
+    ===================================== */
+
+    if (
+      actionDef.referenceData
+    ) {
+      const refConfig =
+        actionDef.referenceData
+
+      let referenceNumber =
+        null
+
+      if (
+        refConfig.generateReferenceNumber
+      ) {
+        referenceNumber =
+          await generateReferenceNumber(
+            organizationId,
+            refConfig.type
+          )
+      }
+
+      let snapshot: any[] =
+        []
+
+      if (
+        refConfig.dataSource ===
+        "inventorySnapshot"
+      ) {
+        const inv = await db
+          .collection(
+            "emcContainerInventory"
+          )
+          .find(
+            {
+              organizationId,
+              containerType:
+                destType,
+              containerIDX:
+                destIDX,
+              quantity: {
+                $gt: 0
+              }
+            },
+            { session }
+          )
+          .toArray()
+
+        snapshot = inv.map(
+          (i: any) => ({
+            productIDX:
+              i.productIDX,
+            quantity:
+              i.quantity
+          })
+        )
+      }
+
+      await db
+        .collection(
+          "emcActionReferenceData"
+        )
+        .insertOne(
+          {
+            organizationId,
+            containerType:
+              destType,
+            containerIDX:
+              destIDX,
+            actionId,
+            referenceType:
+              refConfig.type,
+            referenceNumber,
+            status: "ACTIVE",
+            version: 1,
+            data: {
+              inventorySnapshot:
+                snapshot,
+              input
+            },
+            createdBy:
+              userContext?.userId ||
+              "SYSTEM",
+            createdAt:
+              new Date(),
+            updatedAt:
+              new Date()
+          },
+          { session }
+        )
+      // generatedReference = {
+      //   referenceType: refConfig.type,
+      //   referenceNumber
+      // }
+      if (
+        refConfig.storeInLifecycle
+      ) {
+        const complianceEntry =
+        {
+          type:
+            refConfig.type,
+          referenceNumber,
+          icon:
+            refConfig.icon ||
+            null,
+          createdBy:
+            userContext?.userId ||
+            "SYSTEM",
+          createdAt:
+            new Date()
+        }
+
+        await db
+          .collection(
+            destCollection
+          )
+          .updateOne(
+            {
+              [destOrgKey]:
+                organizationId,
+              [destKeyPath]:
+                destIDX
+            },
+            {
+              $push: {
+                "lifecycle.complianceStatus":
+                  complianceEntry
+              }
+            },
+            { session }
+          )
+      }
+    }
 
     await session.commitTransaction()
 
