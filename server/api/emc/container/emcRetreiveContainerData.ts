@@ -60,8 +60,32 @@ export default defineEventHandler(async (event) => {
   }
 
   /* ==========================================
+     LOAD REFERENCE DATA
+  ========================================== */
+
+  const refs = await db
+    .collection("emcActionReferenceData")
+    .find({
+      organizationId,
+      containerType: type
+    })
+    .sort({ createdAt: 1 })
+    .toArray()
+
+  const referenceMap = new Map()
+
+  for (const ref of refs) {
+    const idx = ref.containerIDX
+
+    if (!referenceMap.has(idx)) {
+      referenceMap.set(idx, [])
+    }
+
+    referenceMap.get(idx).push(ref)
+  }
+
+  /* ==========================================
      INVENTORY AGGREGATION
-     per containerIDX
   ========================================== */
 
   const inventoryAgg = await db
@@ -112,13 +136,12 @@ export default defineEventHandler(async (event) => {
   }
 
   /* ==========================================
-     BUILD CHILD MAPS (MULTI TYPE)
+     BUILD CHILD MAPS
   ========================================== */
 
   const childMaps: any[] = []
 
-  for (const rule of config.canContainRules ||
-    []) {
+  for (const rule of config.canContainRules || []) {
     const childType = rule.childType
 
     const childConfig = await db
@@ -137,8 +160,7 @@ export default defineEventHandler(async (event) => {
         childConfig.storage.collection
       )
       .find({
-        [childConfig.storage
-          .organizationKey]:
+        [childConfig.storage.organizationKey]:
           organizationId
       })
       .toArray()
@@ -154,8 +176,7 @@ export default defineEventHandler(async (event) => {
       const childIDX =
         getValueByPath(
           child,
-          childConfig.storage
-            .primaryKey || "IDX"
+          childConfig.storage.primaryKey || "IDX"
         )
 
       if (!childIDX) continue
@@ -188,7 +209,6 @@ export default defineEventHandler(async (event) => {
     let totalQty = 0
     let linkedCount = 0
 
-    /* direct inventory */
     const direct =
       inventoryMap.get(rowIDX)
 
@@ -197,7 +217,6 @@ export default defineEventHandler(async (event) => {
       totalQty += direct.totalQty
     }
 
-    /* all child maps */
     for (const map of childMaps) {
       const linked =
         map.get(rowIDX) || []
@@ -230,6 +249,10 @@ export default defineEventHandler(async (event) => {
     }
 
     row.inventoryCount = totalQty
+
+    /* NEW: attach references */
+    row.references =
+      referenceMap.get(rowIDX) || []
   }
 
   return {

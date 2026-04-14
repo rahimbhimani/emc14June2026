@@ -940,8 +940,7 @@ export default async function emcExecuteActionEngine(
           )
       }
 
-      let snapshot: any[] =
-        []
+      let snapshot: any[] = []
 
       if (
         refConfig.dataSource ===
@@ -988,74 +987,55 @@ export default async function emcExecuteActionEngine(
             containerIDX:
               destIDX,
             actionId,
+
             referenceType:
               refConfig.type,
+
             referenceNumber,
-            status: "ACTIVE",
+
             version: 1,
+
+            binding: {
+              channel:
+                refConfig.channel ||
+                "compliance",
+
+              visibleWhenStates:
+                refConfig.visibleWhenStates ||
+                []
+            },
+
             data: {
               inventorySnapshot:
                 snapshot,
               input
             },
+
             createdBy:
               userContext?.userId ||
               "SYSTEM",
+
             createdAt:
               new Date(),
+
             updatedAt:
               new Date()
           },
           { session }
         )
-      // generatedReference = {
-      //   referenceType: refConfig.type,
-      //   referenceNumber
-      // }
-      if (
-        refConfig.storeInLifecycle
-      ) {
-        const complianceEntry =
-        {
-          type:
-            refConfig.type,
-          referenceNumber,
-          icon:
-            refConfig.icon ||
-            null,
-          createdBy:
-            userContext?.userId ||
-            "SYSTEM",
-          createdAt:
-            new Date()
-        }
 
-        await db
-          .collection(
-            destCollection
-          )
-          .updateOne(
-            {
-              [destOrgKey]:
-                organizationId,
-              [destKeyPath]:
-                destIDX
-            },
-            {
-              $push: {
-                "lifecycle.complianceStatus":
-                  complianceEntry
-              }
-            },
-            { session }
-          )
+      generatedReference = {
+        referenceType:
+          refConfig.type,
+        referenceNumber
       }
     }
 
     await session.commitTransaction()
 
     return {
-      success: true
+      success: true,
+      ...(generatedReference || {})
     }
   } catch (err) {
     await session.abortTransaction()
