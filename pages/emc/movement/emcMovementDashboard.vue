@@ -7,12 +7,79 @@ const userRole = "MANAGER"
 const selectedConfig = ref<any>(null)
 const instances = ref<any[]>([])
 const loadingInstances = ref(false)
-
+const lifecycleRemarks = ref<Record<string, any>>({})
 const movementDrawer = ref(false)
 
 const activeContainer = ref<any>(null)
 const activeAction = ref<string | null>(null)
 const activeActionConfig = ref<any>(null)
+
+function lifecycleLabel(
+  track: string,
+  code: string
+) {
+  if (!track || !code) return "N/A"
+
+  const states =
+    selectedConfig.value?.lifecycles?.[track]?.states || []
+
+  const match = states.find(
+    (s: any) => s.code === code
+  )
+
+  return match?.label || code
+}
+
+async function loadLifecycleRemarks(
+  container: any
+) {
+  if (!selectedConfig.value) return
+
+  const tracks =
+    selectedConfig.value.lifecycles || {}
+
+  for (const trackName in tracks) {
+    const currentState =
+      container.lifecycle?.[trackName]
+
+    if (!currentState) continue
+
+    const stateDef =
+      tracks[trackName]?.states?.find(
+        (s: any) =>
+          s.code === currentState
+      )
+
+    const showRemarks =
+      stateDef?.presentation
+        ?.showRemarks
+
+    if (!showRemarks) continue
+
+    try {
+      const res: any = await $fetch(
+        "/api/emc/movement/emdRetreiveLifecycleRemarks",
+        {
+          method: "POST",
+          body: {
+            organizationId,
+            containerIDX:
+              container.IDX,
+            track: trackName,
+            state: currentState
+          }
+        }
+      )
+
+      lifecycleRemarks.value[
+        container.IDX
+      ] = res
+    }
+    catch (err) {
+      console.error(err)
+    }
+  }
+}
 
 function getValue(obj: any, path: string) {
   return path.split(".").reduce((acc, key) => acc?.[key], obj)
@@ -20,7 +87,6 @@ function getValue(obj: any, path: string) {
 
 function resolveTitle(container: any) {
   const fields = selectedConfig.value?.ui?.listView || []
-
   const nameField = fields.find((f: any) => f.label === "Name")
 
   if (nameField) {
@@ -85,6 +151,10 @@ async function selectConfig(config: any) {
     for (const container of instances.value) {
       container.availableActions =
         await loadAvailableActions(container)
+
+      await loadLifecycleRemarks(
+        container
+      )
     }
   }
   finally {
@@ -128,6 +198,7 @@ EXECUTE ACTION
 function executeAction(container: any, action: any) {
   activeContainer.value = container
   activeAction.value = action.actionId || action
+
   activeActionConfig.value =
     action.actionId
       ? action
@@ -225,22 +296,56 @@ function getLatestReference(
 /* ======================================================
 REPORT
 ====================================================== */
-
+const { runReport } =
+  useReportRunner()
 async function generateReport() {
-  await $fetch("/api/report/emcRunReport", {
-    method: "POST",
-    body: {
-      reportId: "BCL_REPORT",
-      params: {
-        containerId: "TROLLEY-01"
-      }
-    }
+  runReport({
+    reportId: "BCL_REPORT",
+    reportName:
+      "Bar Check List Report",
+    params: {
+      referenceNumber:
+        "BCL-000041"
+    },
+    output: "HTML"
   })
+
+
+  // const reportWindow = window.open("about:blank", "_blank")
+  // if (!reportWindow) {
+  //   console.error("Unable to open report window")
+  //   return
+  // }
+
+  // try {
+  //   const result = await $fetch("/api/report/emcRunReport", {
+  //     method: "POST",
+  //     body: {
+  //       reportId: "BCL_REPORT",
+  //       params: {
+  //         containerIDX: "TLY-00007",
+  //         referenceNumber: "BCL-000041"
+  //       },
+  //       output: "HTML"
+  //     }
+  //   })
+
+  //   const html = typeof result === "string" ? result : result?.html || JSON.stringify(result, null, 2)
+  //   reportWindow.document.open()
+  //   reportWindow.document.write(html)
+  //   reportWindow.document.close()
+  // } catch (error: any) {
+  //   reportWindow.document.open()
+  //   reportWindow.document.body.innerText = error?.message || String(error)
+  //   reportWindow.document.close()
+  //   console.error("Failed to generate report", error)
+  // }
 }
 </script>
 
 <template>
   <v-container fluid class="pa-8">
+
     <v-btn class="mb-6" @click="generateReport">
       Generate BCL Report for TROLLEY-01
     </v-btn>
@@ -254,7 +359,9 @@ async function generateReport() {
       <v-row>
         <v-col v-for="config in configs" :key="config.type" cols="12" sm="6" md="4" lg="3">
           <div class="airbnb-card" @click="selectConfig(config)">
-            <img class="card-image" :src="config.imageUrl || '/images/placeholder.jpg'">
+            <img class="card-image" :src="config.imageUrl ||
+              '/images/placeholder.jpg'
+              ">
 
             <div class="card-content">
               <div class="title">
@@ -272,6 +379,7 @@ async function generateReport() {
 
     <!-- INSTANCE VIEW -->
     <div v-else>
+
       <div class="d-flex align-center mb-6">
         <v-btn icon="mdi:arrow-left" variant="text" @click="goBack" />
 
@@ -285,26 +393,30 @@ async function generateReport() {
       </v-row>
 
       <v-row v-else>
-        <!-- TEMPLATE: Replace only the card block inside v-for="container in instances" -->
-
         <v-col v-for="container in instances" :key="container.IDX" cols="12" sm="6" md="4" lg="3">
-          <div class="ops-card" @click="executeAction(container, 'CONTAINER_HISTORY')">
-            <!-- IMAGE -->
-            <img class="ops-card-image" :src="selectedConfig.imageUrl || '/images/placeholder.jpg'">
+          <div class="ops-card" @click="
+            executeAction(
+              container,
+              'CONTAINER_HISTORY'
+            )
+            ">
+            <img class="ops-card-image" :src="selectedConfig.imageUrl ||
+              '/images/placeholder.jpg'
+              ">
 
-            <!-- BODY -->
             <div class="ops-card-body">
 
               <!-- HEADER -->
               <div class="ops-card-header">
-                <div>
+
+                <div class="ops-header-text">
                   <div class="ops-title">
                     {{
                       resolveField(
                         container,
                         selectedConfig.ui?.listView?.find((f: any) => f.isTitle)
                         || selectedConfig.ui?.listView?.[0]
-                        || { path: "IDX" }
+                        || { path: 'IDX' }
                       )
                     }}
                   </div>
@@ -328,6 +440,7 @@ async function generateReport() {
                     </v-list-item>
                   </v-list>
                 </v-menu>
+
               </div>
 
               <!-- EXTRA FIELDS -->
@@ -344,8 +457,12 @@ async function generateReport() {
 
               <!-- STATS -->
               <div class="ops-stats">
+
                 <div class="stat-box">
-                  <div class="stat-label">Items</div>
+                  <div class="stat-label">
+                    Items
+                  </div>
+
                   <div class="stat-value">
                     {{
                       container.inventorySummary?.itemCount
@@ -356,7 +473,10 @@ async function generateReport() {
                 </div>
 
                 <div class="stat-box">
-                  <div class="stat-label">Qty</div>
+                  <div class="stat-label">
+                    Qty
+                  </div>
+
                   <div class="stat-value">
                     {{
                       container.inventorySummary?.totalQty
@@ -364,9 +484,10 @@ async function generateReport() {
                     }}
                   </div>
                 </div>
+
               </div>
 
-              <!-- STATUS SECTION -->
+              <!-- STATUS -->
               <div class="status-section">
 
                 <!-- Operational -->
@@ -377,9 +498,12 @@ async function generateReport() {
 
                   <v-chip size="small" :color="lifecycleColor(container)" variant="flat">
                     {{
-                      container.lifecycle?.[
-                      selectedConfig.display?.primaryLifecycle
-                      ] || "N/A"
+                      lifecycleLabel(
+                        selectedConfig.display?.primaryLifecycle,
+                        container.lifecycle?.[
+                        selectedConfig.display?.primaryLifecycle
+                        ]
+                      )
                     }}
                   </v-chip>
 
@@ -406,7 +530,7 @@ async function generateReport() {
 
                   <v-chip size="small" color="primary" variant="tonal">
                     {{
-                      container.lifecycle?.compliance || "N/A"
+                      container.lifecycle?.compliance || 'N/A'
                     }}
                   </v-chip>
 
@@ -430,6 +554,7 @@ async function generateReport() {
                 </div>
 
               </div>
+
             </div>
           </div>
         </v-col>
@@ -438,46 +563,57 @@ async function generateReport() {
 
     <!-- DRAWER -->
     <v-navigation-drawer v-model="movementDrawer" location="right" width="520" temporary>
+
+      <!-- DEFAULT MOVEMENT -->
       <emcMovementAction v-if="
         movementDrawer &&
         activeContainer &&
-        (
-          activeAction !== 'VIEW_INVENTORY' &&
-          activeAction !== 'SEAL_CONTAINER' &&
-          activeAction !== 'CHANGE_STATUS' &&
-          activeAction !== 'CONTAINER_HISTORY'
-        )
-      " :master="activeContainer" :containerType="selectedConfig.type" :actionId="activeAction"
-        :actionConfig="activeActionConfig" @close="movementDrawer = false" @completed="reloadContainers" />
+        activeAction !== 'VIEW_INVENTORY' &&
+        activeAction !== 'SEAL_CONTAINER' &&
+        activeAction !== 'CUSTOMS_ACTIONS' &&
+        activeAction !== 'CHANGE_STATUS' &&
+        activeAction !== 'CONTAINER_HISTORY'
+      " :master="activeContainer" :masterConfig="selectedConfig" :containerType="selectedConfig.type"
+        :actionId="activeAction" :actionConfig="activeActionConfig" @close="movementDrawer = false"
+        @completed="reloadContainers" />
 
-      <emcContainerInventory v-if="
+      <!-- INVENTORY -->
+      <emcContainerInventory v-else-if="
         movementDrawer &&
         activeContainer &&
         activeAction === 'VIEW_INVENTORY'
       " :containerType="selectedConfig.type" :containerIDX="activeContainer.IDX" @close="movementDrawer = false"
         @completed="reloadContainers" />
 
-      <emcContainerSeal v-if="
+      <!-- SEAL / CUSTOM ACTIONS -->
+      <emcContainerSeal v-else-if="
         movementDrawer &&
         activeContainer &&
-        activeAction === 'SEAL_CONTAINER'
+        (
+          activeAction === 'SEAL_CONTAINER' ||
+          activeAction === 'CUSTOMS_ACTIONS'
+        )
       " :master="activeContainer" :containerType="selectedConfig.type" :actionId="activeAction"
         :actionConfig="activeActionConfig" @close="movementDrawer = false" @completed="reloadContainers" />
 
-      <emcChangeStatus v-if="
+      <!-- CHANGE STATUS -->
+      <emcChangeStatus v-else-if="
         movementDrawer &&
         activeContainer &&
         activeAction === 'CHANGE_STATUS'
       " :master="activeContainer" :containerType="selectedConfig.type" :containerIDX="activeContainer.IDX"
         @close="movementDrawer = false" @completed="reloadContainers" />
 
-      <emcContainerHistory v-if="
+      <!-- HISTORY -->
+      <emcContainerHistory v-else-if="
         movementDrawer &&
         activeContainer &&
         activeAction === 'CONTAINER_HISTORY'
       " :master="activeContainer" :containerType="selectedConfig.type" :containerIDX="activeContainer.IDX"
         @close="movementDrawer = false" @completed="reloadContainers" />
+
     </v-navigation-drawer>
+
   </v-container>
 </template>
 
@@ -494,135 +630,6 @@ async function generateReport() {
   transition: all 0.25s ease;
 }
 
-/* STYLE: Replace existing card CSS */
-
-.ops-card {
-  display: flex;
-  overflow: hidden;
-  flex-direction: column;
-  border-radius: 20px;
-  background: #fff;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 8%);
-  cursor: pointer;
-  min-block-size: 190px;
-  transition: all 0.25s ease;
-}
-
-.ops-card:hover {
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 14%);
-  transform: translateY(-4px);
-}
-
-.ops-card-image {
-  block-size: 110px;
-  inline-size: 100%;
-  object-fit: cover;
-}
-
-.ops-card-body {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  padding: 16px;
-}
-
-.ops-card-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-}
-
-.ops-title {
-  font-size: 20px;
-  font-weight: 700;
-  line-height: 1.2;
-}
-
-.ops-subtitle {
-  color: #777;
-  font-size: 13px;
-  margin-block-start: 4px;
-}
-
-.ops-meta {
-  color: #666;
-  font-size: 13px;
-  margin-block-start: 4px;
-}
-
-.ops-stats {
-  display: grid;
-  gap: 10px;
-  grid-template-columns: 1fr 1fr;
-  margin-block-start: 14px;
-}
-
-.stat-box {
-  padding: 10px;
-  border-radius: 12px;
-  background: #f8f9fb;
-}
-
-.stat-label {
-  color: #777;
-  font-size: 12px;
-}
-
-.stat-value {
-  font-size: 18px;
-  font-weight: 700;
-  margin-block-start: 2px;
-}
-
-.status-section {
-  display: grid;
-  border-block-start: 1px solid #eee;
-  gap: 18px;
-  grid-template-columns: 1fr 1fr;
-  margin-block-start: 14px;
-  padding-block-start: 12px;
-}
-
-.status-row {
-  display: grid;
-  align-items: start;
-  grid-template-rows: 20px 34px 24px;
-}
-
-.status-row .v-chip {
-  margin-block-start: 4px;
-}
-
-.status-row.status-row {
-  margin-block-start: 14px;
-}
-
-.status-caption {
-  margin: 0;
-  color: #777;
-  font-size: 12px;
-}
-
-.ref-number,
-.pending-text {
-  font-size: 13px;
-  margin-block-start: 0;
-}
-
-.ref-number {
-  color: #1565c0;
-  font-family: monospace;
-  font-size: 13px;
-  font-weight: 700;
-  margin-block-start: 6px;
-}
-
-.pending-text {
-  color: #999;
-  font-size: 13px;
-  margin-block-start: 6px;
-}
-
 .airbnb-card:hover {
   box-shadow: 0 12px 25px rgba(0, 0, 0, 12%);
   transform: translateY(-6px);
@@ -635,21 +642,13 @@ async function generateReport() {
 }
 
 .card-content {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
   padding: 16px;
-}
-
-.card-header {
-  display: flex;
-  align-items: start;
-  justify-content: space-between;
 }
 
 .title {
   font-size: 18px;
   font-weight: 600;
+  text-overflow: ellipsis;
 }
 
 .subtitle {
@@ -658,25 +657,122 @@ async function generateReport() {
   margin-block-start: 4px;
 }
 
-.status-block {
+.ops-card {
+  display: flex;
+  overflow: hidden;
+  flex-direction: column;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 8%);
+  cursor: pointer;
+  min-block-size: 340px;
+  transition: all 0.25s ease;
+}
+
+.ops-card:hover {
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 14%);
+  transform: translateY(-4px);
+}
+
+.ops-card-image {
+  block-size: 90px;
+  inline-size: 100%;
+  object-fit: cover;
+}
+
+.ops-card-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 12px;
+}
+
+.ops-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ops-header-text {
+  inline-size: calc(100% - 20px);
+  min-inline-size: 0;
+}
+
+.ops-title {
+  overflow: hidden;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ops-subtitle {
+  color: #777;
+  font-size: 13px;
+  margin-block-start: 4px;
+}
+
+.ops-subtitle,
+.ops-meta {
+  color: #777;
+  font-size: 13px;
+  margin-block-start: 4px;
+}
+
+.ops-stats {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: 1fr 1fr;
   margin-block-start: 8px;
 }
 
-.status-label {
-  color: #777;
-  font-size: 12px;
-  margin-block-end: 4px;
+.stat-box {
+  border-radius: 10px;
+  background: #f8f9fb;
+  padding-block: 8px;
+  padding-inline: 10px;
 }
 
-.reference-number {
-  color: #1565c0;
+.stat-label {
+  color: #777;
+  font-size: 11px;
+}
+
+.stat-value {
+  font-size: 15px;
+  font-weight: 700;
+  margin-block-start: 4px;
+}
+
+.status-section {
+  display: grid;
+  border-block-start: 1px solid #eee;
+  gap: 18px;
+  grid-template-columns: 1fr 1fr;
+  margin-block-start: 14px;
+  padding-block-start: 12px;
+}
+
+.status-caption {
+  color: #777;
+  font-size: 12px;
+}
+
+.ref-number,
+.pending-text {
   font-size: 13px;
-  font-weight: 600;
   margin-block-start: 6px;
 }
 
-.compliance-empty {
+.ref-number {
+  color: #1565c0;
+  font-family: monospace;
+  font-weight: 700;
+}
+
+.pending-text {
   color: #999;
-  font-size: 13px;
 }
 </style>

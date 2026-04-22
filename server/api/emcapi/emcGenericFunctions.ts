@@ -1109,9 +1109,15 @@ async function updatetData(collection, body, res) {
         // // console.log(.log('inside check true', res)
         return res;
       }
-      dataToUpdate = await UpdateSystemFields(body.data);
-      delete dataToUpdate._id;
-      result = await collection.replaceOne(lretObj, dataToUpdate);
+      if (!body.data._isThisForValidate) {
+        dataToUpdate = await UpdateSystemFields(body.data);
+        delete dataToUpdate._id;
+        result = await collection.replaceOne(lretObj, dataToUpdate);
+        console.log('update data 9.2', result);
+      } else {
+        console.log('update data 9.2 666', result);
+        result = { acknowledged: true, modifiedCount: 1 };
+      }
     }
     // dataToUpdate = body.data
     //// // // console.log(.log('deletion dataToUpdate123',dataToUpdate)
@@ -1166,8 +1172,15 @@ async function insertData(collection, body, res) {
       // console.log(.log('inside check true', res)
       return res;
     }
-    const dataToInsert = await UpdateSystemFields(body.data);
-    const result = await collection.insertOne(dataToInsert);
+    let result;
+    if (!body.data._isThisForValidate) {
+      console.log('insert data _isThisForValidate')
+      const dataToInsert = await UpdateSystemFields(body.data);
+      result = await collection.insertOne(dataToInsert);
+    } else {
+      console.log('insert data _isThisForValidate232423')
+      result = { acknowledged: true, insertedId: null };
+    }
     // // console.log(.log('inserted data',result)
     if (result.acknowledged) {
       res = {

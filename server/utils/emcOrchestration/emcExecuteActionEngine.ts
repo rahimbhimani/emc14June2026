@@ -364,9 +364,15 @@ export default async function emcExecuteActionEngine(
     actionId,
     destination,
     containers = {},
-    userContext,
     input = {}
   } = payload
+
+  let { userContext } = payload
+
+  userContext ??= {}
+  userContext.userId ??= "RAHIM"
+  userContext.role ??= "ADMIN"
+
 
   const destType =
     destination?.type

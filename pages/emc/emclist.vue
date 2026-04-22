@@ -4,7 +4,7 @@
   import { componentRegistry } from '@/utils/componentRegistry.client'
   import { useValidator } from '~/composables/useEMCValidator'
   provide('componentRegistry', componentRegistry)
-
+  const activeMenu = ref(null)
   const { buildZodSchema, validateField, validateForm, errors, clearErrors } = useValidator()
 
   const isSnackbarVisible = reactive({ show: false, error: true, message: '' })
@@ -37,6 +37,11 @@
       console.log(result.error);
     }
     return result
+  }
+
+  function areAllChildrenDisabled(children) {
+    if (!children?.length) return true
+    return children.every(child => disbleButton(child.text))
   }
 
   function getControl(vAttribute) {
@@ -267,7 +272,7 @@
   }
 
 
-  async function btnMoveToEdit() {
+  async function btnMoveToEdit(vAction = 'edit') {
     //debugger
 
     // console.log('GetDetailData()', await GetDetailData())
@@ -292,6 +297,9 @@
     if (currentMaster.value !== 'ScreenConfigure') {
       clearErrors()
       // muserDataStore.data.FormData.UserEntryObjects = Object({})
+      if (vAction === 'copy')
+        delete lTemp._id
+
       muserDataStore.data.FormData.UserEntryObjects.FormName = { ...lTemp }
       //debugger
       console.log('muserDataStore.data.FormData.UserEntryObjects.FormName', muserDataStore.data.FormData.UserEntryObjects.FormName)
@@ -299,16 +307,16 @@
 
     // muserDataStore.data.FormData.UserEntryObjects.FormName = await GetDetailData()
 
-    mCurrentFunction.value = 'edit'
+    mCurrentFunction.value = vAction === 'copy' ? 'create' : vAction === 'refresh' ? 'edit' : mCurrentFunction.value
     mErrorOnPage.value = false
   }
 
-  async function btnMoveToSave() {
+  async function btnMoveToSave(vAction = 'save') {
     console.log(muserDataStore.data.FormData.DataObject)
     //debugger
 
     const master = currentMaster.value;
-    const payload = master === 'ScreenConfigure'
+    let payload = master === 'ScreenConfigure'
       ? screenDesignStore
       : muserDataStore.data?.FormData.UserEntryObjects.FormName
 
@@ -322,6 +330,9 @@
     }
 
     // Call insert logic
+    if (vAction === 'validate') {
+      payload._isThisForValidate = true
+    }
     const lObj = await useEmcInsert(master, payload)
     //debugger;
     console.log(lObj?.status.value)
@@ -331,14 +342,22 @@
     if (success === 'success')
       success = true
 
-    if (success === true) {
-      if (lObj?.insertedID)
-        muserDataStore.data.FormData.UserEntryObjects.FormName._id = lObj?.insertedID
 
-      await informUser('success', `Data successfully ${lObj?.insertedID ? 'created' : 'updated'}. `)
-    } else if (success === false) {
-      // alert(lObj?.data.value.insertedID)
-      await informUser('error', `${lObj?.insertedID || lObj?.insertedID === undefined ? 'Create' : 'Update'} action Failed ! \n ${lObj?.message}`)
+    if (vAction === 'validate') {
+      if (success === true) {
+        await informUser('success', 'Validation successful.')
+      } else if (success === false) {
+        await informUser('error', `Validation Failed ! \n ${lObj?.message || lObj?.data?.value?.message || 'Unknown error'}`)
+      }
+    } else {
+      if (success === true) {
+        if (lObj?.insertedID)
+          muserDataStore.data.FormData.UserEntryObjects.FormName._id = lObj?.insertedID
+        await informUser('success', `Data successfully ${lObj?.insertedID ? 'created' : 'updated'}. `)
+      } else if (success === false) {
+        // alert(lObj?.data.value.insertedID)
+        await informUser('error', `${lObj?.insertedID || lObj?.insertedID === undefined ? 'Create' : 'Update'} action Failed ! \n ${lObj?.message}`)
+      }
     }
   }
 
@@ -358,30 +377,175 @@
       isSnackbarVisible.message = vMessage.replace(/\n/g, '<br>')
     }
   }
-  const lPermission = { create: ['delete', 'edit'], edit: ['edit', 'delete', 'create'], save: ['create', 'save', 'list'], list: ['save', 'delete', 'edit'] }
+  // const lPermission = { create: ['delete', 'edit'], edit: ['edit', 'delete', 'create'], save: ['create', 'save', 'list'], list: ['save', 'delete', 'edit'] }
+
+  // function disbleButton(vAction) {
+  //   if (vAction === 'delete')
+  //     return !(lPermission[mCurrentFunction.value.toLocaleLowerCase()]?.includes('delete') && (SelectedRows.value?.length > 0 && mCurrentFunction.value.toLocaleLowerCase() === 'list'))
+
+  //   if (vAction === 'edit' && mCurrentFunction.value === 'list')
+  //     return !(lPermission[mCurrentFunction.value.toLocaleLowerCase()]?.includes('edit') && (SelectedRows.value?.length === 1))
+
+  //   return lPermission[mCurrentFunction.value.toLocaleLowerCase()]?.includes(vAction)
+  // }
+
+  const lPermission = {
+    create: ['delete', 'edit', 'copy', 'template', 'excel_load', 'back'],
+    edit: ['edit', 'delete', 'create'],
+    save: ['create', 'save', 'list'],
+    list: ['save'],
+  }
 
   function disbleButton(vAction) {
-    if (vAction === 'delete')
-      return !(lPermission[mCurrentFunction.value.toLocaleLowerCase()]?.includes('delete') && (SelectedRows.value?.length > 0 && mCurrentFunction.value.toLocaleLowerCase() === 'list'))
+    debugger
+    const mode = mCurrentFunction.value?.toLowerCase()
+    const selectedCount = SelectedRows.value?.length || 0
 
-    if (vAction === 'edit' && mCurrentFunction.value === 'list')
-      return !(lPermission[mCurrentFunction.value.toLocaleLowerCase()]?.includes('edit') && (SelectedRows.value?.length === 1))
+    let item = vConfToolbar.find(btn => btn.text === vAction)
 
-    return lPermission[mCurrentFunction.value.toLocaleLowerCase()]?.includes(vAction)
+    if (!item) {
+      for (const parent of vConfToolbar) {
+        if (parent.children) {
+          item = parent.children.find(child => child.text === vAction)
+          if (item) break
+        }
+      }
+    }
+
+    if (!item) return false
+
+    // Disable by mode
+    if (item.hide?.includes(mode))
+      return true
+
+    // Permission rule
+    if (lPermission[mode]?.includes(vAction))
+      return true
+
+    // Selection rule
+    const min = item.selection?.min ?? 0
+    const max = item.selection?.max ?? Infinity
+
+    if (selectedCount < min || selectedCount > max)
+      return true
+
+    return false
   }
 
   const vConfToolbar = [
-    { hide: ['delete'], text: 'create', caption: 'Create', icon: 'emcAdd', index: 1, order: 1 },
-    { hide: ['create', 'save', 'list'], text: 'save', caption: 'Save', icon: 'emcSave', index: 2, order: 2 },
-    { hide: ['save', 'delete'], text: 'list', caption: 'List', icon: 'emcList', index: 3, order: 3 },
-    { hide: [], text: 'edit', caption: 'Edit', icon: 'emcEdit', index: 4, order: 4 },
-    { hide: [], text: 'delete', caption: 'Delete', icon: 'emcDelete', index: 5, order: 5 },
+    {
+      text: 'create',
+      caption: 'Create',
+      icon: 'emcAdd',
+      order: 1,
+      hide: ['delete', 'copy', 'template', 'excel_load'],
+      selection: { min: 0, max: 999 },
+      children: [
+        {
+          text: 'copy',
+          caption: 'Copy',
+          icon: 'mdi:content-copy',
+          hide: ['create'],
+          selection: { min: 1, max: 1 }
+        },
+        {
+          text: 'template',
+          caption: 'Create from Template',
+          icon: 'mdi:content-copy',
+          selection: { min: 0, max: 0 }
+        },
+        {
+          text: 'excel_load',
+          caption: 'Excel via Load',
+          icon: 'mdi:file-excel',
+          selection: { min: 0, max: 0 },
+          children: [
+            {
+              text: 'copy',
+              caption: 'Copy',
+              icon: 'mdi:content-copy',
+              hide: ['create'],
+              selection: { min: 1, max: 1 }
+            }
+
+          ]
+        }
+      ]
+    },
+    {
+      text: 'save',
+      caption: 'Save',
+      icon: 'emcSave',
+      order: 2,
+      hide: ['list'],
+      selection: { min: 0, max: 999 },
+      children: [
+        {
+          text: 'validate',
+          caption: 'Validate',
+          icon: 'mdi:check',
+          hide: ['list'],
+          selection: { min: 0, max: 999 }
+        }
+      ]
+    },
+    {
+      text: 'list',
+      caption: 'List',
+      icon: 'emcList',
+      order: 2,
+      hide: [],
+      selection: { min: 0, max: 999 },
+      children: [
+        {
+          text: 'back',
+          caption: 'Back',
+          icon: 'mdi:arrow-left',
+          hide: [],
+          selection: { min: 1, max: 1 }
+        }
+      ]
+    },
+    {
+      text: 'edit',
+      caption: 'Edit',
+      icon: 'emcEdit',
+      order: 4,
+      hide: ['create', 'save'],
+      selection: { min: 1, max: 1 },
+      children: [
+        {
+          text: 'refresh',
+          caption: 'Refresh',
+          icon: 'mdi:refresh',
+          hide: ['list', 'create', 'save'],
+          selection: { min: 1, max: 1 }
+        }
+      ]
+    },
+    {
+      text: 'delete',
+      caption: 'Delete',
+      icon: 'mdi:delete',
+      order: 5,
+      selection: { min: 1, max: 999 }
+    }
   ]
+
 
   function perforFunction(vAction) {
     switch (vAction) {
       case 'create':
         btnMoveToCreate()
+        break
+      case 'copy':
+        btnMoveToEdit(vAction)
+        break
+      case 'refresh':
+        btnMoveToEdit(vAction)
+        break
+      case 'validate':
+        btnMoveToSave(vAction)
         break
       case 'save':
         btnMoveToSave()
@@ -412,6 +576,7 @@
 
 </script>
 <template>
+
   <!-- {{ muserDataStore.data.FormData.UserEntryObjects }} -->
   <!-- {{ mOutPutFormData.FormData.ListHeaders }} -->
   <!-- {{ errors }} -->
@@ -467,7 +632,7 @@
   </VSkeletonLoader>
 
   <VCard v-else dense elevation="6">
-    <VToolbar style="background-color: transparent;" density="compact" class="ml-2 pa-0">
+    <!-- <VToolbar style="background-color: transparent;" density="compact" class="ml-2 pa-0">
 
       <div style="display: flex; align-items: baseline; gap: 6px;">
         <h2 class="text-truncate" style="margin: 0; color: black; font-weight: bold;max-inline-size: 100%;">
@@ -489,18 +654,89 @@
         <template #prepend>
           <VIcon :icon="inividualControl.icon" />
         </template>
-        <h5 style="font-weight: normal;">
-          {{ inividualControl.caption }}
-        </h5>
-      </VBtn>
+<h5 style="font-weight: normal;">
+  {{ inividualControl.caption }}
+</h5>
+</VBtn>
 
+<VBtn :color="mFormInputData.searchCriteria?.length > 0 ? '#008000' : 'red'"
+  @click="filterpanelexpanded = !filterpanelexpanded">
+  <VIcon size="18px" color="green" :icon="mFormInputData.searchCriteria.length > 0 ? emcfilter : emcfilteroff">
+  </VIcon>
+</VBtn>
+</VToolbar> -->
+    <VToolbar style="background-color: #f2f9fb;" density="compact" class="pa-0">
+      <!-- Title -->
+
+      <div style="display: flex; align-items: baseline; gap: 6px;" class="ml-2">
+        <h2 class="text-truncate" style="margin: 0; color: black; font-weight: bold; max-inline-size: 100%;">
+          {{ mOutPutFormData.FormData.FormParameters?.Title }}
+        </h2>
+
+        <h5 class="text-truncate"
+          style="margin: 0; color: darkgray; font-style: italic; font-weight: lighter; max-inline-size: 60%;">
+          {{ mOutPutFormData.FormData.FormParameters?.Description }}
+        </h5>
+      </div>
+
+      <VSpacer />
+      <VSpacer />
+
+      <!-- Title -->
+      <template v-for="item in vConfToolbar.sort((a, b) => a.order - b.order)" :key="item.text">
+        <!-- Split Button -->
+        <VMenu v-if="item.children" :model-value="activeMenu === item.text"
+          @update:model-value="val => activeMenu = val ? item.text : null" location="bottom">
+          <template #activator="{ props }">
+            <div class="split-menu-wrapper" :class="{ 'split-menu-active': activeMenu === item.text }">
+              <!-- Main -->
+              <VBtn color="#5865f2" density="comfortable" class="split-main-btn"
+                :disabled="pageLoading ? true : disbleButton(item.text)" @click="perforFunction(item.text)">
+                <template #prepend>
+                  <VIcon :icon="item.icon" color="black" />
+                </template>
+
+                {{ item.caption }}
+              </VBtn>
+
+              <!-- Arrow -->
+              <VBtn v-bind="props" color="#5865f2" density="comfortable" class="split-arrow-btn"
+                :disabled="pageLoading ? true : areAllChildrenDisabled(item.children)">
+                <VIcon icon="mdi:chevron-down" size="16" color="black" />
+              </VBtn>
+            </div>
+          </template>
+
+          <VList density="compact">
+            <VListItem v-for="child in item.children" :key="child.text"
+              :disabled="pageLoading ? true : disbleButton(child.text)" @click="perforFunction(child.text)">
+              <template #prepend>
+                <VIcon :icon="child.icon" />
+              </template>
+
+              <VListItemTitle>
+                {{ child.caption }}
+              </VListItemTitle>
+            </VListItem>
+          </VList>
+        </VMenu>
+
+        <!-- Normal Button -->
+        <VBtn v-else color="#5865f2" density="comfortable" class="menu-toolbar-btn"
+          :disabled="pageLoading ? true : disbleButton(item.text)" @click="perforFunction(item.text)">
+          <template #prepend>
+            <VIcon :icon="item.icon" color="black" />
+          </template>
+
+          {{ item.caption }}
+        </VBtn>
+      </template>
+      <!-- Filter Button -->
       <VBtn :color="mFormInputData.searchCriteria?.length > 0 ? '#008000' : 'red'"
         @click="filterpanelexpanded = !filterpanelexpanded">
-        <VIcon size="18px" color="green" :icon="mFormInputData.searchCriteria.length > 0 ? emcfilter : emcfilteroff">
-        </VIcon>
+        <VIcon size="18px" color="green" :icon="mFormInputData.searchCriteria.length > 0 ? emcfilter : emcfilteroff" />
       </VBtn>
     </VToolbar>
-
   </VCard>
   <div v-if="mErrorOnPage === true"
     style=" display: flex;align-items: center; justify-content: center; block-size: 300px; inline-size: 100%;">
@@ -557,3 +793,73 @@
     </div>
   </vsnackbar>
 </template>
+<!-- <style scoped>
+.split-btn-wrapper {
+  display: inline-flex;
+  align-items: center;
+  margin-inline-end: 6px;
+}
+
+.split-main-btn {
+  border-radius: 6px 0 0 6px !important;
+}
+
+.split-arrow-btn {
+  padding: 0 !important;
+  border-radius: 0 6px 6px 0 !important;
+  background: transparent !important;
+  border-inline-start: 1px solid rgba(0, 0, 0, 8%);
+  inline-size: 28px !important;
+  margin-inline-start: -1px !important;
+  min-inline-size: 28px !important;
+}
+
+.split-btn-wrapper:hover .split-main-btn,
+.split-btn-wrapper:hover .split-arrow-btn,
+.split-active .split-main-btn,
+.split-active .split-arrow-btn {
+  background-color: rgba(88, 101, 242, 12%) !important;
+}
+
+.split-arrow-btn .v-icon {
+  font-size: 14px !important;
+}
+</style> -->
+<style scoped>
+.split-menu-wrapper {
+  display: inline-flex;
+  align-items: center;
+  margin-inline-end: 6px;
+}
+
+/* Main side */
+.split-main-btn {
+  border-radius: 6px 0 0 6px !important;
+  color: black !important;
+}
+
+/* Arrow side */
+.split-arrow-btn {
+  padding: 0 !important;
+  border-radius: 0 6px 6px 0 !important;
+  border-inline-start: 1px solid rgba(0, 0, 0, 8%);
+  color: black !important;
+  inline-size: 34px !important;
+  margin-inline-start: -1px !important;
+  min-inline-size: 34px !important;
+}
+
+/* Shared hover */
+.split-menu-wrapper:hover .split-main-btn,
+.split-menu-wrapper:hover .split-arrow-btn,
+.split-menu-active .split-main-btn,
+.split-menu-active .split-arrow-btn {
+  background-color: rgba(88, 101, 242, 12%) !important;
+}
+
+/* Disabled still visible */
+.split-main-btn.v-btn--disabled,
+.split-arrow-btn.v-btn--disabled {
+  opacity: 0.45 !important;
+}
+</style>

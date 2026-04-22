@@ -91,7 +91,8 @@ export async function getAvailableActions(params: Params) {
 
       actions.push({
         actionId,
-        label: actionDef.label || actionId
+        label: actionDef.label || actionId,
+        ...actionDef // Include any additional UI config for list view if needed
       })
 
       addedActionIds.add(actionId)
@@ -117,7 +118,8 @@ export async function getAvailableActions(params: Params) {
 
     actions.push({
       actionId,
-      label: actionDef.label || actionId
+      label: actionDef.label || actionId,
+      ...actionDef // Include any additional UI config for list view if needed
     })
 
     addedActionIds.add(actionId)

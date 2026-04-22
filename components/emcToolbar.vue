@@ -263,7 +263,15 @@ function disbleButton(vAction) {
 
 const vConfToolbar = [
   { hide: ['delete'], text: 'create', caption: 'Create', icon: 'emcadd', index: 1, order: 1 },
-  { hide: ['create', 'save', 'list'], text: 'save', caption: 'Save', icon: 'emcsave', index: 2, order: 2 },
+  {
+    hide: ['create', 'save', 'list'], text: 'save', caption: 'Save', icon: 'emcsave', index: 2, order: 2,
+    children: [
+      { text: 'create_new', caption: 'Create New', icon: 'emcadd' },
+      { text: 'copy', caption: 'Copy', icon: 'mdi:content-copy' },
+      { text: 'excel_load', caption: 'Excel Load', icon: 'mdi:file-excel' },
+      { text: 'template', caption: 'Template', icon: 'mdi:file-download' },
+    ]
+  },
   { hide: ['save', 'delete'], text: 'list', caption: 'List', icon: 'emclist', index: 3, order: 3 },
   { hide: [], text: 'edit', caption: 'Edit', icon: 'emcedit', index: 4, order: 4 },
   { hide: [], text: 'delete', caption: 'Delete', icon: 'emcdelete', index: 5, order: 5 },

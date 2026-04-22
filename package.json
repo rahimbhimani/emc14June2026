@@ -44,6 +44,7 @@
     "nuxt": "^4.2.1",
     "ofetch": "^1.5.1",
     "pinia": "^3.0.4",
+    "playwright": "^1.59.1",
     "prismjs": "^1.30.0",
     "puppeteer": "^24.39.1",
     "qrcode": "^1.5.4",

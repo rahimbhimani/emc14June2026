@@ -1,59 +1,123 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue"
+import { computed, onMounted, ref } from "vue"
 
 const props = defineProps({
   master: { type: Object, required: true },
   containerType: { type: String, required: true },
   actionId: { type: String, required: true },
-  actionConfig: { type: Object, default: () => ({}) }
+  actionConfig: { type: Object, required: true }
 })
 
 const emit = defineEmits(["close", "completed"])
 
 const organizationId = 12313
 const loading = ref(false)
-const tab = ref("available")
-
-/* ==========================
-SEAL DATA
-========================== */
-
-const sealNumber = ref("")
-const sealRemarks = ref("")
-
-const groupedChildren = ref<any>({})
-const inventoryItems = ref<any>({})
-
-const quantityMap = ref<Record<string, number>>({})
-const movementMap = ref<Record<string, any>>({})
-
-const selectedContainers = ref<string[]>([])
-const selectedUserContainers = ref<string[]>([])
-
-let sourceStrategy =
-  props.actionConfig?.orchestration?.sourceStrategy || "NONE"
+const tab = ref("seal")
 
 /* ======================================================
-HELPERS
+ALERT
 ====================================================== */
+const alertShow = ref(false)
+const alertText = ref("")
+const alertColor = ref("error")
 
-function getInventoryMode(group: any) {
+function showAlert(
+  message: string,
+  color = "error"
+) {
+  alertText.value = message
+  alertColor.value = color
+  alertShow.value = true
+}
+
+function getErrorMessage(err: any) {
   return (
-    group?.actionConfig?.ui?.inventoryMode ||
-    props.actionConfig?.ui?.inventoryMode ||
-    "edit"
+    err?.data?.message ||
+    err?.response?._data?.message ||
+    err?.message ||
+    "Something went wrong"
   )
 }
 
-function badgeValue(row: any) {
-  if (row.quantity !== undefined) return row.quantity
-  if (row.itemCount !== undefined) return row.itemCount
-  return null
-}
+/* ======================================================
+CONFIG
+====================================================== */
+const tabs = computed(
+  () => props.actionConfig?.ui?.tabs || []
+)
+
+const sealCfg = computed(() => {
+  const found =
+    tabs.value.find(
+      (t: any) => t.id === "seal"
+    ) || {}
+
+  return {
+    label: found.label || "Seal",
+    actionRef:
+      found.actionRef ||
+      "SEAL_CONTAINER",
+    requireSealNumber:
+      found.requireSealNumber || false,
+    requireRemarks:
+      found.requireRemarks || false
+  }
+})
+
+const rejectCfg = computed(() => {
+  const found =
+    tabs.value.find(
+      (t: any) => t.id === "rejection"
+    ) || {}
+
+  return {
+    label:
+      found.label || "Rejection",
+    actionRef:
+      found.actionRef,
+    reasonMandatory:
+      found.reasonMandatory || false,
+    remarksMandatory:
+      found.remarksMandatory || false,
+    reasons:
+      found.reasons || []
+  }
+})
+
+const inventoryCfg = computed(() => {
+  const found =
+    tabs.value.find(
+      (t: any) => t.id === "inventory"
+    ) || {}
+
+  return {
+    label:
+      found.label || "Inventory"
+  }
+})
 
 /* ======================================================
-LOAD MOVEMENT DATA
+FORM STATE
 ====================================================== */
+const sealNumber = ref("")
+const sealRemarks = ref("")
+
+const rejectReason = ref("")
+const rejectRemarks = ref("")
+
+/* ======================================================
+DATA
+====================================================== */
+const groupedChildren = ref<any>({})
+const inventoryItems = ref<any>({})
+
+/* ======================================================
+LOAD
+====================================================== */
+onMounted(async () => {
+  await loadMovement()
+  await loadInventory()
+})
 
 async function loadMovement() {
   loading.value = true
@@ -65,30 +129,29 @@ async function loadMovement() {
         method: "POST",
         body: {
           organizationId,
-          destinationType: props.containerType,
-          destinationIDX: props.master?.IDX,
-          actionId: props.actionId
+          destinationType:
+            props.containerType,
+          destinationIDX:
+            props.master.IDX,
+          actionId:
+            sealCfg.value.actionRef
         }
       }
     )
 
-    sourceStrategy =
-      res.orchestration?.sourceStrategy || "NONE"
-
     groupedChildren.value =
       res.groupedChildren || {}
-
-    initializeSelections()
-  } catch (err) {
-    console.error("movement load error", err)
-  } finally {
+  }
+  catch (err: any) {
+    console.error(err)
+    showAlert(
+      getErrorMessage(err)
+    )
+  }
+  finally {
     loading.value = false
   }
 }
-
-/* ======================================================
-LOAD CURRENT INVENTORY
-====================================================== */
 
 async function loadInventory() {
   try {
@@ -98,176 +161,161 @@ async function loadInventory() {
         method: "POST",
         body: {
           organizationId,
-          containerType: props.containerType,
-          containerIDX: props.master.IDX
+          containerType:
+            props.containerType,
+          containerIDX:
+            props.master.IDX
         }
       }
     )
 
     inventoryItems.value =
       res.items || {}
-  } catch (err) {
-    console.error("inventory load error", err)
+  }
+  catch (err: any) {
+    console.error(err)
+    showAlert(
+      getErrorMessage(err)
+    )
   }
 }
-
-onMounted(async () => {
-  await loadMovement()
-  await loadInventory()
-})
 
 /* ======================================================
-STRUCTURAL LOGIC
+SEAL ACTION
 ====================================================== */
-
-function isAssignedHere(item: any) {
-  return item.parentIDX === props.master.IDX
-}
-
-function isAssignedElsewhere(item: any) {
-  return (
-    item.parentIDX &&
-    item.parentIDX !== props.master.IDX
-  )
-}
-
-function initializeSelections() {
-  const selected: string[] = []
-
-  for (const type in groupedChildren.value) {
-    const rows =
-      groupedChildren.value?.[type]?.items || []
-
-    for (const item of rows) {
-      if (item.parentIDX === props.master.IDX) {
-        selected.push(item.IDX)
-      }
-    }
-  }
-
-  selectedContainers.value = selected
-}
-
-function toggleContainer(idx: string) {
+async function confirmSeal() {
   if (
-    !selectedUserContainers.value.includes(idx)
+    sealCfg.value.requireSealNumber &&
+    !sealNumber.value
   ) {
-    selectedUserContainers.value.push(idx)
-  } else {
-    selectedUserContainers.value =
-      selectedUserContainers.value.filter(
-        i => i !== idx
-      )
-  }
-}
-
-/* ======================================================
-MULTI SOURCE QTY
-====================================================== */
-
-function setSourceQty(
-  productIDX: string,
-  sourceIDX: string,
-  qty: number
-) {
-  if (!movementMap.value[productIDX]) {
-    movementMap.value[productIDX] = {}
+    showAlert(
+      "Seal Number is required"
+    )
+    return
   }
 
-  movementMap.value[productIDX][sourceIDX] = qty
-}
-
-/* ======================================================
-CONFIRM
-====================================================== */
-
-async function confirmMovement() {
-  if (!sealNumber.value) {
-    alert("Seal Number is required")
+  if (
+    sealCfg.value.requireRemarks &&
+    !sealRemarks.value
+  ) {
+    showAlert(
+      "Remarks are required"
+    )
     return
   }
 
   loading.value = true
 
   try {
-    const containers: any = {}
-
-    for (const type in groupedChildren.value) {
-      const group = groupedChildren.value[type]
-      const config = group.config
-
-      if (config.inventoryManaged) {
-        const quantities = quantityMap.value
-        const sources = movementMap.value
-
-        if (
-          Object.keys(quantities).length ||
-          Object.keys(sources).length
-        ) {
-          containers[type] = {}
-
-          if (Object.keys(quantities).length) {
-            containers[type].quantities =
-              quantities
-          }
-
-          if (Object.keys(sources).length) {
-            containers[type].sources =
-              sources
-          }
-        }
-      } else {
-        if (
-          selectedUserContainers.value.length
-        ) {
-          containers[type] = {
-            children:
-              selectedUserContainers.value
-          }
-        }
-      }
-    }
-
-    const payload = {
-      organizationId,
-      actionId: props.actionId,
-      destination: {
-        type: props.containerType,
-        idx: props.master.IDX
-      },
-      containers,
-      input: {
-        sealNumber: sealNumber.value,
-        remarks: sealRemarks.value
-      },
-      userContext: {
-        userId: "USR-001",
-        role: "MANAGER"
-      }
-    }
-
     await $fetch(
       "/api/emc/movement/emcExecuteAction",
       {
         method: "POST",
-        body: payload
+        body: {
+          organizationId,
+          actionId:
+            sealCfg.value.actionRef,
+          destination: {
+            type:
+              props.containerType,
+            idx:
+              props.master.IDX
+          },
+          containers:
+            groupedChildren.value,
+          input: {
+            sealNumber:
+              sealNumber.value,
+            remarks:
+              sealRemarks.value
+          }
+        }
       }
     )
 
-    await loadMovement()
-    await loadInventory()
-
-    quantityMap.value = {}
-    movementMap.value = {}
-    selectedUserContainers.value = []
-
-    sealNumber.value = ""
-    sealRemarks.value = ""
+    showAlert(
+      "Seal completed successfully",
+      "success"
+    )
 
     emit("completed")
-  } catch (err) {
-    console.error("movement failed", err)
-  } finally {
+  }
+  catch (err: any) {
+    console.error(err)
+    showAlert(
+      getErrorMessage(err)
+    )
+  }
+  finally {
+    loading.value = false
+  }
+}
+
+/* ======================================================
+REJECTION ACTION
+====================================================== */
+async function rejectAction() {
+  if (
+    rejectCfg.value.reasonMandatory &&
+    !rejectReason.value
+  ) {
+    showAlert(
+      "Reason is required"
+    )
+    return
+  }
+
+  if (
+    rejectCfg.value.remarksMandatory &&
+    !rejectRemarks.value
+  ) {
+    showAlert(
+      "Remarks are required"
+    )
+    return
+  }
+
+  loading.value = true
+
+  try {
+    await $fetch(
+      "/api/emc/movement/emcExecuteAction",
+      {
+        method: "POST",
+        body: {
+          organizationId,
+          actionId:
+            rejectCfg.value.actionRef,
+          destination: {
+            type:
+              props.containerType,
+            idx:
+              props.master.IDX
+          },
+          input: {
+            reason:
+              rejectReason.value,
+            remarks:
+              rejectRemarks.value
+          }
+        }
+      }
+    )
+
+    showAlert(
+      "Rejected successfully",
+      "success"
+    )
+
+    emit("completed")
+  }
+  catch (err: any) {
+    console.error(err)
+    showAlert(
+      getErrorMessage(err)
+    )
+  }
+  finally {
     loading.value = false
   }
 }
@@ -277,177 +325,103 @@ async function confirmMovement() {
   <v-card class="movement-drawer">
 
     <!-- HEADER -->
-
     <div class="drawer-header">
       <div class="title">
-        {{ actionConfig?.label || actionId }}
+        {{
+          actionConfig.label ||
+          "Customs Actions"
+        }}
         →
-        {{ master?.IDX }}
+        {{ master.IDX }}
       </div>
 
-      <v-btn icon="mdi:close" variant="text" @click="emit('close')" />
+      <v-btn icon="mdi-close" variant="text" @click="emit('close')" />
     </div>
 
     <!-- TABS -->
-
     <v-tabs v-model="tab">
-      <v-tab value="available">
-        Seal Details
+      <v-tab value="seal">
+        {{ sealCfg.label }}
+      </v-tab>
+
+      <v-tab value="rejection">
+        {{ rejectCfg.label }}
       </v-tab>
 
       <v-tab value="inventory">
-        Current Inventory
+        {{ inventoryCfg.label }}
       </v-tab>
     </v-tabs>
 
     <v-window v-model="tab">
 
-      <!-- TAB 1 -->
-
-      <v-window-item value="available">
-
+      <!-- SEAL -->
+      <v-window-item value="seal">
         <div class="drawer-content">
 
-          <!-- Seal Info -->
-
-          <v-card class="mb-6 pa-4">
-
+          <v-card class="action-card">
             <div class="section-title">
-              Seal Information
+              Seal Details
             </div>
 
-            <v-row>
-              <v-col cols="12">
-                <v-text-field v-model="sealNumber" label="Seal Number" density="compact" required />
-              </v-col>
+            <v-text-field v-model="sealNumber" label="Seal Number" density="comfortable" variant="outlined"
+              class="field-gap" hide-details="auto" />
 
-              <v-col cols="12">
-                <v-textarea v-model="sealRemarks" label="Remarks" density="compact" rows="2" />
-              </v-col>
-            </v-row>
-
+            <v-textarea v-model="sealRemarks" label="Remarks" rows="2" auto-grow density="comfortable"
+              variant="outlined" class="field-gap" hide-details="auto" />
           </v-card>
 
-          <!-- Dynamic Groups -->
-
-          <div v-for="(group, type) in groupedChildren" :key="type" class="mb-6">
-            <h3 class="section-title">
-              {{ group.config?.label || type }}
-            </h3>
-
-            <!-- Inventory -->
-
-            <div v-if="group.config.inventoryManaged">
-              <v-row class="font-weight-bold mb-2">
-                <v-col cols="4">
-                  Item
-                </v-col>
-                <v-col cols="2">
-                  Source
-                </v-col>
-                <v-col cols="2">
-                  Available
-                </v-col>
-                <v-col cols="2">
-                  In Container
-                </v-col>
-                <v-col cols="2">
-                  Qty
-                </v-col>
-              </v-row>
-
-              <v-card v-for="item in group.items" :key="item.IDX" class="product-card">
-                <v-row align="center">
-
-                  <v-col cols="4">
-                    {{ item.Name || item.IDX }}
-                  </v-col>
-
-                  <v-col cols="2">
-                    {{
-                      item.sources?.[0]
-                        ?.containerIDX || "-"
-                    }}
-                  </v-col>
-
-                  <v-col cols="2">
-                    {{
-                      item.sources?.[0]
-                        ?.available || 0
-                    }}
-                  </v-col>
-
-                  <v-col cols="2">
-                    {{
-                      item.currentQuantity || 0
-                    }}
-                  </v-col>
-
-                  <v-col cols="2">
-
-                    <v-text-field v-if="getInventoryMode(group) === 'edit'" v-model.number="quantityMap[item.IDX]"
-                      type="number" density="compact" label="Qty" />
-
-                    <v-chip v-else-if="getInventoryMode(group) === 'readonly'" size="small" color="primary"
-                      variant="tonal">
-                      {{
-                        quantityMap[item.IDX] ??
-                        item.currentQuantity ??
-                        0
-                      }}
-                    </v-chip>
-
-                  </v-col>
-
-                </v-row>
-              </v-card>
-            </div>
-
-            <!-- Structural -->
-
-            <v-list v-else>
-
-              <v-list-item v-for="item in group.items.filter(i => !isAssignedElsewhere(i))" :key="item.IDX">
-
-                <v-checkbox v-model="selectedContainers" :value="item.IDX" :disabled="isAssignedHere(item)"
-                  :model-value="isAssignedHere(item)" @update:model-value="toggleContainer(item.IDX)" hide-details />
-
-                <v-list-item-title>
-                  {{ item.Name || item.IDX }}
-                </v-list-item-title>
-
-              </v-list-item>
-
-            </v-list>
-
-          </div>
+          <v-btn block color="primary" size="large" class="action-btn" :loading="loading" @click="confirmSeal">
+            Confirm Seal
+          </v-btn>
 
         </div>
       </v-window-item>
 
-      <!-- TAB 2 -->
-
-      <v-window-item value="inventory">
-
+      <!-- REJECTION -->
+      <v-window-item value="rejection">
         <div class="drawer-content">
 
-          <emcInventoryViewer :items="inventoryItems" :loading="loading" />
+          <v-card class="action-card">
+            <div class="section-title">
+              Rejection Details
+            </div>
+
+            <v-select v-model="rejectReason" :items="rejectCfg.reasons" item-title="label" item-value="value"
+              label="Reason" density="comfortable" variant="outlined" class="field-gap" hide-details="auto" clearable />
+
+            <v-textarea v-model="rejectRemarks" label="Remarks" rows="2" auto-grow density="comfortable"
+              variant="outlined" class="field-gap" hide-details="auto" />
+          </v-card>
+
+          <v-btn block color="error" size="large" class="action-btn" :loading="loading" @click="rejectAction">
+            Reject BCL
+          </v-btn>
 
         </div>
+      </v-window-item>
 
+      <!-- INVENTORY -->
+      <v-window-item value="inventory">
+        <div class="drawer-content">
+          <emcContainerInventory :containerType="containerType
+            " :containerIDX="master.IDX
+              " />
+        </div>
       </v-window-item>
 
     </v-window>
 
-    <!-- FOOTER -->
+    <!-- ALERT -->
+    <v-snackbar v-model="alertShow" :color="alertColor" timeout="4000" location="top">
+      {{ alertText }}
 
-    <div class="drawer-footer">
-
-      <v-btn block color="primary" size="large" :loading="loading" @click="confirmMovement">
-        Confirm Seal
-      </v-btn>
-
-    </div>
+      <template #actions>
+        <v-btn variant="text" @click="alertShow = false">
+          Close
+        </v-btn>
+      </template>
+    </v-snackbar>
 
   </v-card>
 </template>
@@ -456,6 +430,7 @@ async function confirmMovement() {
 .movement-drawer {
   display: flex;
   flex-direction: column;
+  background: #fafafa;
   block-size: 100vh;
 }
 
@@ -463,29 +438,41 @@ async function confirmMovement() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px;
-  border-block-end: 1px solid #eee;
+  border-block-end: 1px solid #ececec;
+  padding-block: 14px;
+  padding-inline: 18px;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 700;
 }
 
 .drawer-content {
-  flex: 1;
-  padding: 16px;
-  overflow-y: auto;
+  padding: 18px;
 }
 
-.drawer-footer {
-  padding: 16px;
-  border-block-start: 1px solid #eee;
+.action-card {
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 6%);
+  margin-block-end: 18px;
 }
 
 .section-title {
+  color: #444;
   font-size: 16px;
-  font-weight: 600;
-  margin-block-end: 10px;
+  font-weight: 700;
+  margin-block-end: 16px;
 }
 
-.product-card {
-  padding: 10px;
-  margin-block-end: 6px;
+.field-gap {
+  margin-block-end: 14px;
+}
+
+.action-btn {
+  border-radius: 12px;
+  block-size: 48px;
+  font-weight: 700;
 }
 </style>
