@@ -322,6 +322,7 @@
 
     // If not ScreenConfigure, validate form first
     if (master !== 'ScreenConfigure') {
+
       const result = await formValidate()
       if (result === false) {
         await informUser('error', 'form validation failed.')
@@ -390,10 +391,11 @@
   // }
 
   const lPermission = {
-    create: ['delete', 'edit', 'copy', 'template', 'excel_load', 'back'],
-    edit: ['edit', 'delete', 'create'],
+    create: ['delete', 'edit', 'copy', 'template', 'excel_load', 'back', 'print', 'export_excel'],
+    edit: ['edit', 'delete', 'create', 'print', 'export_excel'],
     save: ['create', 'save', 'list'],
     list: ['save'],
+    print: ['list', 'create', 'edit'],
   }
 
   function disbleButton(vAction) {
@@ -448,15 +450,15 @@
           hide: ['create'],
           selection: { min: 1, max: 1 }
         },
-        {
-          text: 'template',
-          caption: 'Create from Template',
-          icon: 'mdi:content-copy',
-          selection: { min: 0, max: 0 }
-        },
+        // {
+        //   text: 'template',
+        //   caption: 'Create from Template',
+        //   icon: 'mdi:content-copy',
+        //   selection: { min: 0, max: 0 }
+        // },
         {
           text: 'excel_load',
-          caption: 'Excel via Load',
+          caption: 'load via Excel',
           icon: 'mdi:file-excel',
           selection: { min: 0, max: 0 },
           children: [
@@ -529,6 +531,17 @@
       icon: 'mdi:delete',
       order: 5,
       selection: { min: 1, max: 999 }
+    },
+    {
+      text: 'more',
+      caption: '',
+      icon: 'mdi:dots-vertical',
+      order: 999,
+      menuOnly: true,
+      children: [
+        { text: 'print', caption: 'Print', icon: 'mdi:printer', selection: { min: 0, max: 999 } },
+        { text: 'export_excel', caption: 'Export', icon: 'mdi:file-excel', selection: { min: 0, max: 999 } }
+      ]
     }
   ]
 
@@ -559,10 +572,26 @@
       case 'edit':
         btnMoveToEdit()
         break;
-
+      case 'print':
+        PrintOnPage()
+        break;
       // case default:
       //   btnMoveToCreate()
     }
+  }
+
+
+
+
+  function PrintOnPage() {
+    const { runReport } =
+      emcUseReportRunner()
+    runReport({
+      screenId: "emcTrolley",
+      reportName:
+        "Trolley Report",
+      format: "HTML"
+    })
   }
 
   function clientValidate(vControlName) {
@@ -683,13 +712,37 @@
       <VSpacer />
 
       <!-- Title -->
-      <template v-for="item in vConfToolbar.sort((a, b) => a.order - b.order)" :key="item.text">
-        <!-- Split Button -->
-        <VMenu v-if="item.children" :model-value="activeMenu === item.text"
-          @update:model-value="val => activeMenu = val ? item.text : null" location="bottom">
+      <template v-for="item in vConfToolbar
+        .filter(x => !x.hidden)
+        .sort((a, b) => a.order - b.order)" :key="item.text">
+        <!-- MENU ONLY (burger) -->
+        <VMenu v-if="item.menuOnly" location="bottom end">
+          <template #activator="{ props }">
+            <VBtn v-bind="props" color="#5865f2" density="comfortable" class="menu-toolbar-btn"
+              :disabled="pageLoading ? true : areAllChildrenDisabled(item.children)">
+              <VIcon :icon="item.icon" color="black" />
+            </VBtn>
+          </template>
+
+          <VList density="compact" min-width="220">
+            <VListItem v-for="child in item.children" :key="child.text"
+              :disabled="pageLoading ? true : disbleButton(child.text)" @click="perforFunction(child.text)">
+              <template #prepend>
+                <VIcon :icon="child.icon" />
+              </template>
+
+              <VListItemTitle>
+                {{ child.caption }} ({{ child.text }})
+              </VListItemTitle>
+            </VListItem>
+          </VList>
+        </VMenu>
+
+        <!-- SPLIT MENU -->
+        <VMenu v-else-if="item.children" :model-value="activeMenu === item.text"
+          @update:model-value="val => activeMenu = val ? item.text : null" location="bottom end">
           <template #activator="{ props }">
             <div class="split-menu-wrapper" :class="{ 'split-menu-active': activeMenu === item.text }">
-              <!-- Main -->
               <VBtn color="#5865f2" density="comfortable" class="split-main-btn"
                 :disabled="pageLoading ? true : disbleButton(item.text)" @click="perforFunction(item.text)">
                 <template #prepend>
@@ -699,7 +752,6 @@
                 {{ item.caption }}
               </VBtn>
 
-              <!-- Arrow -->
               <VBtn v-bind="props" color="#5865f2" density="comfortable" class="split-arrow-btn"
                 :disabled="pageLoading ? true : areAllChildrenDisabled(item.children)">
                 <VIcon icon="mdi:chevron-down" size="16" color="black" />
@@ -708,7 +760,7 @@
           </template>
 
           <VList density="compact">
-            <VListItem v-for="child in item.children" :key="child.text"
+            <VListItem v-for="child in item.children" :key="item.text + '-' + child.text"
               :disabled="pageLoading ? true : disbleButton(child.text)" @click="perforFunction(child.text)">
               <template #prepend>
                 <VIcon :icon="child.icon" />
@@ -721,7 +773,7 @@
           </VList>
         </VMenu>
 
-        <!-- Normal Button -->
+        <!-- NORMAL BUTTON -->
         <VBtn v-else color="#5865f2" density="comfortable" class="menu-toolbar-btn"
           :disabled="pageLoading ? true : disbleButton(item.text)" @click="perforFunction(item.text)">
           <template #prepend>

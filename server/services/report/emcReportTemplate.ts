@@ -14,9 +14,27 @@ export function applyTemplate(
   template: string,
   row: any
 ) {
-  return template.replace(/\{\{(.*?)\}\}/g, (_, key) => {
-    return getValue(row, key.trim())
-  })
+  const reserved = [
+    "TABLE"
+  ]
+
+  return template.replace(
+    /\{\{(.*?)\}\}/g,
+    (_, key) => {
+      const token = key.trim()
+
+      if (
+        reserved.includes(token)
+      ) {
+        return `{{${token}}}`
+      }
+
+      return getValue(
+        row,
+        token
+      )
+    }
+  )
 }
 
 function renderDynamicTable(

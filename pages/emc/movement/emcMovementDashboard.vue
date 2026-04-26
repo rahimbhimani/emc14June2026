@@ -1,122 +1,32 @@
 <script setup lang="ts">
 import { computed, ref } from "vue"
 
+/**
+ * Enterprise SaaS Hybrid UI
+ * Replace API endpoints/components with your existing ones where needed.
+ */
+
 const organizationId = 12313
 const userRole = "MANAGER"
 
+/* --------------------------
+STATE
+-------------------------- */
+const loading = ref(false)
+const viewMode = ref<"card" | "list">("card")
+const searchText = ref("")
 const selectedConfig = ref<any>(null)
 const instances = ref<any[]>([])
-const loadingInstances = ref(false)
-const lifecycleRemarks = ref<Record<string, any>>({})
-const movementDrawer = ref(false)
 
+const movementDrawer = ref(false)
 const activeContainer = ref<any>(null)
 const activeAction = ref<string | null>(null)
 const activeActionConfig = ref<any>(null)
 
-function lifecycleLabel(
-  track: string,
-  code: string
-) {
-  if (!track || !code) return "N/A"
-
-  const states =
-    selectedConfig.value?.lifecycles?.[track]?.states || []
-
-  const match = states.find(
-    (s: any) => s.code === code
-  )
-
-  return match?.label || code
-}
-
-async function loadLifecycleRemarks(
-  container: any
-) {
-  if (!selectedConfig.value) return
-
-  const tracks =
-    selectedConfig.value.lifecycles || {}
-
-  for (const trackName in tracks) {
-    const currentState =
-      container.lifecycle?.[trackName]
-
-    if (!currentState) continue
-
-    const stateDef =
-      tracks[trackName]?.states?.find(
-        (s: any) =>
-          s.code === currentState
-      )
-
-    const showRemarks =
-      stateDef?.presentation
-        ?.showRemarks
-
-    if (!showRemarks) continue
-
-    try {
-      const res: any = await $fetch(
-        "/api/emc/movement/emdRetreiveLifecycleRemarks",
-        {
-          method: "POST",
-          body: {
-            organizationId,
-            containerIDX:
-              container.IDX,
-            track: trackName,
-            state: currentState
-          }
-        }
-      )
-
-      lifecycleRemarks.value[
-        container.IDX
-      ] = res
-    }
-    catch (err) {
-      console.error(err)
-    }
-  }
-}
-
-function getValue(obj: any, path: string) {
-  return path.split(".").reduce((acc, key) => acc?.[key], obj)
-}
-
-function resolveTitle(container: any) {
-  const fields = selectedConfig.value?.ui?.listView || []
-  const nameField = fields.find((f: any) => f.label === "Name")
-
-  if (nameField) {
-    if (Array.isArray(nameField.path)) {
-      return nameField.path
-        .map((p: string) => getValue(container, p))
-        .filter(Boolean)
-        .join(" ")
-    }
-
-    return getValue(container, nameField.path)
-  }
-
-  return container.IDX
-}
-
-function resolveField(container: any, field: any) {
-  if (!field) return ""
-
-  if (Array.isArray(field.path)) {
-    return field.path
-      .map((p: string) => getValue(container, p))
-      .filter(Boolean)
-      .join(field.separator || " ")
-  }
-
-  return getValue(container, field.path)
-}
-
-const { data: configData } = await useFetch(
+/* --------------------------
+CONFIG LOAD
+-------------------------- */
+const { data: configData } = useFetch(
   "/api/emc/container/emcRetrieveContainerConfigs",
   {
     method: "POST",
@@ -124,15 +34,107 @@ const { data: configData } = await useFetch(
   }
 )
 
-const configs = computed(() => configData.value?.configs || [])
+const configs = computed(
+  () => configData.value?.configs || []
+)
 
-/* ======================================================
-SELECT CONFIG
-====================================================== */
+/* --------------------------
+HELPERS
+-------------------------- */
+function getValue(obj: any, path: string) {
+  return path
+    .split(".")
+    .reduce((acc, key) => acc?.[key], obj)
+}
 
+function resolveField(item: any, field: any) {
+  if (!field) return ""
+
+  if (Array.isArray(field.path)) {
+    return field.path
+      .map((p: string) => getValue(item, p))
+      .filter(Boolean)
+      .join(field.separator || " ")
+  }
+
+  return getValue(item, field.path)
+}
+
+function resolveTitle(item: any) {
+  const fields =
+    selectedConfig.value?.ui?.listView || []
+
+  const titleField =
+    fields.find((f: any) => f.isTitle) ||
+    fields.find((f: any) => f.label === "Name") ||
+    fields[0]
+
+  return (
+    resolveField(item, titleField) ||
+    item.IDX
+  )
+}
+
+function lifecycleColor(item: any) {
+  const track =
+    selectedConfig.value?.display?.primaryLifecycle
+
+  const code =
+    item.lifecycle?.[track]
+
+  const states =
+    selectedConfig.value?.lifecycles?.[track]
+      ?.states || []
+
+  return (
+    states.find(
+      (s: any) => s.code === code
+    )?.color || "grey"
+  )
+}
+
+function lifecycleLabel(item: any) {
+  const track =
+    selectedConfig.value?.display?.primaryLifecycle
+
+  const code =
+    item.lifecycle?.[track]
+
+  const states =
+    selectedConfig.value?.lifecycles?.[track]
+      ?.states || []
+
+  return (
+    states.find(
+      (s: any) => s.code === code
+    )?.label || code || "N/A"
+  )
+}
+
+/* --------------------------
+FILTER
+-------------------------- */
+const filteredInstances = computed(() => {
+  const term =
+    searchText.value
+      .trim()
+      .toLowerCase()
+
+  if (!term) return instances.value
+
+  return instances.value.filter((x) =>
+    JSON.stringify(x)
+      .toLowerCase()
+      .includes(term)
+  )
+})
+
+/* --------------------------
+LOAD INSTANCES
+-------------------------- */
 async function selectConfig(config: any) {
   selectedConfig.value = config
-  loadingInstances.value = true
+  loading.value = true
 
   try {
     const res: any = await $fetch(
@@ -146,29 +148,22 @@ async function selectConfig(config: any) {
       }
     )
 
-    instances.value = res.instances || []
+    instances.value =
+      res.instances || []
 
-    for (const container of instances.value) {
-      container.availableActions =
-        await loadAvailableActions(container)
-
-      await loadLifecycleRemarks(
-        container
-      )
+    for (const row of instances.value) {
+      row.availableActions =
+        await loadAvailableActions(row)
     }
   }
   finally {
-    loadingInstances.value = false
+    loading.value = false
   }
 }
 
-/* ======================================================
-LOAD ACTIONS
-====================================================== */
-
-async function loadAvailableActions(container: any) {
-  if (!container?.IDX) return []
-
+async function loadAvailableActions(
+  row: any
+) {
   try {
     const res: any = await $fetch(
       "/api/emc/container/getAvailableActions",
@@ -176,28 +171,31 @@ async function loadAvailableActions(container: any) {
         method: "POST",
         body: {
           organizationId,
-          containerType: selectedConfig.value.type,
-          containerIDX: container.IDX,
+          containerType:
+            selectedConfig.value.type,
+          containerIDX: row.IDX,
           role: userRole
         }
       }
     )
 
-    return res?.actions || []
+    return res.actions || []
   }
-  catch (err) {
-    console.error("actions error", err)
+  catch {
     return []
   }
 }
 
-/* ======================================================
-EXECUTE ACTION
-====================================================== */
-
-function executeAction(container: any, action: any) {
-  activeContainer.value = container
-  activeAction.value = action.actionId || action
+/* --------------------------
+ACTIONS
+-------------------------- */
+function executeAction(
+  row: any,
+  action: any
+) {
+  activeContainer.value = row
+  activeAction.value =
+    action.actionId || action
 
   activeActionConfig.value =
     action.actionId
@@ -210,15 +208,13 @@ function executeAction(container: any, action: any) {
   movementDrawer.value = true
 }
 
-/* ======================================================
-RELOAD
-====================================================== */
-
 async function reloadContainers() {
   movementDrawer.value = false
 
   if (selectedConfig.value) {
-    await selectConfig(selectedConfig.value)
+    await selectConfig(
+      selectedConfig.value
+    )
   }
 }
 
@@ -227,78 +223,13 @@ function goBack() {
   instances.value = []
 }
 
-/* ======================================================
-LIFECYCLE COLOR
-====================================================== */
-
-function lifecycleColor(container: any) {
-  if (!selectedConfig.value) return "grey-300"
-
-  const track =
-    selectedConfig.value?.display?.primaryLifecycle
-
-  if (!track) return "grey-300"
-
-  const state =
-    container.lifecycle?.[track]
-
-  if (!state) return "grey-300"
-
-  const states =
-    selectedConfig.value?.lifecycles?.[track]?.states || []
-
-  const match =
-    states.find((s: any) => s.code === state)
-
-  return match?.color || "grey-300"
-}
-
-/* ======================================================
-REFERENCE LOOKUP
-====================================================== */
-
-function getLatestReference(
-  container: any,
-  channel: string
-) {
-  const refs =
-    container?.references || []
-
-  if (!Array.isArray(refs) || !refs.length) {
-    return null
-  }
-
-  const currentState =
-    container?.lifecycle?.[channel]
-
-  const filtered = refs.filter((r: any) => {
-    if (r?.binding?.channel !== channel) {
-      return false
-    }
-
-    const states =
-      r?.binding?.visibleWhenStates || []
-
-    if (!states.length) {
-      return true
-    }
-
-    return states.includes(currentState)
-  })
-
-  if (!filtered.length) {
-    return null
-  }
-
-  return filtered[filtered.length - 1]
-}
-
-/* ======================================================
+/* --------------------------
 REPORT
-====================================================== */
+-------------------------- */
 const { runReport } =
   useReportRunner()
-async function generateReport() {
+
+function generateReport() {
   runReport({
     reportId: "BCL_REPORT",
     reportName:
@@ -309,120 +240,130 @@ async function generateReport() {
     },
     output: "HTML"
   })
-
-
-  // const reportWindow = window.open("about:blank", "_blank")
-  // if (!reportWindow) {
-  //   console.error("Unable to open report window")
-  //   return
-  // }
-
-  // try {
-  //   const result = await $fetch("/api/report/emcRunReport", {
-  //     method: "POST",
-  //     body: {
-  //       reportId: "BCL_REPORT",
-  //       params: {
-  //         containerIDX: "TLY-00007",
-  //         referenceNumber: "BCL-000041"
-  //       },
-  //       output: "HTML"
-  //     }
-  //   })
-
-  //   const html = typeof result === "string" ? result : result?.html || JSON.stringify(result, null, 2)
-  //   reportWindow.document.open()
-  //   reportWindow.document.write(html)
-  //   reportWindow.document.close()
-  // } catch (error: any) {
-  //   reportWindow.document.open()
-  //   reportWindow.document.body.innerText = error?.message || String(error)
-  //   reportWindow.document.close()
-  //   console.error("Failed to generate report", error)
-  // }
 }
+
+/* --------------------------
+TABLE HEADERS
+-------------------------- */
+const headers = [
+  { title: "Name", key: "name" },
+  { title: "IDX", key: "IDX" },
+  { title: "Items", key: "items" },
+  { title: "Qty", key: "qty" },
+  { title: "Status", key: "status" },
+  {
+    title: "",
+    key: "actions",
+    sortable: false,
+    width: 60
+  }
+]
 </script>
 
 <template>
-  <v-container fluid class="pa-8">
+  <v-container fluid class="page-wrap">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+      <div>
+        <div class="eyebrow">
+          Operations
+        </div>
+        <h1 class="page-title">
+          Movement Planning
+        </h1>
+      </div>
 
-    <v-btn class="mb-6" @click="generateReport">
-      Generate BCL Report for TROLLEY-01
-    </v-btn>
+      <div class="d-flex ga-2">
+        <v-btn variant="tonal" prepend-icon="mdi:file-document" @click="generateReport">
+          Generate Report
+        </v-btn>
+      </div>
+    </div>
 
-    <!-- CONFIG VIEW -->
+    <!-- CONFIG GRID -->
     <div v-if="!selectedConfig">
-      <h1 class="mb-6">
-        Movement Planning
-      </h1>
-
       <v-row>
         <v-col v-for="config in configs" :key="config.type" cols="12" sm="6" md="4" lg="3">
-          <div class="airbnb-card" @click="selectConfig(config)">
-            <img class="card-image" :src="config.imageUrl ||
-              '/images/placeholder.jpg'
-              ">
-
-            <div class="card-content">
-              <div class="title">
+          <v-card class="config-card" rounded="xl" @click="selectConfig(config)">
+            <v-img height="170" cover :src="config.imageUrl || '/images/placeholder.jpg'" />
+            <v-card-text class="pa-4">
+              <div class="card-title">
                 {{ config.label }}
               </div>
 
-              <div class="subtitle">
+              <div class="card-subtitle">
                 {{ config.category }}
               </div>
-            </div>
-          </div>
+
+              <div class="mt-4">
+                <v-btn block rounded="lg" color="primary" variant="tonal">
+                  Open
+                </v-btn>
+              </div>
+            </v-card-text>
+          </v-card>
         </v-col>
       </v-row>
     </div>
 
-    <!-- INSTANCE VIEW -->
+    <!-- INSTANCE SCREEN -->
     <div v-else>
+      <!-- TOOLBAR -->
+      <v-card rounded="xl" class="toolbar-card">
+        <div class="toolbar-grid">
+          <div class="d-flex align-center ga-2">
+            <v-btn icon="mdi:arrow-left" variant="text" @click="goBack" />
 
-      <div class="d-flex align-center mb-6">
-        <v-btn icon="mdi:arrow-left" variant="text" @click="goBack" />
+            <div>
+              <div class="toolbar-label">
+                {{ selectedConfig.label }}
+              </div>
 
-        <h2 class="ml-3">
-          {{ selectedConfig.label }} Instances
-        </h2>
+              <div class="toolbar-sub">
+                {{ filteredInstances.length }} records
+              </div>
+            </div>
+          </div>
+
+          <div class="toolbar-actions">
+            <v-text-field v-model="searchText" density="compact" variant="solo-filled" flat hide-details clearable
+              prepend-inner-icon="mdi:magnify" placeholder="Search..." class="search-box" />
+
+            <v-btn-toggle v-model="viewMode" mandatory rounded="lg">
+              <v-btn variant="flat" value="card" icon="mdi:view-grid" class="mr-1" />
+              <v-btn variant="flat" value="list" icon="mdi:format-list-bulleted" />
+            </v-btn-toggle>
+
+            <v-btn icon="mdi:refresh" variant="text" @click="reloadContainers" />
+          </div>
+        </div>
+      </v-card>
+
+      <!-- LOADING -->
+      <div v-if="loading" class="loading-wrap">
+        <v-progress-circular indeterminate size="42" />
       </div>
 
-      <v-row v-if="loadingInstances" justify="center">
-        <v-progress-circular indeterminate />
-      </v-row>
-
-      <v-row v-else>
-        <v-col v-for="container in instances" :key="container.IDX" cols="12" sm="6" md="4" lg="3">
-          <div class="ops-card" @click="
+      <!-- CARD VIEW -->
+      <v-row v-else-if="viewMode === 'card'">
+        <v-col v-for="row in filteredInstances" :key="row.IDX" cols="12" sm="6" md="4" lg="3" xl="2">
+          <v-card rounded="xl" class="instance-card" @click="
             executeAction(
-              container,
+              row,
               'CONTAINER_HISTORY'
             )
             ">
-            <img class="ops-card-image" :src="selectedConfig.imageUrl ||
-              '/images/placeholder.jpg'
-              ">
+            <v-img height="96" cover :src="selectedConfig.imageUrl || '/images/placeholder.jpg'" />
 
-            <div class="ops-card-body">
-
-              <!-- HEADER -->
-              <div class="ops-card-header">
-
-                <div class="ops-header-text">
-                  <div class="ops-title">
-                    {{
-                      resolveField(
-                        container,
-                        selectedConfig.ui?.listView?.find((f: any) => f.isTitle)
-                        || selectedConfig.ui?.listView?.[0]
-                        || { path: 'IDX' }
-                      )
-                    }}
+            <v-card-text class="pa-4">
+              <div class="instance-head">
+                <div class="min-w-0">
+                  <div class="instance-title">
+                    {{ resolveTitle(row) }}
                   </div>
 
-                  <div class="ops-subtitle">
-                    IDX: {{ container.IDX }}
+                  <div class="instance-sub">
+                    IDX: {{ row.IDX }}
                   </div>
                 </div>
 
@@ -432,139 +373,168 @@ async function generateReport() {
                   </template>
 
                   <v-list density="compact">
-                    <v-list-item v-for="action in container.availableActions" :key="action.actionId"
-                      @click.stop="executeAction(container, action)">
+                    <v-list-item v-for="action in row.availableActions" :key="action.actionId" @click.stop="
+                      executeAction(
+                        row,
+                        action
+                      )
+                      ">
                       <v-list-item-title>
                         {{ action.label }}
                       </v-list-item-title>
                     </v-list-item>
                   </v-list>
                 </v-menu>
-
               </div>
 
-              <!-- EXTRA FIELDS -->
-              <div v-for="field in selectedConfig.ui?.listView" :key="field.label" class="ops-meta">
-                <span v-if="
+              <!-- DYNAMIC FIELDS -->
+              <div v-for="field in selectedConfig.ui?.listView" :key="field.label" class="meta-row">
+                <template v-if="
                   !field.isTitle &&
                   field.label !== 'IDX' &&
-                  resolveField(container, field)
+                  resolveField(row, field)
                 ">
-                  <strong>{{ field.label }}:</strong>
-                  {{ resolveField(container, field) }}
-                </span>
+                  <span class="meta-label">
+                    {{ field.label }}:
+                  </span>
+
+                  <span class="meta-value">
+                    {{
+                      resolveField(
+                        row,
+                        field
+                      )
+                    }}
+                  </span>
+                </template>
               </div>
 
-              <!-- STATS -->
-              <div class="ops-stats">
-
-                <div class="stat-box">
-                  <div class="stat-label">
+              <!-- KPI -->
+              <div class="kpi-grid">
+                <div class="kpi-box">
+                  <div class="kpi-label">
                     Items
                   </div>
 
-                  <div class="stat-value">
+                  <div class="kpi-value">
                     {{
-                      container.inventorySummary?.itemCount
-                      ?? container.inventoryCount
+                      row.inventorySummary?.itemCount
+                      ?? row.inventoryCount
                       ?? 0
                     }}
                   </div>
                 </div>
 
-                <div class="stat-box">
-                  <div class="stat-label">
+                <div class="kpi-box">
+                  <div class="kpi-label">
                     Qty
                   </div>
 
-                  <div class="stat-value">
+                  <div class="kpi-value">
                     {{
-                      container.inventorySummary?.totalQty
+                      row.inventorySummary?.totalQty
                       ?? 0
                     }}
                   </div>
                 </div>
-
               </div>
 
               <!-- STATUS -->
-              <div class="status-section">
-
-                <!-- Operational -->
-                <div class="status-row">
-                  <div class="status-caption">
+              <div class="status-grid">
+                <div>
+                  <div class="status-label">
                     Operational
                   </div>
 
-                  <v-chip size="small" :color="lifecycleColor(container)" variant="flat">
-                    {{
-                      lifecycleLabel(
-                        selectedConfig.display?.primaryLifecycle,
-                        container.lifecycle?.[
-                        selectedConfig.display?.primaryLifecycle
-                        ]
-                      )
-                    }}
+                  <v-chip size="small" :color="lifecycleColor(row)" variant="flat">
+                    {{ lifecycleLabel(row) }}
                   </v-chip>
-
-                  <div v-if="
-                    getLatestReference(
-                      container,
-                      'operational'
-                    )?.referenceNumber
-                  " class="ref-number">
-                    {{
-                      getLatestReference(
-                        container,
-                        'operational'
-                      )?.referenceNumber
-                    }}
-                  </div>
                 </div>
 
-                <!-- Compliance -->
-                <div class="status-row">
-                  <div class="status-caption">
+                <div>
+                  <div class="status-label">
                     Compliance
                   </div>
 
                   <v-chip size="small" color="primary" variant="tonal">
                     {{
-                      container.lifecycle?.compliance || 'N/A'
+                      row.lifecycle?.compliance || "N/A"
                     }}
                   </v-chip>
-
-                  <div v-if="
-                    getLatestReference(
-                      container,
-                      'compliance'
-                    )?.referenceNumber
-                  " class="ref-number">
-                    {{
-                      getLatestReference(
-                        container,
-                        'compliance'
-                      )?.referenceNumber
-                    }}
-                  </div>
-
-                  <div v-else class="pending-text">
-                    Pending
-                  </div>
                 </div>
-
               </div>
-
-            </div>
-          </div>
+            </v-card-text>
+          </v-card>
         </v-col>
       </v-row>
+
+      <!-- LIST VIEW -->
+      <v-card v-else rounded="xl" class="table-card">
+        <v-data-table :items="filteredInstances" :headers="headers" item-value="IDX" density="comfortable" fixed-header
+          height="70vh" hover>
+          <template #item.name="{ item }">
+            <div class="row-link" @click="
+              executeAction(
+                item,
+                'CONTAINER_HISTORY'
+              )
+              ">
+              {{ resolveTitle(item) }}
+            </div>
+          </template>
+
+          <template #item.items="{ item }">
+            {{
+              item.inventorySummary?.itemCount
+              ?? item.inventoryCount
+              ?? 0
+            }}
+          </template>
+
+          <template #item.qty="{ item }">
+            {{
+              item.inventorySummary?.totalQty
+              ?? 0
+            }}
+          </template>
+
+          <template #item.status="{ item }">
+            <v-chip size="small" :color="lifecycleColor(item)" variant="flat">
+              {{ lifecycleLabel(item) }}
+            </v-chip>
+          </template>
+
+          <template #item.actions="{ item }">
+            <v-menu>
+              <template #activator="{ props }">
+                <v-btn icon="mdi:dots-vertical" variant="text" size="small" v-bind="props" />
+              </template>
+
+              <v-list density="compact">
+                <v-list-item v-for="action in item.availableActions" :key="action.actionId" @click="
+                  executeAction(
+                    item,
+                    action
+                  )
+                  ">
+                  <v-list-item-title>
+                    {{ action.label }}
+                  </v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
+          </template>
+          <template #no-data>
+            <div class="pa-8 text-medium-emphasis text-center">
+              No matching records found
+            </div>
+          </template>
+        </v-data-table>
+      </v-card>
     </div>
 
     <!-- DRAWER -->
     <v-navigation-drawer v-model="movementDrawer" location="right" width="520" temporary>
-
-      <!-- DEFAULT MOVEMENT -->
       <emcMovementAction v-if="
         movementDrawer &&
         activeContainer &&
@@ -577,7 +547,6 @@ async function generateReport() {
         :actionId="activeAction" :actionConfig="activeActionConfig" @close="movementDrawer = false"
         @completed="reloadContainers" />
 
-      <!-- INVENTORY -->
       <emcContainerInventory v-else-if="
         movementDrawer &&
         activeContainer &&
@@ -585,7 +554,6 @@ async function generateReport() {
       " :containerType="selectedConfig.type" :containerIDX="activeContainer.IDX" @close="movementDrawer = false"
         @completed="reloadContainers" />
 
-      <!-- SEAL / CUSTOM ACTIONS -->
       <emcContainerSeal v-else-if="
         movementDrawer &&
         activeContainer &&
@@ -596,7 +564,6 @@ async function generateReport() {
       " :master="activeContainer" :containerType="selectedConfig.type" :actionId="activeAction"
         :actionConfig="activeActionConfig" @close="movementDrawer = false" @completed="reloadContainers" />
 
-      <!-- CHANGE STATUS -->
       <emcChangeStatus v-else-if="
         movementDrawer &&
         activeContainer &&
@@ -604,175 +571,209 @@ async function generateReport() {
       " :master="activeContainer" :containerType="selectedConfig.type" :containerIDX="activeContainer.IDX"
         @close="movementDrawer = false" @completed="reloadContainers" />
 
-      <!-- HISTORY -->
       <emcContainerHistory v-else-if="
         movementDrawer &&
         activeContainer &&
         activeAction === 'CONTAINER_HISTORY'
       " :master="activeContainer" :containerType="selectedConfig.type" :containerIDX="activeContainer.IDX"
         @close="movementDrawer = false" @completed="reloadContainers" />
-
     </v-navigation-drawer>
-
   </v-container>
 </template>
 
 <style scoped>
-.airbnb-card {
+.page-wrap {
+  padding: 24px;
+  background: #f8fafc;
+  min-block-size: 100vh;
+}
+
+.page-header {
   display: flex;
-  overflow: hidden;
-  flex-direction: column;
-  border-radius: 16px;
-  background: white;
-  block-size: 320px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 6%);
-  cursor: pointer;
-  transition: all 0.25s ease;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-block-end: 18px;
 }
 
-.airbnb-card:hover {
-  box-shadow: 0 12px 25px rgba(0, 0, 0, 12%);
-  transform: translateY(-6px);
+.eyebrow {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.card-image {
-  block-size: 160px;
-  inline-size: 100%;
-  object-fit: cover;
+.page-title {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.1;
 }
 
-.card-content {
-  padding: 16px;
+.config-card,
+.instance-card,
+.toolbar-card,
+.table-card {
+  border: 1px solid #eef2f7;
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 6%);
 }
 
-.title {
+.card-title {
   font-size: 18px;
-  font-weight: 600;
-  text-overflow: ellipsis;
+  font-weight: 700;
 }
 
-.subtitle {
-  color: #717171;
+.card-subtitle {
+  color: #64748b;
   font-size: 13px;
   margin-block-start: 4px;
 }
 
-.ops-card {
+.toolbar-card {
+  margin-block-end: 16px;
+  padding-block: 14px;
+  padding-inline: 16px;
+}
+
+.toolbar-grid {
   display: flex;
-  overflow: hidden;
-  flex-direction: column;
-  border-radius: 20px;
-  background: #fff;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 8%);
-  cursor: pointer;
-  min-block-size: 340px;
-  transition: all 0.25s ease;
-}
-
-.ops-card:hover {
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 14%);
-  transform: translateY(-4px);
-}
-
-.ops-card-image {
-  block-size: 90px;
-  inline-size: 100%;
-  object-fit: cover;
-}
-
-.ops-card-body {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  padding: 12px;
-}
-
-.ops-card-header {
-  display: flex;
-  align-items: flex-start;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: space-between;
+  gap: 14px;
+}
+
+.toolbar-label {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.toolbar-sub {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.search-box {
+  max-inline-size: 360px;
+  min-inline-size: 280px;
+}
+
+.loading-wrap {
+  display: flex;
+  justify-content: center;
+  padding-block: 50px;
+  padding-inline: 0;
+}
+
+.instance-head {
+  display: grid;
+  align-items: start;
   gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
-.ops-header-text {
-  inline-size: calc(100% - 20px);
-  min-inline-size: 0;
+:deep(.instance-head .v-btn) {
+  margin-block-start: -4px;
+  margin-inline-end: -6px;
 }
 
-.ops-title {
+.instance-title {
   overflow: hidden;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   line-height: 1.2;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.ops-subtitle {
-  color: #777;
+.instance-sub {
+  color: #64748b;
   font-size: 13px;
   margin-block-start: 4px;
 }
 
-.ops-subtitle,
-.ops-meta {
-  color: #777;
+.meta-row {
   font-size: 13px;
-  margin-block-start: 4px;
+  margin-block-start: 6px;
 }
 
-.ops-stats {
+.meta-label {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.meta-value {
+  color: #0f172a;
+}
+
+.kpi-grid {
   display: grid;
-  gap: 6px;
+  gap: 8px;
   grid-template-columns: 1fr 1fr;
-  margin-block-start: 8px;
+  margin-block-start: 12px;
 }
 
-.stat-box {
-  border-radius: 10px;
-  background: #f8f9fb;
-  padding-block: 8px;
-  padding-inline: 10px;
+.kpi-box {
+  padding: 10px;
+  border: 1px solid #eef2f7;
+  border-radius: 12px;
+  background: #f8fafc;
 }
 
-.stat-label {
-  color: #777;
+.kpi-label {
+  color: #64748b;
   font-size: 11px;
 }
 
-.stat-value {
-  font-size: 15px;
-  font-weight: 700;
+.kpi-value {
+  font-size: 16px;
+  font-weight: 800;
   margin-block-start: 4px;
 }
 
-.status-section {
+.status-grid {
   display: grid;
-  border-block-start: 1px solid #eee;
-  gap: 18px;
+  border-block-start: 1px solid #eef2f7;
+  gap: 14px;
   grid-template-columns: 1fr 1fr;
   margin-block-start: 14px;
   padding-block-start: 12px;
 }
 
-.status-caption {
-  color: #777;
+.status-label {
+  color: #64748b;
   font-size: 12px;
+  margin-block-end: 6px;
 }
 
-.ref-number,
-.pending-text {
-  font-size: 13px;
-  margin-block-start: 6px;
+.table-card {
+  overflow: hidden;
 }
 
-.ref-number {
-  color: #1565c0;
-  font-family: monospace;
+.row-link {
+  cursor: pointer;
   font-weight: 700;
 }
 
-.pending-text {
-  color: #999;
+.row-link:hover {
+  text-decoration: underline;
+}
+
+:deep(.v-data-table thead th) {
+  background: #f8fafc;
+  color: #334155;
+  font-weight: 800 !important;
+}
+
+:deep(.v-data-table tbody tr:hover) {
+  background: rgba(15, 23, 42, 3%);
 }
 </style>
