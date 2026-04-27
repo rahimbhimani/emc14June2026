@@ -601,11 +601,19 @@
 
   provide('clientErrors', errors)
   provide('clientValidate', clientValidate)
+  // In any component
+
+  const { organization } = useOrgDetails()
+
+  // Access organization data
 
 
 </script>
 <template>
-
+  RAHIM BHIMANI
+  {{ organization.name }}
+  {{ organization.icon }}
+  {{ organization.logo }}
   <!-- {{ muserDataStore.data.FormData.UserEntryObjects }} -->
   <!-- {{ mOutPutFormData.FormData.ListHeaders }} -->
   <!-- {{ errors }} -->

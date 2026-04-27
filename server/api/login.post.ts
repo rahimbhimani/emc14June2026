@@ -35,11 +35,31 @@ export default defineEventHandler(async event => {
   let organizationDetails = null
   if (dbUser.organizationId) {
     try {
+      console.log(
+        'Fetching organization for ID:',
+        dbUser.organizationId
+      )
+
       organizationDetails = await emcOrganization.findOne({
         organizationId: dbUser.organizationId,
       })
+
+      console.log(
+        'Organization found:',
+        organizationDetails
+      )
+
+      if (!organizationDetails) {
+        console.warn(
+          'Organization not found for ID:',
+          dbUser.organizationId
+        )
+      }
     } catch (err) {
-      console.error('Error fetching organization:', err)
+      console.error(
+        'Error fetching organization:',
+        err
+      )
     }
   }
 
@@ -53,10 +73,26 @@ export default defineEventHandler(async event => {
       organizationIcon: organizationDetails.icon,
       organizationLogo: organizationDetails.logo,
     })
+
+    console.log(
+      'Organization details attached to user'
+    )
+  } else {
+    // Provide defaults
+    Object.assign(user, {
+      organizationName: dbUser.organizationCode || 'Default Organization',
+      organizationIcon: null,
+      organizationLogo: null,
+    })
+
+    console.warn(
+      'Using default organization details'
+    )
   }
 
   console.timeEnd('login:total')
-  console.log('db user123', dbUser)
+  console.log('User login successful:', user.email)
   return { user }
-})
+}
+
 
