@@ -1,4 +1,5 @@
 import { emcOrganization } from '~/server/models/emcOrganization'
+import { seedOrganizationData } from '~/server/utils/seedOrganization'
 
 export default defineEventHandler(async event => {
   console.time('login:total')
@@ -49,11 +50,35 @@ export default defineEventHandler(async event => {
         organizationDetails
       )
 
+      // If organization not found, try to seed data
       if (!organizationDetails) {
-        console.warn(
-          'Organization not found for ID:',
-          dbUser.organizationId
+        console.log(
+          'Organization not found, attempting to seed data...'
         )
+
+        try {
+          await seedOrganizationData()
+          console.log(
+            'Seed completed, fetching organization again...'
+          )
+
+          organizationDetails = await emcOrganization.findOne(
+            {
+              organizationId:
+                dbUser.organizationId,
+            }
+          )
+
+          console.log(
+            'Organization found after seeding:',
+            organizationDetails
+          )
+        } catch (seedErr) {
+          console.error(
+            'Error during seed:',
+            seedErr
+          )
+        }
       }
     } catch (err) {
       console.error(
@@ -80,7 +105,9 @@ export default defineEventHandler(async event => {
   } else {
     // Provide defaults
     Object.assign(user, {
-      organizationName: dbUser.organizationCode || 'Default Organization',
+      organizationName:
+        dbUser.organizationCode ||
+        'Default Organization',
       organizationIcon: null,
       organizationLogo: null,
     })
@@ -93,6 +120,4 @@ export default defineEventHandler(async event => {
   console.timeEnd('login:total')
   console.log('User login successful:', user.email)
   return { user }
-}
-
-
+})

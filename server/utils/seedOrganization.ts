@@ -3,7 +3,9 @@ import { emcOrganization } from '~/server/models/emcOrganization'
 
 export const seedOrganizationData = async (): Promise<void> => {
     try {
-        console.log('🌱 Seeding emcOrganization data...')
+        console.log(
+            '🌱 Seeding emcOrganization data...'
+        )
 
         const seedData: IemcOrganization[] = [
             {
@@ -11,7 +13,8 @@ export const seedOrganizationData = async (): Promise<void> => {
                 name: 'Emirates Cargo Management',
                 code: 'ORG000001',
                 icon: 'mdi:building-outline',
-                logo: 'https://via.placeholder.com/100?text=ECM',
+                logo:
+                    'https://via.placeholder.com/100?text=ECM',
                 description:
                     'Emirates Cargo Management - Air Cargo Solutions',
                 email: 'admin@emiratescargo.com',
@@ -26,7 +29,8 @@ export const seedOrganizationData = async (): Promise<void> => {
                 name: 'Global Logistics Inc',
                 code: 'ORG000002',
                 icon: 'mdi:truck-outline',
-                logo: 'https://via.placeholder.com/100?text=GLI',
+                logo:
+                    'https://via.placeholder.com/100?text=GLI',
                 description:
                     'Global Logistics Inc - International Shipping',
                 email: 'admin@globallogistics.com',
@@ -41,7 +45,8 @@ export const seedOrganizationData = async (): Promise<void> => {
                 name: 'Asian Trade Partners',
                 code: 'ORG000003',
                 icon: 'mdi:factory',
-                logo: 'https://via.placeholder.com/100?text=ATP',
+                logo:
+                    'https://via.placeholder.com/100?text=ATP',
                 description:
                     'Asian Trade Partners - Regional Distribution',
                 email: 'admin@asiantrade.com',
@@ -53,19 +58,37 @@ export const seedOrganizationData = async (): Promise<void> => {
             },
         ]
 
-        // Delete existing data
-        const deleteResult =
-            await emcOrganization.deleteMany({})
-        if (deleteResult.deletedCount > 0) {
+        // Check if any data exists
+        const existingCount =
+            await emcOrganization.countDocuments()
+        console.log(
+            `Found ${existingCount} existing organizations`
+        )
+
+        if (existingCount > 0) {
             console.log(
-                `🗑️  Deleted ${deleteResult.deletedCount
-                } existing organization documents`
+                'Organizations already seeded, skipping...'
             )
+            return
         }
 
-        // Insert seed data
-        const result =
-            await emcOrganization.insertMany(seedData)
+        // Insert seed data using upsert
+        const result = []
+        for (const data of seedData) {
+            const doc = await emcOrganization.findOneAndUpdate(
+                {
+                    organizationId:
+                        data.organizationId,
+                },
+                data,
+                {
+                    upsert: true,
+                    new: true,
+                }
+            )
+            result.push(doc)
+        }
+
         console.log(
             `✅ Seeded ${result.length} organizations`
         )
