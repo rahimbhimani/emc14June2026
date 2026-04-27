@@ -77,6 +77,14 @@ async function login() {
     useCookie('userData').value = user
     useCookie('userAbilityRules').value = user.abilityRules
 
+    // Store organization details
+    if (user.organizationId) {
+      useCookie('organizationId').value = user.organizationId
+      useCookie('organizationName').value = user.organizationName || ''
+      useCookie('organizationIcon').value = user.organizationIcon || ''
+      useCookie('organizationLogo').value = user.organizationLogo || ''
+    }
+
     // Update user abilities
     ability.update(user.abilityRules ?? [])
 

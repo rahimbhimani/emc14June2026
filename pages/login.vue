@@ -51,6 +51,15 @@ async function login() {
 
   useCookie<Partial<User>>('userData').value = user
   useCookie<User['abilityRules']>('userAbilityRules').value = user.abilityRules
+  
+  // Store organization details
+  if (user.organizationId) {
+    useCookie('organizationId').value = user.organizationId
+    useCookie('organizationName').value = user.organizationName || ''
+    useCookie('organizationIcon').value = user.organizationIcon || ''
+    useCookie('organizationLogo').value = user.organizationLogo || ''
+  }
+  
   ability.update(user.abilityRules ?? [])
   navigateTo(route.query.to ? String(route.query.to) : '/', { replace: true })
 }

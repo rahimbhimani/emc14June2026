@@ -1,3 +1,5 @@
+import { emcOrganization } from '~/server/models/emcOrganization'
+
 export default defineEventHandler(async event => {
   console.time('login:total')
   console.log('login handler start')
@@ -29,9 +31,32 @@ export default defineEventHandler(async event => {
     })
   }
 
+  // Fetch organization details
+  let organizationDetails = null
+  if (dbUser.organizationId) {
+    try {
+      organizationDetails = await emcOrganization.findOne({
+        organizationId: dbUser.organizationId,
+      })
+    } catch (err) {
+      console.error('Error fetching organization:', err)
+    }
+  }
+
   // ℹ️ Don't send password in response
   const { password: _, ...user } = dbUser
+
+  // Attach organization details to user
+  if (organizationDetails) {
+    Object.assign(user, {
+      organizationName: organizationDetails.name,
+      organizationIcon: organizationDetails.icon,
+      organizationLogo: organizationDetails.logo,
+    })
+  }
+
   console.timeEnd('login:total')
   console.log('db user123', dbUser)
   return { user }
 })
+

@@ -8,15 +8,20 @@ interface UserAdditionalData {
   avatar?: string
   role?: string
   abilityRules?: Rule[]
+  organizationId?: number
+  organizationCode?: string
+  organizationName?: string
+  organizationIcon?: string
+  organizationLogo?: string
 }
 
 declare module 'next-auth/jwt' {
   /** Returned by the `jwt` callback and `getToken`, when using JWT sessions */
-  interface JWT extends UserAdditionalData {}
+  interface JWT extends UserAdditionalData { }
 }
 
 declare module "next-auth" {
-    
+
   /**
    * Returned by `useSession`, `getSession` and received as a prop on the `SessionProvider` React Context
    */
