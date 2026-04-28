@@ -281,13 +281,26 @@ export async function emcRunGenericReport(
       user
     )
 
+  const organization =
+    user.organization ||
+    user.organizationDetails ||
+    {}
+
   const context = {
     companyName:
+      organization.name ||
+      organization.Name ||
+      organization.code ||
+      organization.Code ||
       user.organizationName ||
       "Your Company",
 
     companyLogo:
-      user.companyLogo || "",
+      organization.logo ||
+      organization.Logo ||
+      user.organizationLogo ||
+      user.companyLogo ||
+      "",
 
     reportTitle: title,
 
@@ -355,26 +368,43 @@ export async function emcRunGenericReport(
 
     .toolbar-title{
       font-size:16px;
-      font-weight:bold;
+      font-weight:700;
     }
 
     .toolbar-actions{
       display:flex;
-      gap:8px;
+      gap:10px;
       flex-wrap:wrap;
     }
 
     .toolbar-actions button{
-      padding:8px 12px;
-      border:1px solid #ccc;
-      background:#fff;
-      border-radius:4px;
+      border:none;
+      padding:9px 14px;
+      border-radius:6px;
+      color:#fff;
       cursor:pointer;
-      font-size:12px;
+      font-size:13px;
+      font-weight:600;
+    }
+
+    .btn-print{
+      background:#1976d2;
+    }
+
+    .btn-excel{
+      background:#2e7d32;
+    }
+
+    .btn-pdf{
+      background:#c62828;
+    }
+
+    .btn-csv{
+      background:#6d4c41;
     }
 
     .toolbar-actions button:hover{
-      background:#f0f0f0;
+      opacity:.9;
     }
 
     .report-wrapper{
@@ -445,7 +475,8 @@ export async function emcRunGenericReport(
   </style>
 
   <script>
-    window.emcPayload = ${JSON.stringify(payload)};
+    window.emcPayload =
+      ${JSON.stringify(payload)};
 
     async function emcExport(format){
       try{
@@ -463,7 +494,8 @@ export async function emcRunGenericReport(
           }
         );
 
-        const blob = await response.blob();
+        const blob =
+          await response.blob();
 
         const ext =
           format === 'PDF'
@@ -503,21 +535,31 @@ export async function emcRunGenericReport(
     </div>
 
     <div class="toolbar-actions">
-      <button onclick="window.print()">
-        Print
+
+      <button
+        class="btn-print"
+        onclick="window.print()">
+        🖨 Print
       </button>
 
-      <button onclick="emcExport('EXCEL')">
-        Export Excel
+      <button
+        class="btn-excel"
+        onclick="emcExport('EXCEL')">
+        📗 Excel
       </button>
 
-      <button onclick="emcExport('PDF')">
-        Export PDF
+      <button
+        class="btn-pdf"
+        onclick="emcExport('PDF')">
+        📕 PDF
       </button>
 
-      <button onclick="emcExport('CSV')">
-        Export CSV
+      <button
+        class="btn-csv"
+        onclick="emcExport('CSV')">
+        📄 CSV
       </button>
+
     </div>
 
   </div>

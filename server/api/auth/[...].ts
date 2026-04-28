@@ -55,6 +55,7 @@ export default NuxtAuthHandler({
         token.organizationName = user.organizationName
         token.organizationIcon = user.organizationIcon
         token.organizationLogo = user.organizationLogo
+        token.organizationDetails = user.organizationDetails
       }
 
       return token
@@ -74,6 +75,7 @@ export default NuxtAuthHandler({
         session.user.organizationName = token.organizationName
         session.user.organizationIcon = token.organizationIcon
         session.user.organizationLogo = token.organizationLogo
+        session.user.organizationDetails = token.organizationDetails
       }
 
       return session

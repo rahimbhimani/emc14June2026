@@ -611,7 +611,7 @@
 </script>
 <template>
   RAHIM BHIMANI
-  {{ organization.name }}
+  {{ organization.Name }}
   {{ organization.icon }}
   {{ organization.logo }}
   <!-- {{ muserDataStore.data.FormData.UserEntryObjects }} -->

@@ -13,6 +13,21 @@ interface UserAdditionalData {
   organizationName?: string
   organizationIcon?: string
   organizationLogo?: string
+  organizationDetails?: {
+    id?: number
+    organizationId?: number
+    code?: string
+    name?: string
+    icon?: string | null
+    logo?: string | null
+    description?: string | null
+    email?: string | null
+    phone?: string | null
+    address?: string | null
+    city?: string | null
+    country?: string | null
+    isActive?: boolean
+  }
 }
 
 declare module 'next-auth/jwt' {

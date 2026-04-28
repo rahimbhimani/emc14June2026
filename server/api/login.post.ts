@@ -41,9 +41,11 @@ export default defineEventHandler(async event => {
         dbUser.organizationId
       )
 
-      organizationDetails = await emcOrganization.findOne({
-        organizationId: dbUser.organizationId,
-      })
+      organizationDetails = await emcOrganization
+        .findOne({
+          organizationId: dbUser.organizationId,
+        })
+        .lean()
 
       console.log(
         'Organization found:',
@@ -62,12 +64,12 @@ export default defineEventHandler(async event => {
             'Seed completed, fetching organization again...'
           )
 
-          organizationDetails = await emcOrganization.findOne(
-            {
+          organizationDetails = await emcOrganization
+            .findOne({
               organizationId:
                 dbUser.organizationId,
-            }
-          )
+            })
+            .lean()
 
           console.log(
             'Organization found after seeding:',
@@ -93,27 +95,98 @@ export default defineEventHandler(async event => {
 
   // Attach organization details to user
   if (organizationDetails) {
+    console.log(
+      'organizationDetails from DB:',
+      organizationDetails
+    )
+
+    // Map organization details to user object
+    const organization = {
+      id: organizationDetails.organizationId,
+      organizationId:
+        organizationDetails.organizationId,
+      code:
+        organizationDetails.code ||
+        dbUser.organizationCode,
+      Name:
+        organizationDetails.name ||
+        organizationDetails.Name,
+      icon: organizationDetails.icon || null,
+      logo: organizationDetails.logo || null,
+      description:
+        organizationDetails.description ||
+        null,
+      email:
+        organizationDetails.email ||
+        null,
+      phone:
+        organizationDetails.phone ||
+        null,
+      address:
+        organizationDetails.address ||
+        null,
+      city: organizationDetails.city || null,
+      country:
+        organizationDetails.country ||
+        null,
+      isActive:
+        organizationDetails.isActive,
+    }
+
+    // Attach all organization data to user
     Object.assign(user, {
-      organizationName: organizationDetails.name,
-      organizationIcon: organizationDetails.icon,
-      organizationLogo: organizationDetails.logo,
+      organizationName: organization.Name,
+      organizationIcon: organization.icon,
+      organizationLogo: organization.logo,
+      organizationDetails: organization,
     })
+
+    console.log(
+      'User object after org attachment:',
+      {
+        organizationName:
+          user.organizationName,
+        organizationIcon:
+          user.organizationIcon,
+        organizationLogo:
+          user.organizationLogo,
+      }
+    )
 
     console.log(
       'Organization details attached to user'
     )
   } else {
     // Provide defaults
-    Object.assign(user, {
-      organizationName:
+    const organization = {
+      id: dbUser.organizationId,
+      organizationId:
+        dbUser.organizationId,
+      code: dbUser.organizationCode,
+      Name:
         dbUser.organizationCode ||
         'Default Organization',
-      organizationIcon: null,
-      organizationLogo: null,
+      icon: null,
+      logo: null,
+      description: null,
+      email: null,
+      phone: null,
+      address: null,
+      city: null,
+      country: null,
+      isActive: false,
+    }
+
+    Object.assign(user, {
+      organizationName: organization.Name,
+      organizationIcon: organization.icon,
+      organizationLogo: organization.logo,
+      organizationDetails: organization,
     })
 
     console.warn(
-      'Using default organization details'
+      'Using default organization details',
+      organization
     )
   }
 

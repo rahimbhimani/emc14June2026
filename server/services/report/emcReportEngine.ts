@@ -98,6 +98,7 @@ async function generateHTML(
     ...(data?.[0] || {}),
 
     companyName:
+      user.organization.Name ||
       report?.branding?.companyName ||
       user?.organizationName ||
       "Your Company",
