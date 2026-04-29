@@ -286,6 +286,17 @@ export async function emcRunGenericReport(
     user.organizationDetails ||
     {}
 
+  const companyLogo =
+    organization.logo ||
+    organization.Logo ||
+    user.organizationLogo ||
+    user.companyLogo ||
+    ""
+
+  const logoBlock = companyLogo
+    ? `<img src="${companyLogo}" />`
+    : ""
+
   const context = {
     companyName:
       organization.name ||
@@ -295,18 +306,19 @@ export async function emcRunGenericReport(
       user.organizationName ||
       "Your Company",
 
-    companyLogo:
-      organization.logo ||
-      organization.Logo ||
-      user.organizationLogo ||
-      user.companyLogo ||
-      "",
+    companyLogo,
+
+    logoBlock,
 
     reportTitle: title,
 
     reportSubtitle:
       payload.subtitle || "",
-
+    printedBy:
+      user.code ||
+      user.userCode ||
+      user.id ||
+      "Unknown User",
     generatedAt:
       new Date().toLocaleString()
   }
@@ -387,38 +399,38 @@ export async function emcRunGenericReport(
       font-weight:600;
     }
 
-    .btn-print{
-      background:#1976d2;
-    }
+.btn-print{
+  background:#4f6b8a;
+}
 
-    .btn-excel{
-      background:#2e7d32;
-    }
+.btn-excel{
+  background:#4e7d5a;
+}
 
-    .btn-pdf{
-      background:#c62828;
-    }
+.btn-pdf{
+  background:#8a4f56;
+}
 
-    .btn-csv{
-      background:#6d4c41;
-    }
+.btn-csv{
+  background:#6a6258;
+}
 
-    .toolbar-actions button:hover{
-      opacity:.9;
-    }
+.toolbar-actions button:hover{
+  filter:brightness(0.95);
+}
 
-    .report-wrapper{
-      padding:16px;
-    }
+.report-wrapper{
+  padding:4px 12px 4px 12px;
+}
 
-    .report-page{
-      width:190mm;
-      margin:0 auto;
-      background:#fff;
-      padding:10mm;
-      box-shadow:0 2px 8px rgba(0,0,0,.08);
-      box-sizing:border-box;
-    }
+.report-page{
+  width:190mm;
+  margin:0 auto;
+  background:#fff;
+  padding:4px 10mm 4px 10mm;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);
+  box-sizing:border-box;
+}
 
     .report-header{
       margin-bottom:10px;
@@ -451,9 +463,9 @@ export async function emcRunGenericReport(
     }
 
     @media print{
-      .report-toolbar{
-        display:none;
-      }
+.report-toolbar{
+  padding:6px 12px;
+}
 
       .report-wrapper{
         padding:0;
@@ -584,6 +596,13 @@ export async function emcRunGenericReport(
 
 </body>
 </html>
+<style>
+.report-header img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+</style>
 `
 
   // -------------------------

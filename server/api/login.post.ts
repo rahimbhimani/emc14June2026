@@ -111,8 +111,8 @@ export default defineEventHandler(async event => {
       Name:
         organizationDetails.name ||
         organizationDetails.Name,
-      icon: organizationDetails.icon || null,
-      logo: organizationDetails.logo || null,
+      icon: organizationDetails.branding?.icon || null,
+      logo: organizationDetails.branding?.logo || null,
       description:
         organizationDetails.description ||
         null,
