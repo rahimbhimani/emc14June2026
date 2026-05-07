@@ -6,12 +6,9 @@
   <div class="header-banner">
     <div class="header-wrapper">
       <!-- Logo -->
-<div class="logo-box">
-  <VImg
-    src="/Customer_LOGO.png"
-    contain
-  />
-</div>
+      <div class="logo-box">
+        <VImg src="/Customer_LOGO.png" contain />
+      </div>
 
 
 
@@ -23,11 +20,7 @@
         </div>
 
         <div class="sub-line">
-          <VChip
-            color="primary"
-            variant="tonal"
-            size="small"
-          >
+          <VChip color="primary" variant="tonal" size="small">
             Sales OnBoard
           </VChip>
 
@@ -59,10 +52,13 @@
 }
 
 .logo-box {
-  display: flex;              /* 🔑 */
+  display: flex;
+  /* 🔑 */
   flex-shrink: 0;
-  align-items: center;        /* 🔑 */
-  justify-content: center;    /* 🔑 */
+  align-items: center;
+  /* 🔑 */
+  justify-content: center;
+  /* 🔑 */
   block-size: 250px;
   inline-size: 250px;
 }
@@ -110,7 +106,22 @@
   }
 
   .logo-box {
-    display: none;
+    position: absolute;
+    display: flex;
+    align-items: center;
+    /* vertical centering */
+    justify-content: center;
+    /* horizontal centering */
+    block-size: 110px;
+    inline-size: 260px;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+  }
+
+  .logo-box img {
+    block-size: auto;
+    max-block-size: 100%;
+    max-inline-size: 100%;
   }
 }
 </style>

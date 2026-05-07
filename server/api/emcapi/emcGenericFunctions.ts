@@ -1870,3 +1870,43 @@ export function extractZodJsonFromDTObjects(controls: any[]): any {
 
   return schema;
 }
+
+async function GetControlsWithinComponent(cn, body) {
+  // // // // console.log(.log('inside GetControlsData ')
+
+  let cursor
+
+  // //// // // console.log(.log('before connection 2')
+
+  const collectionMaster = cn.collection('emcFormDesign')
+
+  // // console.log(.log('inside GetControlsData 22', body.data)
+
+  // const lretObj = { FormData: { Controls: null, DataObject: null, RTFormObjectForUserEntry: {} } }
+  let lretObj = {}
+
+  // // // // console.log(.log(body.data)
+  // cursor = collectionMaster.find().filter({ 'FormParameters.Name': body.master.value })
+  if (body.data.ComponentType && body.data.ComponentName) {
+    // // console.log(.log('Parent and Child',body.data.ComponentType,body.data.ComponentName )
+    cursor = collectionMaster.find({ 'FormParameters.FormType.value': body.data.ComponentType, 'FormParameters.Name': body.data.ComponentName })
+
+    lretObj = (await cursor.toArray())
+    if (lretObj.length === 0) {
+      return []
+    }
+    // // console.log(.log('GetControlsWithinComponent1',lretObj)
+    return body.data.IsThisForDesignTime === true ? lretObj[0]?.FormDTObjects?.board[0].Controls : lretObj[0]
+  }
+  if (body.data.ComponentType && body.data.ComponentName === undefined) {
+    // // console.log(.log('Parent onlly',body.data.ComponentType)
+    cursor = collectionMaster.find({ 'FormParameters.FormType.value': body.data.ComponentType }, { projection: { 'FormParameters.Name': 1 } })
+
+    lretObj = (await cursor.toArray())
+    if (lretObj.length === 0) {
+      return []
+    }
+    // // console.log(.log('GetControlsWithinComponent2',lretObj)
+    return body.data.IsThisForDesignTime === true ? lretObj : lretObj[0]
+  }
+}

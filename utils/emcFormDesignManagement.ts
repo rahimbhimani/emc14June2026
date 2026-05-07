@@ -254,7 +254,7 @@ function CreateRuntimeForGrid(input) {
 
 function setFormListHeader(vdataForGrid = undefined) {
   try {
-    debugger
+    // // debugger
     const lObjListHeader = []
     let lItemsForList = []
     // console.log('setFormListHeader1')

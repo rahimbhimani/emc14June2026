@@ -27,7 +27,7 @@
   let schema = {}
   //  { "Code": { "_id": "6885e29af2dae01edb4893d8", "title": "Published" } }
   function formValidate() {
-    ////debugger
+    //////debugger
     // muserDataStore.data.FormData.UserEntryObjects.FormName = { "TabRateManagent": { "TbRateMgmt": { "Reference": undefined, "ContractType": { "_id": "6885e29af2dae01edb4893d8", "title": "Published" } } } }
     const result = validateForm(schema, muserDataStore.data.FormData.UserEntryObjects.FormName)
 
@@ -79,7 +79,7 @@
   }
 
   watch(() => route.path, newRoute => {
-    //debugger
+    ////debugger
     if (newRoute.toLowerCase().indexOf('emclist')) {
       IsthisFirstServerRequest.value = true
       mFormInputData.searchCriteria = {}
@@ -100,7 +100,7 @@
 
 
   async function GetDetailData() {
-    //debugger
+    ////debugger
     mCurrentFunction.value = 'edit'
 
     mErrorOnPage.value = false
@@ -133,7 +133,7 @@
     // alert('Before')
 
     const lObj = await useEmcList(currentMaster.value, mFormInputData, IsthisFirstServerRequest.value)
-    //debugger
+    ////debugger
 
     console.log('LISTDATAINLIST', lObj)
 
@@ -217,7 +217,7 @@
   async function handleDelete(vBool) {
     if (vBool === true) {
       const lObj = await useEmcDelete(currentMaster.value, SelectedRows.value)
-      //debugger
+      ////debugger
       if (lObj?.status.value === 'success')
         informUser('success', 'Data Deleted sucessfully')
       await btnMoveToList()
@@ -227,18 +227,22 @@
 
 
   async function btnMoveToList() {
-    //debugger
+    debugger
     pageLoading.value = true
-    mCurrentFunction.value = 'list'
-
-
-    await clearListData()
+    // alert(mCurrentFunction.value)
+    if (mCurrentFunction.value === 'back') {
+      // alert(mCurrentFunction.value)
+      await clearListData()
+    }
 
     if (mFormInputData.PageParameters === undefined)
       mFormInputData.PageParameters = { CurrentPage: 1 }
     else
-      mFormInputData.PageParameters.CurrentPage = 1
-
+      if (mCurrentFunction.value === 'back') {
+        mFormInputData.searchCriteria = {}
+        mFormInputData.PageParameters.CurrentPage = 1
+      }
+    mCurrentFunction.value = 'list'
     await listData()
     pageLoading.value = false
 
@@ -246,7 +250,7 @@
 
 
   async function btnMoveToCreate() {
-    //debugger
+    ////debugger
     pageLoading.value = true
     if (currentMaster.value === 'ScreenConfigure') {
       // muserDataStore.data.FormData = Object({})
@@ -273,10 +277,10 @@
 
 
   async function btnMoveToEdit(vAction = 'edit') {
-    //debugger
+    ////debugger
 
     // console.log('GetDetailData()', await GetDetailData())
-    //debugger
+    ////debugger
 
     pageLoading.value = true
     const lTemp = await GetDetailData()
@@ -290,7 +294,7 @@
       // alert(lTemp._id)
       muserDataStore.data.FormData.DataObject['_id'] = lTemp._id
       screenDesignStore.board = lTemp.FormDTObjects.board
-      //debugger
+      ////debugger
       screenDesignStore['_id'] = lTemp._id
       //alert(screenDesignStore.board._id)
     }
@@ -301,7 +305,7 @@
         delete lTemp._id
 
       muserDataStore.data.FormData.UserEntryObjects.FormName = { ...lTemp }
-      //debugger
+      ////debugger
       console.log('muserDataStore.data.FormData.UserEntryObjects.FormName', muserDataStore.data.FormData.UserEntryObjects.FormName)
     }
 
@@ -313,7 +317,7 @@
 
   async function btnMoveToSave(vAction = 'save') {
     console.log(muserDataStore.data.FormData.DataObject)
-    //debugger
+    ////debugger
 
     const master = currentMaster.value;
     let payload = master === 'ScreenConfigure'
@@ -335,7 +339,7 @@
       payload._isThisForValidate = true
     }
     const lObj = await useEmcInsert(master, payload)
-    //debugger;
+    ////debugger;
     console.log(lObj?.status.value)
     // let success = lObj?.data.value.success
     let success = lObj?.status.value || lObj?.success
@@ -399,7 +403,7 @@
   }
 
   function disbleButton(vAction) {
-    debugger
+    //debugger
     const mode = mCurrentFunction.value?.toLowerCase()
     const selectedCount = SelectedRows.value?.length || 0
 
@@ -501,10 +505,10 @@
       children: [
         {
           text: 'back',
-          caption: 'Back',
+          caption: 'Reset List',
           icon: 'mdi:arrow-left',
           hide: [],
-          selection: { min: 1, max: 1 }
+          selection: { min: 1, max: 999 }
         }
       ]
     },
@@ -547,6 +551,7 @@
 
 
   function perforFunction(vAction) {
+    mCurrentFunction.value = vAction
     switch (vAction) {
       case 'create':
         btnMoveToCreate()
@@ -563,7 +568,11 @@
       case 'save':
         btnMoveToSave()
         break
+      case 'back':
+        btnMoveToList()
+        break
       case 'list':
+        // alert(vAction)
         btnMoveToList()
         break
       case 'delete':
@@ -610,10 +619,10 @@
 
 </script>
 <template>
-  RAHIM BHIMANI
+  <!-- RAHIM BHIMANI
   {{ organization.Name }}
   {{ organization.icon }}
-  {{ organization.logo }}
+  {{ organization.logo }} -->
   <!-- {{ muserDataStore.data.FormData.UserEntryObjects }} -->
   <!-- {{ mOutPutFormData.FormData.ListHeaders }} -->
   <!-- {{ errors }} -->

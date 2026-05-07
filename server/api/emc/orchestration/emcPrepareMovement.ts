@@ -47,21 +47,48 @@ function getPrimaryKeyValue(row: any, config: any) {
   return getValueByPath(row, keyPath)
 }
 
+// function sumInventoryForContainer(
+//   allInventory: any[],
+//   containerIDX: string
+// ) {
+//   return allInventory
+//     .filter(
+//       inv =>
+//         inv.containerIDX === containerIDX &&
+//         Number(inv.quantity || 0) > 0
+//     )
+//     .reduce(
+//       (sum, inv) =>
+//         sum + Number(inv.quantity || 0),
+//       0
+//     )
+// }
 function sumInventoryForContainer(
   allInventory: any[],
   containerIDX: string
 ) {
-  return allInventory
-    .filter(
-      inv =>
-        inv.containerIDX === containerIDX &&
-        Number(inv.quantity || 0) > 0
-    )
-    .reduce(
-      (sum, inv) =>
-        sum + Number(inv.quantity || 0),
-      0
-    )
+  const filtered = allInventory.filter(
+    inv =>
+      inv.containerIDX === containerIDX &&
+      Number(inv.quantity || 0) > 0
+  )
+
+  const totalQty = filtered.reduce(
+    (sum, inv) => sum + Number(inv.quantity || 0),
+    0
+  )
+
+  // 🔥 FIX: use productIDX (unique items)
+  const uniqueItems = new Set(
+    filtered
+      .map(inv => inv.productIDX)
+      .filter(Boolean)
+  )
+
+  return {
+    totalQty,                 // total quantity
+    itemTypes: uniqueItems.size // unique products
+  }
 }
 
 export default async function emcPrepareMovement(
@@ -341,12 +368,12 @@ export default async function emcPrepareMovement(
           )
       }
 
-      filteredRows =
-        filteredRows.filter(
-          (row: any) =>
-            !row.parentIDX ||
-            row.parentIDX === destinationIDX
-        )
+      // filteredRows =
+      //   filteredRows.filter(
+      //     (row: any) =>
+      //       !row.parentIDX ||
+      //       row.parentIDX === destinationIDX
+      //   )
 
       for (const row of filteredRows) {
         const IDX =
@@ -373,12 +400,19 @@ export default async function emcPrepareMovement(
           sumInventoryForContainer(
             allInventory,
             String(IDX)
-          )
+          ).totalQty
+
+        const typeCount =
+          sumInventoryForContainer(
+            allInventory,
+            String(IDX)
+          ).itemTypes
 
         items.push({
           IDX,
           Name,
           itemCount,
+          typeCount,
           assignedHere:
             row.parentIDX === destinationIDX,
           parentIDX:
@@ -395,7 +429,9 @@ export default async function emcPrepareMovement(
           childConfig.label ||
           childType,
         showItemCount:
-          childConfig.ui?.showItemCount !== false
+          childConfig.ui?.showItemCount !== false,
+        showQuantity:
+          childConfig.ui?.showQuantity !== false
       },
       actionConfig: actionDef,
       items
