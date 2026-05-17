@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { userDataStore } from '@/store/userDataStore'
-import { inject, ModelRef, ref, watch } from 'vue'
+import { inject, ref, watch } from 'vue'
 
 /* -------------------------------------------------
    Props / Injects
@@ -58,7 +58,7 @@ async function fetchOptions(type: string) {
   error.value = null
 
   try {
-      const res = await useEmcReferenceDataList('RefGroupData', {
+    const res = await useEmcReferenceDataList('RefGroupData', {
       id: groupObject.value.id,
       path: groupObject.value.dataPath,
       userdata: RTData.dataValue,
@@ -88,11 +88,11 @@ watch(
   { immediate: true }
 )
 
-onMounted(async() => {
+onMounted(async () => {
   await fetchOptions("Location")
   // rows.value = RTData.dataValue.value?.rows //|| []
   // rows.value = [ { rowId: "1f90ef72-7827-47e2-8e65-17e380a90212", selectedItem: { id: "68c84689826395702c504086", code: "BOM", name: "BOMBAY", Type: "City" } } ]
-  rows.value = RTData.dataValue.value?.rows  || []
+  rows.value = RTData.dataValue.value?.rows || []
 })
 
 function addRow() {
@@ -100,7 +100,7 @@ function addRow() {
     rowId: crypto.randomUUID(),
     selectedItem: null,
   })
-  
+
 }
 
 function removeRow(index: number) {
@@ -109,84 +109,51 @@ function removeRow(index: number) {
 </script>
 
 <template>
-<!-- RAHIM
+  <!-- RAHIM
 {{rows}} -->
   <!-- {{ apiOptions }} -->
   <!-- {{rows}}
   <hr/>-->
-  {{ RTData }} 
+  <!-- {{ RTData }}  -->
+  {{ rows }}
   <VCard variant="outlined">
     <VCardTitle class="text-subtitle-3 font-weight-bold">
-      {{ groupObject.controlProperties.find(e => e.propertyTitle === 'Label').data }}
+      {{groupObject.controlProperties.find(e => e.propertyTitle === 'Label').data}}
     </VCardTitle>
 
     <VCardText>
       <!-- Controls -->
       <VRow>
         <VCol cols="12" md="4">
-          <VSelect
-            v-model="groupType"
-            :items="groupTypes"
-            label="Select Type"
-            density="compact"
-          />
+          <VSelect v-model="groupType" :items="groupTypes" label="Select Type" density="compact" />
         </VCol>
 
         <VCol cols="12" md="3">
-          <VBtn
-            color="primary"
-            type="button"
-            block
-            @click="addRow"
-            :disabled="loading"
-          >
+          <VBtn color="primary" type="button" block @click="addRow" :disabled="loading">
             Add Item
           </VBtn>
         </VCol>
       </VRow>
 
       <!-- Error -->
-      <VAlert
-        v-if="error"
-        type="error"
-        variant="tonal"
-        class="mt-3"
-      >
+      <VAlert v-if="error" type="error" variant="tonal" class="mt-3">
         {{ error }}
       </VAlert>
 
       <!-- Table -->
-      <VDataTable
-        class="mt-2 ma-0 pa-0"
-        density="compact"
-        :headers="[
-          { title: 'Item', key: 'item' },
-          { title: 'Actions', key: 'actions' },
-        ]"
-        :items="rows"
-        item-value="rowId"
-        :loading="loading"
-      >
+      <VDataTable class="mt-2 ma-0 pa-0" density="compact" :headers="[
+        { title: 'Item', key: 'item' },
+        { title: 'Actions', key: 'actions' },
+      ]" :items="rows" item-value="rowId" :loading="loading">
         <!-- ✅ CORRECT SLOT USAGE -->
         <!-- {{apiOptions}} -->
         <template #item.item="{ item }">
-          <VSelect 
-            v-model="item.selectedItem"
-            :items="apiOptions"
-            item-title="code"
-            item-value="id"
-            return-object
-            class="mt-1 mb-1 ml-n5"
-          />
+          <VSelect v-model="item.selectedItem" :items="apiOptions" item-title="code" item-value="id" return-object
+            class="mt-1 mb-1 ml-n5" />
         </template>
 
         <template #item.actions="{ index }">
-          <VIcon
-            icon="mdi:delete"
-            color="red"
-            class="cursor-pointer"
-            @click="removeRow(index)"
-          />
+          <VIcon icon="mdi:delete" color="red" class="cursor-pointer" @click="removeRow(index)" />
         </template>
 
         <template #no-data>

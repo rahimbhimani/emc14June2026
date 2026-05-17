@@ -1,10 +1,12 @@
 // stores/myStore.js
 import { defineStore } from 'pinia'
 
+
 export const userDataStore = defineStore('userDataStore', () => {
   const data = reactive({
     FormData: { Name: '', DataObject: {}, flattenData: [{}], UserEntryObjects: {} },
   })
+
 
   // const trial = reactive({
   //   rahim: 'rahim trial',
@@ -59,8 +61,78 @@ export const userDataStore = defineStore('userDataStore', () => {
 
 export const userDataInternalstore = defineStore('userDataInternalstore', () => {
   const data = ({
-    FormData: { Name: '', DataObject: {}, flattenData: [{}], UserEntryObjects: {} },
+    FormData: { Name: '', DataObject: {}, flattenData: [{}], UserEntryObjects: {}, testing: 'testing value' },
   })
 
   return { data }
 })
+
+
+export const useUserDataInternalStore = defineStore(
+  'userDataInternalstoreForObjects',
+  () => {
+    /**
+     * Creates a fresh FormData object.
+     * A new object is returned every time so items do not share references.
+     */
+    function createDefaultFormData() {
+      return {
+        Name: '',
+        DataObject: {},
+        flattenData: [{}],
+        UserEntryObjects: {},
+        testing: 'testing value'
+      }
+    }
+
+    const data = {
+      // Default FormData for the store itself (optional)
+      FormData: createDefaultFormData(),
+
+      // All runtime objects are stored here
+      Items: []
+    }
+
+    /**
+     * Returns an existing item if the identifier exists.
+     * If no identifier is provided, a new item is created with a UUID.
+     * If the identifier does not exist, a new item is created with that identifier.
+     *
+     * @param {string} [identifier]
+     * @returns {Object}
+     *
+     * Returned structure:
+     * {
+     *   identifier: 'uuid-or-custom-id',
+     *   data: {
+     *     FormData: { ... }
+     *   }
+     * }
+     */
+    function getOrCreateItem(identifier = crypto.randomUUID()) {
+      // Check whether an item with this identifier already exists
+      let item = data.Items.find(
+        entry => entry.identifier === identifier
+      )
+
+      // Create a new item if not found
+      if (!item) {
+        item = {
+          identifier,
+          data: {
+            FormData: createDefaultFormData()
+          }
+        }
+
+        data.Items.push(item)
+      }
+
+      return item
+    }
+
+    return {
+      data,
+      getOrCreateItem
+    }
+  }
+)

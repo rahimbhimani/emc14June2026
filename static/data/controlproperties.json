@@ -105,6 +105,45 @@
          ]
       },
       {
+         "ControlName": "DynamicComponentName",
+         "controlType": "DynamicComponent",
+         "controlProperties": [
+            {
+               "propertyTitle": "Name",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 25,
+               "mandatory": "true",
+               "Defaultvalue": "Name",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Title",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 15,
+               "mandatory": "true",
+               "Defaultvalue": "Component Title",
+               "ChangedBy": "",
+               "data": ""
+            },
+            {
+               "propertyTitle": "Cols",
+               "controlType": "TextBox",
+               "groupBy": "UI",
+               "dataType": "Number",
+               "size": 2,
+               "Defaultvalue": "3",
+               "ChangedBy": "",
+               "keepThisPropertyAtRuntime": "true",
+               "data": ""
+            }
+         ]
+      },
+      {
          "ControlName": "FormName",
          "controlType": "Form",
          "controlProperties": [
@@ -1803,7 +1842,39 @@
                "keepThisPropertyAtRuntime": "true"
             },
             {
+               "propertyTitle": "Order",
+               "controlType": "TextBox",
+               "groupBy": "UI",
+               "dataType": "Number",
+               "size": 15,
+               "Defaultvalue": "0",
+               "ChangedBy": "",
+               "data": "",
+               "keepThisPropertyAtRuntime": "true"
+            },
+            {
+               "propertyTitle": "Height",
+               "controlType": "TextBox",
+               "groupBy": "UI",
+               "dataType": "Number",
+               "size": 15,
+               "Defaultvalue": "0",
+               "ChangedBy": "",
+               "data": "",
+               "keepThisPropertyAtRuntime": "true"
+            },
+            {
                "propertyTitle": "Start Expanded",
+               "controlType": "CheckBox",
+               "groupBy": "UI",
+               "dataType": "Boolean",
+               "Defaultvalue": "false",
+               "ChangedBy": "",
+               "data": "",
+               "keepThisPropertyAtRuntime": "true"
+            },
+            {
+               "propertyTitle": "Container Type",
                "controlType": "CheckBox",
                "groupBy": "UI",
                "dataType": "Boolean",
@@ -1899,7 +1970,7 @@
                "controlType": "TextBox",
                "groupBy": "DataBase",
                "dataType": "Text",
-               "Defaultvalue": "TableNameRahim",
+               "Defaultvalue": "TableName01",
                "ChangedBy": "",
                "data": ""
             }

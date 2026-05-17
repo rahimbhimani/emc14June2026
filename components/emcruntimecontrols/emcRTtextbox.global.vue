@@ -1,6 +1,6 @@
 <script setup>
-import { userDataStore } from '@/store/userDataStore'
 // const props = defineProps(['vbind1','FormParameters'])
+import { userDataStore } from '@/store/userDataStore';
 let lTouched = ref(false)
 const props = defineProps({
   vbind1: {
@@ -21,6 +21,7 @@ let clientErrors = inject('clientErrors')
 const groupObject = defineModel('groupObject')
 const inputdata = defineModel('inputdata')
 let muserDataStore = props.vbind1.isthisfordialog ? inputdata.value : userDataStore()
+// let muserDataStore = inputdata.value
 let ldataType1 = groupObject.value.controlProperties.filter(e => e.propertyTitle === 'DataType')
 let RTData = useUpdateObject(muserDataStore.data.FormData.UserEntryObjects, groupObject)
 
@@ -106,6 +107,9 @@ let date = ref < Date | null > (null)
 </script>
 
 <template>
+  <!-- {{ clientErrors }} -->
+  <!-- {{ clientValidate }} -->
+  <!-- {{ RTData }} -->
   <!-- {{ props.groupObject }} -->
   <!-- {{ props.vbind1 }} -->
   <!-- {{ clientErrors }} -->
@@ -114,6 +118,10 @@ let date = ref < Date | null > (null)
   <!-- {{ groupObject.componentName }} -->
   <!-- {{ groupObject.dataPath }} -->
   <!-- {{ muserDataStore.data.FormData.UserEntryObjects }} -->
+  <!-- {{ inputdata }} -->
+  <!-- {{ muserDataStore }} -->
+  <!-- DIALOG -->
+  <!-- {{ props.vbind1.isthisfordialog }} -->
   <VTextField v-model="RTData.dataValue.value" v-bind="props?.vbind1"
     :style="`background-color: ${props.vbind1?.style['background-color'] && props.vbind1?.style['background-color'] !== '' ? props.vbind1.style['background-color'] : groupObject.controlProperties.filter(e => e.propertyTitle === 'Mandatory')[0]?.data.value === 'true' ? props.FormParameters?.ColorForMandatory : ''}`"
     :label="props.vbind1?.label ? `${props.vbind1?.label} ${props.FormParameters?.Mandatory.value === 'Astrix' ? groupObject.controlProperties.filter(e => e.propertyTitle === 'Mandatory')[0]?.data.value === 'true' ? '*' : '' : groupObject.controlProperties.filter(e => e.propertyTitle === 'Mandatory')[0]?.data.value === 'false' ? '(Opt.)' : ''}` : ''"

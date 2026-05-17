@@ -511,6 +511,51 @@ async function retreiveDTData(vId = '', vSearchWhat = '', vPropertyToLookFor = '
   // // console.log(.log("retreiveDTData123", lObj.controlProperties.filter((e) => e.propertyTitle === vPropertyToLookFor)[0].data);
   return lObj.controlProperties.filter((e) => e.propertyTitle === vPropertyToLookFor)[0]?.data;
 }
+
+function parseTableName(lTableName) {
+  if (!lTableName || typeof lTableName !== 'string') return lTableName
+
+  // ✅ Remove outer { }
+  let cleaned = lTableName.trim()
+
+  if (cleaned.startsWith('{') && cleaned.endsWith('}')) {
+    cleaned = cleaned.slice(1, -1)
+  }
+  else {
+    return lTableName
+  }
+
+  // ✅ Remove outer [ ]
+  if (cleaned.startsWith('[') && cleaned.endsWith(']')) {
+    cleaned = cleaned.slice(1, -1)
+  }
+
+  cleaned = cleaned.trim()
+
+  // 🔥 Case 2 → JSON array
+  if (cleaned.startsWith('{')) {
+    try {
+      return JSON.parse(`[${cleaned}]`)
+    } catch (e) {
+      console.error('Invalid JSON format:', cleaned)
+      return []
+    }
+  }
+
+  // 🔥 Case 1 → simple values
+  const items = cleaned
+    .split(',')
+    .map(i => i.trim())
+    .filter(Boolean)
+
+  return items.map(item => ({
+    _id: item,
+    title: item,
+    Name: null
+  }))
+}
+
+
 async function getDataForControl(cn, body) {
   try {
     // console.log('length12366', body.data);
@@ -531,30 +576,36 @@ async function getDataForControl(cn, body) {
     );
     // console.log('lTableName33', lTableName);
 
-    if (!lTableName || lTableName !== '') {
-      //This is to handle hardcoded values within Group Data control
-      console.log(
-        'lTableName333',
-        lTableName.includes('{'),
-        lTableName.includes('}')
-      );
-      if (lTableName.includes('{') && lTableName.includes('}')) {
-        lTableName = lTableName.replace('{', '').replace('}', '');
-        console.log('lTableName334', lTableName);
-        if (lTableName.includes('[') && lTableName.includes(']')) {
-          console.log('lTableName335', lTableName);
-          lTableName = lTableName.replace('[', '').replace(']', '');
-          console.log('lTableName336', lTableName);
-          const renamedResults = lTableName.split(',').map((doc) => ({
-            _id: doc,
-            title: doc,
-          }));
-          return renamedResults;
-        } else {
-          return lTableName;
-        }
-      }
+    // if (!lTableName || lTableName !== '') {
+    //   //This is to handle hardcoded values within Group Data control
+    //   console.log(
+    //     'lTableName333',
+    //     lTableName.includes('{'),
+    //     lTableName.includes('}')
+    //   );
+    //   if (lTableName.includes('{') && lTableName.includes('}')) {
+    //     lTableName = lTableName.replace('{', '').replace('}', '');
+    //     console.log('lTableName334', lTableName);
+    //     if (lTableName.includes('[') && lTableName.includes(']')) {
+    //       console.log('lTableName335', lTableName);
+    //       lTableName = lTableName.replace('[', '').replace(']', '');
+    //       console.log('lTableName336', lTableName);
+    //       const renamedResults = lTableName.split(',').map((doc) => ({
+    //         _id: doc,
+    //         title: doc,
+    //       }));
+    //       return renamedResults;
+    //     } else {
+    //       return lTableName;
+    //     }
+    //   }
+    // }
+
+    lTableName = parseTableName(lTableName)
+    if (Array.isArray(lTableName) || typeof lTableName === 'object') {
+      return lTableName;
     }
+
     let lColumnNames = await retreiveDTData(
       body.data.id,
       ltxtControls,

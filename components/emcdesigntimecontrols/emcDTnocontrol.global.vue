@@ -21,7 +21,7 @@ watch(
     // alert('start')
     if (newValue === null)
       controlSelected.value = 'Select Control'
-    if (newValue !== 'Select Control'){
+    if (newValue !== 'Select Control') {
       // alert('start')
       updateControl(newValue)
     }
@@ -49,9 +49,9 @@ function ClearClicked() {
   screenDesignStore.deleteControl(props.groupObject.id, '', 'Controls', props.AdditionalPropertiesForControl === undefined ? '' : props.AdditionalPropertiesForControl)
 }
 
-const items = ['Select Control', 'TextBox', 'Pricing', 'GridTable', 'GroupData', 'DropDown', 'DataTable', 'Component', 'RateDefinition', 'Image']
+const items = ['Select Control', 'TextBox', 'Pricing', 'GridTable', 'GroupData', 'DropDown', 'DataTable', 'Component', 'RateDefinition', 'Image', 'DynamicComponent']
 
-const componentItems = ['FormContainer', 'ControlContainer', 'RateType', 'RateCondition']
+const componentItems = ['FormContainer', 'ControlContainer', 'RateType', 'RateCondition', 'DynamicComponent']
 
 const filteredControls = computed(() => {
   // const match = Object//= await useEmcList(currentMaster.value, mFormInputData, IsthisFirstServerRequest.value)
@@ -62,16 +62,9 @@ const filteredControls = computed(() => {
 <template>
 
   <div style="align-object: left;">
-    <VSelect
-      v-model="controlSelected"
-      :items="items"
-      single-line
-      label="Select Control"
-      density="comfortable"
-      :prepend-inner-icon="controlSelected === 'Select Control' || controlSelected === '' ? '' : 'mdi:wrench'"
-      clearable
+    <VSelect v-model="controlSelected" :items="items" single-line label="Select Control" density="comfortable"
+      :prepend-inner-icon="controlSelected === 'Select Control' || controlSelected === '' ? '' : 'mdi:wrench'" clearable
       :post-icon="controlSelected === 'Select Control' || controlSelected === '' ? '' : 'mdi:wrench11'"
-      @click:clear="ClearClicked"
-    />
+      @click:clear="ClearClicked" />
   </div>
 </template>

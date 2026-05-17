@@ -1,10 +1,37 @@
 <script setup>
-  const { resolveComponent } = useComponentRegistry()
+const { resolveComponent } = useComponentRegistry()
 const props = defineProps({
   groupObject: {
     type: Object,
   },
 })
+
+/**
+ * Returns a new array where:
+ * 1. Each control has an Order property at the top level
+ * 2. The array is sorted by Order
+ *
+ * Usage:
+ * <template v-for="control in getControlsForVFor(formControls)" :key="control.id">
+ *   {{ control.ControlName }} - {{ control.Order }}
+ * </template>
+ */
+function getControlsInOrder(controls) {
+  if (!Array.isArray(controls)) return []
+
+  return controls
+    .map(control => {
+      const orderProperty = control.controlProperties?.find(
+        prop => prop.propertyTitle === 'Order'
+      )
+
+      return {
+        ...control,
+        Order: Number(orderProperty?.data ?? 0)
+      }
+    })
+    .sort((a, b) => a.Order - b.Order)
+}
 
 function getCols(vObject) {
   debugger
@@ -24,32 +51,20 @@ function getCols(vObject) {
 
 <template>
   <!-- {{ props.groupObject }} -->
-  <template v-for="(control) in props.groupObject" :key="control.id">
+  <template v-for="(control) in getControlsInOrder(props.groupObject)" :key="control.id">
     <!-- {{ control.controlProperties }} -->
-    <VCol
-      v-if="control.controlProperties?.some(p => p.propertyTitle === 'StartOnNextLine' && p.data === 'true')"
-      style="flex-basis: 100%; padding: 0; block-size: 0;"
-    />
+    <VCol v-if="control.controlProperties?.some(p => p.propertyTitle === 'StartOnNextLine' && p.data === 'true')"
+      style="flex-basis: 100%; padding: 0; block-size: 0;" />
     <VDivider
       v-if="control.controlProperties?.some(p => p.propertyTitle === 'HorizontalLineBefore' && p.data === 'true')"
-      :thickness="2"
-      class="border-opacity-75 mt-1 mb-1"
-      style="border-color: silver;"
-    />
+      :thickness="2" class="border-opacity-75 mt-1 mb-1" style="border-color: silver;" />
     <!-- {{ control }} -->
-    <VCol
-    :cols="getCols(control)"
-    class="pl-0 ml-0"
-    >  
-    <component
-      :is="resolveComponent(control.controlType, true)"
-      :group-object="control"
-      type="control.Datatype"
-      v-bind="control.vbind"
-    />
-  </VCol>
+    <VCol :cols="getCols(control)" class="pl-0 ml-0">
+      <component :is="resolveComponent(control.controlType, true)" :group-object="control" type="control.Datatype"
+        v-bind="control.vbind" />
+    </VCol>
 
-</template>
+  </template>
 </template>
 
 <style>

@@ -1,12 +1,20 @@
 <script setup>
+import { string } from 'zod'
+
 const { resolveComponent } = useComponentRegistry()
 const props = defineProps({
   groupObject: {
     type: Object,
   },
+  vbind1: {
+    type: string,
+    optional: true,
+  },
+  inputdata: {
+    type: Object,
+    optional: true,
+  },
 })
-
-// const userDataEntry = defineModel('userDataEntry')
 
 function getCols(vObject) {
   //debugger
@@ -55,16 +63,15 @@ function getControlObject(vControl) {
   return vControl
 }
 
-// function getControlswithinData() {
-// // props.groupObject?.FormRTObjects ? props.groupObject?.FormRTObjects.Controls : props.groupObject.Controls"
-//   if (props.groupObject?.FormRTObjects)
-//     return props.groupObject?.FormRTObjects.Controls
+function getBind(ivbind = {}) {
+  return {
+    ...ivbind,
+    isthisfordialog:
+      ivbind.isthisfordialog ||
+      (props.vbind1?.isthisfordialog ? 'globeID' : undefined)
+  }
+}
 
-//   if (props.groupObject.Controls)
-//     return props.groupObject.Controls
-
-//   return []
-// }
 </script>
 <template>
   <!-- {{ groupObject }} -->
@@ -84,11 +91,13 @@ function getControlObject(vControl) {
         v-if="control?.controlProperties?.some(p => p.propertyTitle === 'HorizontalLineBefore' && p.data === 'true')"
         :thickness="1" class="border-opacity-75 mt-2 mb-3 mr-3" style="border-color: gray;"></VDivider>
       <!-- {{ control.dataPath }} -->
-      <VCol :cols="getCols(control)" class="ma-0">
+      <VCol :cols="getCols(control)" class="ma-0 pa-2">
         <!-- {{ control.controlType }} -->
+        <!-- {{ props.vbind1?.isthisfordialog }} -->
+        <!-- {{ control.vbind }} -->
         <component :is="resolveComponent(control.controlType)" v-model:groupObject="control.Name"
           :FormParameters=props.groupObject.FormParameters :group-object="getControlObject(control)"
-          type="control.Datatype" :vbind1="control.vbind" />
+          type="control.Datatype" :vbind1="getBind(control.vbind)" :inputdata="props.inputdata" />
       </VCol>
 
     </template>

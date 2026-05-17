@@ -179,17 +179,17 @@ export function useValidator() {
 
   function validateField(schema: any, path: string) {
     return (value: any) => {
-      console.log('validateFormSchema1', schema, 'validateFormdata1.1', path, 'validateFormdata1.2', value)
+      //console.log('validateFormSchema1', schema, 'validateFormdata1.1', path, 'validateFormdata1.2', value)
 
       const fieldSchema = getSchemaAtPath(schema, path)
-      console.log('validateFormSchema3', fieldSchema, 'validateFormSchema3.1', typeof (fieldSchema))
+      //console.log('validateFormSchema3', fieldSchema, 'validateFormSchema3.1', typeof (fieldSchema))
 
       if (!fieldSchema) return true
 
       // Convert "" to undefined for optional fields
       const inputValue = value === '' ? undefined : value
       const result = fieldSchema.safeParse(inputValue)
-      console.log('validateFormSchema4', result)
+      //console.log('validateFormSchema4', result)
 
       if (result.success) {
         // Clear existing errors for this path
@@ -198,7 +198,7 @@ export function useValidator() {
       } else {
         // Store all error messages for this field
         errors[path] = result.error.issues.map(e => e.message)
-        console.log("result ValidateField5", errors[path])
+        //console.log("result ValidateField5", errors[path])
         return false
       }
     }
@@ -207,21 +207,21 @@ export function useValidator() {
 
   // function validateField(schema: any, path: string) {
   //   //debugger
-  //   console.log('validateFormSchema1', schema, 'validateFormdata', path)
+  //   //console.log('validateFormSchema1', schema, 'validateFormdata', path)
   //   return (value: any) => {
-  //     console.log('validateFormSchema2',value)
+  //     //console.log('validateFormSchema2',value)
   //     const fieldSchema = getSchemaAtPath(schema, path)
-  //     console.log('validateFormSchema3',fieldSchema)
+  //     //console.log('validateFormSchema3',fieldSchema)
   //     if (!fieldSchema) return true
   //     const result = fieldSchema.safeParse(value === '' ? undefined : value)
-  //     console.log('validateFormSchema4',result)
+  //     //console.log('validateFormSchema4',result)
   //     if (result.success) {
   //       if (errors[path]) {
   //         errors[path] = []
   //       }
   //       return true;
   //     }
-  //     console.log("result ValidateField5", result)
+  //     //console.log("result ValidateField5", result)
   //     errors[path] = result.error.issues.map(e => e.message)
   //     // result.error.issues[path] = result.error.issues.map(e => e.message)
   //     result.error.issues.map(e => e.message).join(", ")
@@ -243,21 +243,21 @@ export function useValidator() {
   function validateForm(schema: any, data: any) {
     try {
       //debugger
-      console.log('validateFormSchema', schema, 'validateFormdata', data)
+      //console.log('validateFormSchema', schema, 'validateFormdata', data)
       // alert('rahim start')
       const result = schema.safeParse(data)
-      console.log('result.error.issues', result)
+      //console.log('result.error.issues', result)
       if (!result.success) {
         result.error.issues.forEach(err => {
           const fieldName = err.path.join(".")
-          console.log('fieldName', fieldName, 'err.message', err.message)
+          //console.log('fieldName', fieldName, 'err.message', err.message)
           errors[fieldName] = errors[fieldName] || []
           errors[fieldName].push(err.message)
         })
       }
       return result.success
     } catch (error) {
-      console.log('InsideErrrorvalidateForm', error)
+      //console.log('InsideErrrorvalidateForm', error)
       // alert(error)
     }
   }

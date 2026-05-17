@@ -16,11 +16,11 @@ const uuid = () => {
 }
 
 export async function useEmcList(vMaster: string, vInputData?: object, vRetreiveConfData: boolean = false) {
-  console.log('useEmcList started')
+  //console.log('useEmcList started')
 
-  console.log((vInputData))
+  //console.log((vInputData))
 
-  console.log('useEmcList aftervinput')
+  //console.log('useEmcList aftervinput')
 
   // const lObjToStart = JSON.stringify(vInputData)
 
@@ -40,8 +40,8 @@ export async function useEmcList(vMaster: string, vInputData?: object, vRetreive
 
   })
 
-  console.log('before EMCLIST')
-  console.log(data)
+  //console.log('before EMCLIST')
+  //console.log(data)
 
   return data
 }
@@ -51,13 +51,13 @@ export async function useEmcReferenceDataList(vMaster: string, vInputData?: obje
   try {
 
 
-    console.log('useEmcReferenceDataList started', vInputData)
+    //console.log('useEmcReferenceDataList started', vInputData)
 
     // alert(`/api/emcapi/emcGenericFunctions?q=${vInputData?.id}`)
 
-    console.log(vInputData?.id)
+    //console.log(vInputData?.id)
 
-    console.log('useEmcReferenceDataList aftervinput')
+    //console.log('useEmcReferenceDataList aftervinput')
 
     // const lObjToStart = JSON.stringify(vInputData)
 
@@ -91,8 +91,8 @@ export async function useEmcReferenceDataList(vMaster: string, vInputData?: obje
       }
     }
 
-    console.log('post useEmcReferenceDataList')
-    console.log(data)
+    //console.log('post useEmcReferenceDataList')
+    //console.log(data)
     return data
   } catch (error) {
     alert('error')
@@ -100,11 +100,11 @@ export async function useEmcReferenceDataList(vMaster: string, vInputData?: obje
 }
 
 export async function useEmcGetDetail(vMaster: string, vInputData?: object, vRetreiveConfData: boolean = false) {
-  console.log('useEmcGetDetail started')
+  //console.log('useEmcGetDetail started')
 
-  console.log('useEmcGetDetail aftervinput', vInputData?.data)
+  //console.log('useEmcGetDetail aftervinput', vInputData?.data)
 
-  console.log('useEmcGetDetail aftervinput')
+  //console.log('useEmcGetDetail aftervinput')
 
   // const lObjToStart = JSON.stringify(vInputData)
 
@@ -124,14 +124,14 @@ export async function useEmcGetDetail(vMaster: string, vInputData?: object, vRet
   })
 
 
-  console.log('before useEmcGetDetail')
-  console.log(data)
+  //console.log('before useEmcGetDetail')
+  //console.log(data)
 
   return data
 }
 
 export async function useEmcGetControlsData(vMaster: string) {
-  console.log('useEmcGetControlsData started')
+  //console.log('useEmcGetControlsData started')
 
   // const lObjToStart = JSON.stringify(vInputData)
 
@@ -149,8 +149,8 @@ export async function useEmcGetControlsData(vMaster: string) {
     },
   })
 
-  console.log('get constrols data11')
-  console.log(data.value)
+  //console.log('get constrols data11')
+  //console.log(data.value)
 
   return data.value
 }
@@ -158,7 +158,7 @@ export async function useEmcGetControlsData(vMaster: string) {
 
 async function insertWithBinarydata(vMaster: string, vData: object) {
   debugger
-  console.log('useEmcInsert started', vData)
+  //console.log('useEmcInsert started', vData)
   const fd = new FormData()
   fd.append("data", JSON.stringify({
     master: vMaster,
@@ -174,11 +174,11 @@ async function insertWithBinarydata(vMaster: string, vData: object) {
       fd.append("BinaryDataPath", x.datapath || "") // optional
       fd.append("Type", x.Type || "") // optional
     } else {
-      console.log(`❌ BinaryData[${index}] is not File`, file)
+      //console.log(`❌ BinaryData[${index}] is not File`, file)
     }
   })
 
-  console.log('FormData prepared for useEmcInsert', fd)
+  //console.log('FormData prepared for useEmcInsert', fd)
   const retValue = await $fetch('/api/emcapi/emcGenericFunctions', {
     method: 'POST',
     body: fd,
@@ -192,7 +192,7 @@ export async function useEmcInsert(vMaster: string, vData: object) {
     return await insertWithBinarydata(vMaster, vData)
   }
 
-  console.log('useEmcInsert started')
+  //console.log('useEmcInsert started')
 
   const retValue = await $fetch('/api/emcapi/emcGenericFunctions', {
     method: 'POST',
@@ -212,7 +212,7 @@ export async function useEmcInsert(vMaster: string, vData: object) {
 }
 
 export async function useEmcDelete(vMaster: string, vData: object) {
-  console.log('useEmcDelete started')
+  //console.log('useEmcDelete started')
 
   return await useFetch('/api/emcapi/emcGenericFunctions', {
     method: 'POST',
@@ -227,21 +227,38 @@ export async function useEmcDelete(vMaster: string, vData: object) {
   })
 }
 
-export async function useEmcGetReferenceControlData(vMaster: string, vData: object) {
-  console.log('useEmcDelete started', vData)
-
-  return await useFetch('/api/emcapi/emcGenericFunctions', {
+export async function useEmcGetReferenceControlData(
+  vMaster: string,
+  vData: object
+) {
+  return await $fetch('/api/emcapi/emcGenericFunctions', {
     method: 'POST',
-    body: JSON.stringify({
+    body: {
       master: vMaster,
       action: 'GetControlsWithinComponent',
       data: vData,
-    }),
+    },
     headers: {
       'Content-Type': 'application/json',
     },
   })
 }
+
+// export async function useEmcGetReferenceControlData(vMaster: string, vData: object) {
+//   //console.log('useEmcDelete started', vData)
+
+//   return await useFetch('/api/emcapi/emcGenericFunctions', {
+//     method: 'POST',
+//     body: JSON.stringify({
+//       master: vMaster,
+//       action: 'GetControlsWithinComponent',
+//       data: vData,
+//     }),
+//     headers: {
+//       'Content-Type': 'application/json',
+//     },
+//   })
+// }
 
 export function useEmcfindObjectByName(obj, targetName) {
   if (!obj || typeof obj !== 'object') return null
@@ -259,7 +276,7 @@ export function useEmcfindObjectByName(obj, targetName) {
 }
 
 export async function useEmcGenericList(vUrl: string, InputObject: object) {
-  console.log('useEmcGenericList started')
+  //console.log('useEmcGenericList started')
 
   return await useFetch(vUrl, {
     method: 'POST',

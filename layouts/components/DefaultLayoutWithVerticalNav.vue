@@ -28,12 +28,12 @@ const filterNavItems = (items) => {
 
       // Determine required subject: explicit `item.subject` or default to 'Admin'
       const requiredSubject = item.subject ?? 'Admin'
-      console.log('item.subject', item.subject)
+      // console.log('item.subject', item.subject)
       const rules = sessionData.value?.user?.abilityRules || []
       const hasSubject = rules.some(r => {
         const subj = String(r.subject).toLowerCase()
         const target = String(requiredSubject).toLowerCase()
-        console.log('target', target, 'subject', subj)
+        // console.log('target', target, 'subject', subj)
         return subj === target || subj === 'all'
       })
       // console.log('hassubject', hasSubject)

@@ -159,6 +159,16 @@
 
 
     mOutPutFormData.FormData.GridData = lObj.value?.FormData.GridData
+
+    // Restore selection based on _id
+    if (SelectedRows.value?.length) {
+      const selectedIds = SelectedRows.value.map(x => x._id)
+
+      SelectedRows.value = mOutPutFormData.FormData.GridData.filter(item =>
+        selectedIds.includes(item._id)
+      )
+    }
+
     mFormInputData.PageParameters.TotalRecordCount = lObj.value?.FormData.PaginationOutPutData.TotalRecordCount
     mFormInputData.PageParameters.TotalPages = lObj.value?.FormData.PaginationOutPutData.TotalPages
     mFormInputData.PageParameters.Limit = lObj.value?.FormData.PaginationOutPutData.Limit
@@ -316,14 +326,14 @@
   }
 
   async function btnMoveToSave(vAction = 'save') {
+
     console.log(muserDataStore.data.FormData.DataObject)
-    ////debugger
+    debugger
 
     const master = currentMaster.value;
     let payload = master === 'ScreenConfigure'
       ? screenDesignStore
       : muserDataStore.data?.FormData.UserEntryObjects.FormName
-
     // If not ScreenConfigure, validate form first
     if (master !== 'ScreenConfigure') {
 
@@ -339,6 +349,7 @@
       payload._isThisForValidate = true
     }
     const lObj = await useEmcInsert(master, payload)
+
     ////debugger;
     console.log(lObj?.status.value)
     // let success = lObj?.data.value.success
@@ -533,6 +544,7 @@
       text: 'delete',
       caption: 'Delete',
       icon: 'mdi:delete',
+      color: 'red',
       order: 5,
       selection: { min: 1, max: 999 }
     },
@@ -551,7 +563,7 @@
 
 
   function perforFunction(vAction) {
-    mCurrentFunction.value = vAction
+
     switch (vAction) {
       case 'create':
         btnMoveToCreate()
@@ -569,10 +581,12 @@
         btnMoveToSave()
         break
       case 'back':
+        mCurrentFunction.value = vAction
         btnMoveToList()
         break
       case 'list':
         // alert(vAction)
+        // mCurrentFunction.value = vAction
         btnMoveToList()
         break
       case 'delete':
@@ -619,6 +633,8 @@
 
 </script>
 <template>
+  <!-- {{ mCurrentFunction }} -->
+  <!-- {{ SelectedRows }} -->
   <!-- RAHIM BHIMANI
   {{ organization.Name }}
   {{ organization.icon }}
@@ -707,7 +723,7 @@
 
 <VBtn :color="mFormInputData.searchCriteria?.length > 0 ? '#008000' : 'red'"
   @click="filterpanelexpanded = !filterpanelexpanded">
-  <VIcon size="18px" color="green" :icon="mFormInputData.searchCriteria.length > 0 ? emcfilter : emcfilteroff">
+  <VIcon size="18px" color="green" :icon="mFormInputData.searchCriteria.length > 0 ? 'mdi:filter' : 'mdi:filter-off'">
   </VIcon>
 </VBtn>
 </VToolbar> -->
@@ -760,12 +776,11 @@
           @update:model-value="val => activeMenu = val ? item.text : null" location="bottom end">
           <template #activator="{ props }">
             <div class="split-menu-wrapper" :class="{ 'split-menu-active': activeMenu === item.text }">
-              <VBtn color="#5865f2" density="comfortable" class="split-main-btn"
+              <VBtn :color="item.color ? item.color : 'black'" density="dense" class="split-main-btn"
                 :disabled="pageLoading ? true : disbleButton(item.text)" @click="perforFunction(item.text)">
                 <template #prepend>
-                  <VIcon :icon="item.icon" color="black" />
+                  <VIcon :icon="item.icon" />
                 </template>
-
                 {{ item.caption }}
               </VBtn>
 
@@ -803,7 +818,8 @@
       <!-- Filter Button -->
       <VBtn :color="mFormInputData.searchCriteria?.length > 0 ? '#008000' : 'red'"
         @click="filterpanelexpanded = !filterpanelexpanded">
-        <VIcon size="18px" color="green" :icon="mFormInputData.searchCriteria.length > 0 ? emcfilter : emcfilteroff" />
+        <VIcon size="18px" color="green"
+          :icon="mFormInputData.searchCriteria.length > 0 ? 'mdi:filter' : 'mdi:filter-off'" />
       </VBtn>
     </VToolbar>
   </VCard>
@@ -841,6 +857,7 @@
   <!-- {{ muserDataStore }}   -->
   <!-- {{ mFormInputData }} -->
   <!-- {{ muserDataStore.data.FormData.DataObject }} -->
+  <!-- {{ SelectedRows }}{{ currentMaster }}{{ mCurrentFunction }} -->
   <VForm ref="formRef" style="background-color: white;">
     <VCard class="mt-2 mx-auto" style="background-color: transparent;">
       <component :is="getControl(mCurrentFunction)" v-model:vmaster="currentMaster"

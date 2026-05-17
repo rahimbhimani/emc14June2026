@@ -1,48 +1,51 @@
-import mongoose from 'mongoose'
-import { seedOrganizationData } from '~/server/utils/seedOrganization'
 
 export default defineNitroPlugin(async (nitroApp) => {
-    // Wait for MongoDB connection to be ready
-    let retries = 0
-    const maxRetries = 10
-    const retryDelay = 1000 // 1 second
+    // Database seeding disabled
+    console.log('🚀 Organization data seeding plugin loaded (seeding disabled)')
 
-    while (retries < maxRetries) {
-        if (
-            mongoose.connection.readyState === 1
-        ) {
-            // Connection is open
-            console.log(
-                '🌱 MongoDB ready, seeding organization data...'
-            )
+    // Seeding disabled - manually create data via MongoDB console or API
+    // To enable: uncomment lines below
+    // // Wait for MongoDB connection to be ready
+    // let retries = 0
+    // const maxRetries = 10
+    // const retryDelay = 1000 // 1 second
 
-            try {
-                await seedOrganizationData()
-                console.log(
-                    '✅ Organization data seeding completed'
-                )
-                return
-            } catch (err) {
-                console.error(
-                    '⚠️ Failed to seed organization data:',
-                    err
-                )
-                return
-            }
-        }
+    // while (retries < maxRetries) {
+    //     if (
+    //         mongoose.connection.readyState === 1
+    //     ) {
+    //         // Connection is open
+    //         console.log(
+    //             '🌱 MongoDB ready, seeding organization data...'
+    //         )
 
-        retries++
-        if (retries < maxRetries) {
-            console.log(
-                `⏳ Waiting for MongoDB connection... (attempt ${retries}/${maxRetries})`
-            )
-            await new Promise(resolve =>
-                setTimeout(resolve, retryDelay)
-            )
-        }
-    }
+    //         try {
+    //             await seedOrganizationData()
+    //             console.log(
+    //                 '✅ Organization data seeding completed'
+    //             )
+    //             return
+    //         } catch (err) {
+    //             console.error(
+    //                 '⚠️ Failed to seed organization data:',
+    //                 err
+    //             )
+    //             return
+    //         }
+    //     }
 
-    console.warn(
-        '⚠️ MongoDB connection not ready after retries, skipping seed'
-    )
+    //     retries++
+    //     if (retries < maxRetries) {
+    //         console.log(
+    //             `⏳ Waiting for MongoDB connection... (attempt ${retries}/${maxRetries})`
+    //         )
+    //         await new Promise(resolve =>
+    //             setTimeout(resolve, retryDelay)
+    //         )
+    //     }
+    // }
+
+    // console.warn(
+    //     '⚠️ MongoDB connection not ready after retries, skipping seed'
+    // )
 })
