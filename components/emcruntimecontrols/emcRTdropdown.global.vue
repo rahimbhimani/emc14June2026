@@ -28,7 +28,7 @@ const muserDataStore = props.vbind1?.isthisfordialog
    ========================= */
 const RTData = useUpdateObject(
   muserDataStore?.data?.FormData?.UserEntryObjects,
-  groupObject
+  groupObject,
 )
 
 /* =========================
@@ -45,38 +45,42 @@ const mObjectMultiselect = ref(false)
 const lastFetchedQuery = ref('')
 
 let timeout = null
-let stop = null
+const stop = null
 
 /* =========================
    Helpers
    ========================= */
-const getProp = (title) =>
+const getProp = title =>
   groupObject.value?.controlProperties?.find(
-    (e) => e.propertyTitle === title
+    e => e.propertyTitle === title,
   )
 
 const isMandatory = computed(
-  () => getProp('Mandatory')?.data?.value === 'true'
+  () => getProp('Mandatory')?.data?.value === 'true',
 )
 
 const alignClass = computed(
-  () => getProp('Align')?.data?.value || ''
+  () => getProp('Align')?.data?.value || '',
 )
 
 const isClearable = computed(() => !isMandatory.value)
 
 const bgColor = computed(() => {
   const userBg = props.vbind1?.style?.['background-color']
-  if (userBg) return userBg
+  if (userBg)
+    return userBg
   if (isMandatory.value)
     return props.FormParameters?.ColorForMandatory || ''
+
   return ''
 })
 
 const controlLabel = computed(() => {
-  if (!props.vbind1?.label) return ''
+  if (!props.vbind1?.label)
+    return ''
   const label = props.vbind1.label
   const mode = props.FormParameters?.Mandatory?.value
+
   return mode === 'Astrix'
     ? isMandatory.value ? `${label} *` : label
     : isMandatory.value ? label : `${label} (Opt.)`
@@ -86,8 +90,10 @@ const controlLabel = computed(() => {
    Validation
    ========================= */
 function localclientValidate() {
-  if (!lTouched.value && RTData.dataValue.value !== null) return
+  if (!lTouched.value && RTData.dataValue.value !== null)
+    return
   const path = groupObject.value?.dataPath?.replace('FormName.', '')
+
   return clientValidate(path)
 }
 
@@ -102,8 +108,10 @@ function onFocus() {
    Search (SAFE)
    ========================= */
 function onSearch(query) {
-  if (!query || (!query.trim()) && items.value.length !== 0) return
-  if (query === lastFetchedQuery.value && items.value.length !== 0) return
+  if (!query || (!query.trim()) && items.value.length !== 0)
+    return
+  if (query === lastFetchedQuery.value && items.value.length !== 0)
+    return
 
   search.value = query
 
@@ -126,19 +134,38 @@ async function fetchItems(query) {
       path: groupObject.value.dataPath,
     }
 
-    if (query) ldata.UserInputData = query
+    if (query)
+      ldata.UserInputData = query
 
     const res = await useEmcReferenceDataList('RefData', ldata)
-    items.value = res.value || []
+    let responseData = res.value || []
+
+    // Handle case where response is a stringified JSON
+    if (typeof responseData === 'string') {
+      try {
+        responseData = JSON.parse(responseData)
+      }
+      catch (e) {
+        console.warn('Could not parse response as JSON string:', e)
+        responseData = []
+      }
+    }
+
+    // Ensure responseData is an array
+    if (!Array.isArray(responseData))
+      responseData = []
+
+    items.value = responseData
 
     // Auto-select first ONLY for single-select
-    if (!mObjectMultiselect.value && items.value.length === 1) {
+    if (!mObjectMultiselect.value && items.value.length === 1)
       RTData.dataValue.value = items.value[0]
-    }
-  } catch (err) {
+  }
+  catch (err) {
     console.error('Dropdown fetch error:', err)
     items.value = []
-  } finally {
+  }
+  finally {
     isFetching.value = false
   }
 }
@@ -150,29 +177,29 @@ onMounted(async () => {
   const typeProp = getProp('Type')
   const multiProp = getProp('Multiselect')
 
-  if (typeProp) {
+  if (typeProp)
     mObjectType.value = typeProp.data?.value || 'AutoComplete'
-  }
 
   // ✅ Correct multiselect parsing
   if (multiProp) {
-    mObjectMultiselect.value =
-      String(multiProp.data).toLowerCase() === 'true'
+    mObjectMultiselect.value
+      = String(multiProp.data).toLowerCase() === 'true'
   }
   await nextTick()
-  // Preload for non-autocomplete
-  if (mObjectType.value !== 'AutoComplete') {
-    await fetchItems('')
-  }
 
+  // Preload for non-autocomplete
+  if (mObjectType.value !== 'AutoComplete')
+    await fetchItems('')
 })
 
 onUnmounted(() => {
-  if (stop) stop()
+  if (stop)
+    stop()
 })
 </script>
 
 <template>
+  {{ items }}
   <!-- {{ !lTouched }} {{ RTData.dataValue === null }} -->
   <!-- ================= AUTOCOMPLETE ================= -->
   <VAutocomplete v-if="mObjectType === 'AutoComplete'" v-model="RTData.dataValue.value" v-bind="props?.vbind1"

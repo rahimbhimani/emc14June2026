@@ -65,7 +65,24 @@ async function fetchOptions(type: string) {
       grouptype: type,
     })
 
-    apiOptions.value = res?.value ?? []
+    let responseData = res?.value ?? []
+
+    // Handle case where response is a stringified JSON
+    if (typeof responseData === 'string') {
+      try {
+        responseData = JSON.parse(responseData)
+      } catch (e) {
+        console.warn('Could not parse response as JSON string:', e)
+        responseData = []
+      }
+    }
+
+    // Ensure responseData is an array
+    if (!Array.isArray(responseData)) {
+      responseData = []
+    }
+
+    apiOptions.value = responseData
 
   } catch (err) {
     console.error(err)
