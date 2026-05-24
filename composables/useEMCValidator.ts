@@ -100,20 +100,54 @@ export function useValidator() {
     }
 
     // ---- Primitive types ----
+    // z.any() base ensures .refine() always executes in Zod v4 (optional() short-circuits for undefined)
     if (def.type === "string" || def.min !== undefined || def.max !== undefined) {
-      let schema = z.string();
-      if (def.min) schema = schema.min(def.min, def.message);
-      if (def.max) schema = schema.max(def.max, def.message);
-      if (!def.required) schema = schema.optional();
-      return schema;
+      const msg = def.message || "This field is required"
+      let schema: any = z.any()
+
+      if (def.required) {
+        schema = schema.refine(
+          (val: any) => val !== null && val !== undefined && val !== '',
+          { message: msg }
+        )
+      }
+      if (def.min !== undefined) {
+        schema = schema.refine(
+          (val: any) => val == null || val === '' || String(val).length >= def.min,
+          { message: def.message || `Minimum ${def.min} characters required` }
+        )
+      }
+      if (def.max !== undefined) {
+        schema = schema.refine(
+          (val: any) => val == null || val === '' || String(val).length <= def.max,
+          { message: def.message || `Maximum ${def.max} characters allowed` }
+        )
+      }
+      return schema
     }
 
     if (def.type === "number") {
-      let schema = z.number();
-      if (def.min) schema = schema.min(def.min, def.message);
-      if (def.max) schema = schema.max(def.max, def.message);
-      if (!def.required) schema = schema.optional();
-      return schema;
+      const msg = def.message || "This field is required"
+      let schema: any = z.any()
+      if (def.required) {
+        schema = schema.refine(
+          (val: any) => val !== null && val !== undefined,
+          { message: msg }
+        )
+      }
+      if (def.min !== undefined) {
+        schema = schema.refine(
+          (val: any) => val == null || val >= def.min,
+          { message: def.message || `Minimum value is ${def.min}` }
+        )
+      }
+      if (def.max !== undefined) {
+        schema = schema.refine(
+          (val: any) => val == null || val <= def.max,
+          { message: def.message || `Maximum value is ${def.max}` }
+        )
+      }
+      return schema
     }
 
     if (def.type === "Array") {
@@ -138,7 +172,24 @@ export function useValidator() {
       return schema;
     }
 
-    // ---- Objects ----
+    // ---- Explicit object fields (e.g. dropdown return value) ----
+    // Use z.any() so refines always run for undefined in Zod v4
+    if (def.type === "object") {
+      let schema: any = z.any()
+      if (def.required) {
+        schema = schema
+          .refine((val: any) => val !== null && val !== undefined, {
+            message: def.message || "This field is required",
+          })
+          .refine((val: any) => val == null || (typeof val === "object" && Object.keys(val).length > 0), {
+            message: "Invalid data",
+          })
+      }
+      return schema
+    }
+
+    // ---- Structural objects (root form definition — no explicit type) ----
+    // Keeps z.object(shape) so getSchemaAtPath can navigate into field schemas
     if (typeof def === "object") {
       const shape: Record<string, any> = {};
 
@@ -148,18 +199,16 @@ export function useValidator() {
         if (subSchema) shape[key] = subSchema;
       }
 
-      let schema = z.object(shape).passthrough();
+      let schema: any = z.object(shape).passthrough().nullable().optional();
 
       if (def.required) {
         schema = schema
-          .refine(val => val !== null && val !== undefined && val !== '', {
-            message: "Data missing",
+          .refine((val: any) => val !== null && val !== undefined, {
+            message: def.message || "This field is required",
           })
-          .refine(val => typeof val === "object" && Object.keys(val).length > 0, {
+          .refine((val: any) => val == null || (typeof val === "object" && Object.keys(val).length > 0), {
             message: "Invalid data",
           });
-      } else {
-        schema = schema.nullable();
       }
       return schema;
     }
@@ -172,7 +221,14 @@ export function useValidator() {
   function getSchemaAtPath(schema: any, path: string) {
     return path.split(".").reduce((acc, key) => {
       if (!acc) return undefined;
-      if (acc.unwrap) acc = acc.unwrap(); // handle optional()
+      // Unwrap optional/nullable layers — handles both Zod v3 (.unwrap) and v4 (_def.innerType)
+      let depth = 0
+      while (depth++ < 10) {
+        if (acc.shape) break
+        if (typeof acc.unwrap === 'function') { acc = acc.unwrap(); continue }
+        if (acc._def?.innerType) { acc = acc._def.innerType; continue }
+        break
+      }
       return acc.shape?.[key];
     }, schema);
   }
@@ -186,8 +242,8 @@ export function useValidator() {
 
       if (!fieldSchema) return true
 
-      // Convert "" to undefined for optional fields
-      const inputValue = value === '' ? undefined : value
+      // Convert "" and null to undefined so optional schemas pass cleanly
+      const inputValue = (value === '' || value === null) ? undefined : value
       const result = fieldSchema.safeParse(inputValue)
       //console.log('validateFormSchema4', result)
 
@@ -240,25 +296,64 @@ export function useValidator() {
   }
 
 
+  function nullsToUndefined(obj: any): any {
+    if (obj === null || obj === undefined) return undefined
+    if (typeof obj !== 'object') return obj
+    if (Array.isArray(obj)) return obj.map(nullsToUndefined)
+    return Object.fromEntries(
+      Object.entries(obj).map(([k, v]) => [k, nullsToUndefined(v)])
+    )
+  }
+
   function validateForm(schema: any, data: any) {
     try {
-      //debugger
-      //console.log('validateFormSchema', schema, 'validateFormdata', data)
-      // alert('rahim start')
-      const result = schema.safeParse(data)
-      //console.log('result.error.issues', result)
-      if (!result.success) {
-        result.error.issues.forEach(err => {
-          const fieldName = err.path.join(".")
-          //console.log('fieldName', fieldName, 'err.message', err.message)
-          errors[fieldName] = errors[fieldName] || []
-          errors[fieldName].push(err.message)
-        })
+      // Navigate to the underlying ZodObject shape
+      // Zod v4 raises "expected nonoptional" at the object level for missing keys before
+      // field-schema refines can run — so we iterate fields individually instead.
+      let objectSchema: any = schema
+      let depth = 0
+      while (depth++ < 10) {
+        if (objectSchema?.shape) break
+        if (typeof objectSchema?.unwrap === 'function') { objectSchema = objectSchema.unwrap(); continue }
+        if (objectSchema?._def?.innerType) { objectSchema = objectSchema._def.innerType; continue }
+        break
       }
-      return result.success
+
+      if (!objectSchema?.shape) {
+        // Fallback: direct parse (non-object schemas)
+        const result = schema.safeParse(nullsToUndefined(data))
+        if (!result.success) {
+          result.error.issues.forEach((err: any) => {
+            const fieldName = err.path.join(".")
+            errors[fieldName] = errors[fieldName] || []
+            errors[fieldName].push(err.message)
+          })
+        }
+        return result.success
+      }
+
+      // Validate each field's schema directly — avoids Zod v4 object-level "nonoptional" errors
+      const normalizedData: any = nullsToUndefined(data) || {}
+      let isValid = true
+
+      for (const fieldName in objectSchema.shape) {
+        const fieldSchema = objectSchema.shape[fieldName]
+        const value = normalizedData[fieldName]
+        const result = fieldSchema.safeParse(value)
+        if (!result.success) {
+          isValid = false
+          if (!errors[fieldName]) errors[fieldName] = []
+          result.error.issues.forEach((issue: any) => {
+            if (!errors[fieldName]!.includes(issue.message)) {
+              errors[fieldName]!.push(issue.message)
+            }
+          })
+        }
+      }
+
+      return isValid
     } catch (error) {
       //console.log('InsideErrrorvalidateForm', error)
-      // alert(error)
     }
   }
 

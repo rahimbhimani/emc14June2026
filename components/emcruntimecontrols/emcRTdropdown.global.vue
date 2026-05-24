@@ -90,7 +90,7 @@ const controlLabel = computed(() => {
    Validation
    ========================= */
 function localclientValidate() {
-  if (!lTouched.value && RTData.dataValue.value !== null)
+  if (!lTouched.value && (RTData.dataValue.value === undefined || RTData.dataValue.value === null))
     return
   const path = groupObject.value?.dataPath?.replace('FormName.', '')
 
@@ -199,7 +199,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  {{ items }}
+  <!-- {{ items }} -->
   <!-- {{ !lTouched }} {{ RTData.dataValue === null }} -->
   <!-- ================= AUTOCOMPLETE ================= -->
   <VAutocomplete v-if="mObjectType === 'AutoComplete'" v-model="RTData.dataValue.value" v-bind="props?.vbind1"

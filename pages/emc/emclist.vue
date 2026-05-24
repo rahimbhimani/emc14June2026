@@ -304,8 +304,13 @@
       // alert(lTemp._id)
       muserDataStore.data.FormData.DataObject['_id'] = lTemp._id
       screenDesignStore.board = lTemp.FormDTObjects.board
-      ////debugger
-      screenDesignStore['_id'] = lTemp._id
+      if (vAction === 'copy') {
+        delete muserDataStore.data.FormData.DataObject['_id']
+        alert('Screen design copied. Please make necessary changes and save with a new name to avoid confusion with existing design.')
+      }
+      else {
+        screenDesignStore['_id'] = lTemp._id
+      }
       //alert(screenDesignStore.board._id)
     }
     if (currentMaster.value !== 'ScreenConfigure') {
@@ -727,16 +732,15 @@
   </VIcon>
 </VBtn>
 </VToolbar> -->
-    <VToolbar style="background-color: #f2f9fb;" density="compact" class="pa-0">
+    <VToolbar style="background-color: transparent;" density="compact" class="pa-0">
       <!-- Title -->
 
       <div style="display: flex; align-items: baseline; gap: 6px;" class="ml-2">
-        <h2 class="text-truncate" style="margin: 0; color: black; font-weight: bold; max-inline-size: 100%;">
+        <h2 class="text-truncate text-high-emphasis" style="margin: 0; font-weight: bold; max-inline-size: 100%;">
           {{ mOutPutFormData.FormData.FormParameters?.Title }}
         </h2>
 
-        <h5 class="text-truncate"
-          style="margin: 0; color: darkgray; font-style: italic; font-weight: lighter; max-inline-size: 60%;">
+        <h5 class="text-truncate text-medium-emphasis" style="margin: 0; font-style: italic; font-weight: lighter; max-inline-size: 60%;">
           {{ mOutPutFormData.FormData.FormParameters?.Description }}
         </h5>
       </div>
@@ -751,7 +755,7 @@
         <!-- MENU ONLY (burger) -->
         <VMenu v-if="item.menuOnly" location="bottom end">
           <template #activator="{ props }">
-            <VBtn v-bind="props" color="#5865f2" density="comfortable" class="menu-toolbar-btn"
+            <VBtn v-bind="props" color="#5865f2" density="comfortable"
               :disabled="pageLoading ? true : areAllChildrenDisabled(item.children)">
               <VIcon :icon="item.icon" color="black" />
             </VBtn>
@@ -776,7 +780,7 @@
           @update:model-value="val => activeMenu = val ? item.text : null" location="bottom end">
           <template #activator="{ props }">
             <div class="split-menu-wrapper" :class="{ 'split-menu-active': activeMenu === item.text }">
-              <VBtn :color="item.color ? item.color : 'black'" density="dense" class="split-main-btn"
+              <VBtn :color="item.color ? item.color : 'black'" density="comfortable" class="split-main-btn"
                 :disabled="pageLoading ? true : disbleButton(item.text)" @click="perforFunction(item.text)">
                 <template #prepend>
                   <VIcon :icon="item.icon" />
@@ -832,7 +836,7 @@
           <VBtn style="background-color: transparent !important;">
             <VIcon size="18px" style=" border: 0;background-color: transparent;" class="mr-4" icon="emcdelete">
             </VIcon>
-            <H2 style="color: maroon;">
+            <H2 class="text-error">
               Error In Configuration
             </H2>
           </VBtn>
@@ -858,7 +862,7 @@
   <!-- {{ mFormInputData }} -->
   <!-- {{ muserDataStore.data.FormData.DataObject }} -->
   <!-- {{ SelectedRows }}{{ currentMaster }}{{ mCurrentFunction }} -->
-  <VForm ref="formRef" style="background-color: white;">
+  <VForm ref="formRef">
     <VCard class="mt-2 mx-auto" style="background-color: transparent;">
       <component :is="getControl(mCurrentFunction)" v-model:vmaster="currentMaster"
         v-model:PaginationParameters="mFormInputData.PageParameters" v-model:SelectedRows="SelectedRows"
@@ -921,21 +925,41 @@
 /* Main side */
 .split-main-btn {
   border-radius: 6px 0 0 6px !important;
-  color: black !important;
+  overflow: hidden !important;
+}
+
+.split-main-btn :deep(.v-btn__overlay) {
+  border-radius: 6px 0 0 6px;
 }
 
 /* Arrow side */
 .split-arrow-btn {
   padding: 0 !important;
   border-radius: 0 6px 6px 0 !important;
-  border-inline-start: 1px solid rgba(0, 0, 0, 8%);
-  color: black !important;
+  border-inline-start: 1px solid rgba(var(--v-border-color), 0.12);
   inline-size: 34px !important;
   margin-inline-start: -1px !important;
   min-inline-size: 34px !important;
+  overflow: hidden !important;
 }
 
-/* Shared hover */
+.split-arrow-btn :deep(.v-btn__overlay) {
+  border-radius: 0 6px 6px 0;
+}
+
+/* Normal toolbar button */
+.menu-toolbar-btn {
+  overflow: hidden !important;
+}
+
+/* Suppress Vuetify's individual per-button hover so the wrapper hover is the only effect */
+.split-menu-wrapper .split-main-btn :deep(.v-btn__overlay),
+.split-menu-wrapper .split-arrow-btn :deep(.v-btn__overlay) {
+  opacity: 0 !important;
+  transition: none !important;
+}
+
+/* Shared hover — both halves respond together as one control */
 .split-menu-wrapper:hover .split-main-btn,
 .split-menu-wrapper:hover .split-arrow-btn,
 .split-menu-active .split-main-btn,

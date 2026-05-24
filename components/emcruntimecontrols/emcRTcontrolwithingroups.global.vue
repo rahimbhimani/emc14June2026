@@ -89,7 +89,7 @@ function getBind(ivbind = {}) {
 
       <VDivider
         v-if="control?.controlProperties?.some(p => p.propertyTitle === 'HorizontalLineBefore' && p.data === 'true')"
-        :thickness="1" class="border-opacity-75 mt-2 mb-3 mr-3" style="border-color: gray;"></VDivider>
+        :thickness="1" class="border-opacity-75 mt-2 mb-3 mr-3"></VDivider>
       <!-- {{ control.dataPath }} -->
       <VCol :cols="getCols(control)" class="ma-0 pa-2">
         <!-- {{ control.controlType }} -->

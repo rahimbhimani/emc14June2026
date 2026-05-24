@@ -13,7 +13,7 @@ const props = defineProps({
   FormParameters: Object,
   watchPath: {
     type: String,
-    default: 'FormName.grpVariant.ddProductType'
+    default: 'FormName.grpVariant.ddProductType1'
   }
 })
 const loadedComponents = new Set()
@@ -42,8 +42,10 @@ const basePath = computed(() => {
 // -----------------------------------------------------------------------------
 // Path to watch
 // -----------------------------------------------------------------------------
-const idPath = computed(() => props.watchPath)
-
+// const idPath = computed(() => props.watchPath)
+// const idPath = computed(() => "FormName.grpMain.ddProdDetType")
+const idPath = groupObject.value.controlProperties.find(e => e.propertyTitle === 'ListenToAttributeAndPath')?.data
+const controlNameSuffix = groupObject.value.controlProperties.find(e => e.propertyTitle === 'SuffixOfControlName')?.data || ''
 // -----------------------------------------------------------------------------
 // Helper
 // -----------------------------------------------------------------------------
@@ -56,7 +58,7 @@ function getNestedValue(obj, path) {
 // Selected value
 // -----------------------------------------------------------------------------
 const selectedValue = computed(() => {
-  return getNestedValue(basePath.value, idPath.value)
+  return getNestedValue(basePath.value, idPath)
 })
 
 // -----------------------------------------------------------------------------
@@ -83,36 +85,39 @@ function clientValidate(vControlName) {
 provide('clientErrors', errors)
 provide('clientValidate', clientValidate)
 
+
+
 watch(
   selectedValue,
   async (newVal, oldVal) => {
-    if (
-      newVal == null ||
-      newVal === '' ||
-      newVal === oldVal
-    ) {
-      return
-    }
+    if (newVal == null || newVal === '') return
 
     const componentType = newVal.ComponentType
-    const componentName = newVal.ComponentName
+    const componentName = newVal.ComponentName + (controlNameSuffix || '')
     if (!componentType || !componentName) return
 
+    // Skip only when the same component type+name is already loaded AND value reference unchanged
     const componentKey = `${componentType}|${componentName}`
+    const isSameComponent =
+      oldVal?.ComponentType === componentType &&
+      oldVal?.ComponentName === componentName
 
-    if (loadedComponents.has(componentKey)) {
-      return
-    }
+    if (isSameComponent && loadedComponents.has(componentKey)) return
 
-    if (isLoading.value) {
-      return
-    }
+    if (isLoading.value) return
+
+    // Reset all state for the incoming product type
+    clearErrors()
+    expandedRows.value = []
+    Object.keys(rowMode).forEach(k => delete rowMode[k])
+    pendingNewItem.value = null
+    mUserDataStoreInternal.value = []
+    loadedComponents.clear()
 
     try {
       isLoading.value = true
-
-      // Mark as loaded BEFORE async call
       loadedComponents.add(componentKey)
+
       FormRTObjects.value = await useEmcGetReferenceControlData(
         'ComponentData',
         {
@@ -122,17 +127,13 @@ watch(
         }
       )
       console.log('FormRTObjects loaded:', FormRTObjects.value)
-      schema.value = FormRTObjects.value.FormRTObjects.validationSchema ? buildZodSchema(FormRTObjects.value.FormRTObjects.validationSchema) : {}
+      schema.value = FormRTObjects.value.FormRTObjects.validationSchema
+        ? buildZodSchema(FormRTObjects.value.FormRTObjects.validationSchema)
+        : {}
 
-      clearErrors()
-      expandedRows.value = []
-      Object.keys(rowMode).forEach(k => delete rowMode[k])
-      pendingNewItem.value = null
       await nextTick()
     } catch (err) {
       console.error('Error loading component data:', err)
-
-      // Remove from global set so retry is possible
       loadedComponents.delete(componentKey)
     } finally {
       isLoading.value = false
@@ -380,7 +381,10 @@ function getvbind() {
 const tableHeaders = computed(() => {
   if (!FormRTObjects.value?.ListHeaders) return []
   return [
-    ...FormRTObjects.value.ListHeaders,
+    ...FormRTObjects.value.ListHeaders.map((h) => ({
+      ...h,
+      key: `data.FormData.UserEntryObjects.FormName.${h.key}`
+    })),
     { title: 'Actions', key: 'actions', sortable: false, align: 'end', width: '130px' }
   ]
 })
@@ -402,12 +406,8 @@ const tableItems = computed(() => {
       // }
 
       return {
-        // Unique identifier for v-data-table
         identifier: item.identifier,
-
-        // Flatten the form fields to top-level properties
         ...item,
-        // Keep the original object if needed later
         _original: structuredClone(toRaw(item))
       }
     })
@@ -420,81 +420,92 @@ const tableItems = computed(() => {
 
 
 <template>
-
-  {{ schema }}
   <div>
-    <div class="d-flex align-center pa-2">
-      <v-btn color="primary" size="small" prepend-icon="mdi:plus" :disabled="!!pendingNewItem" @click="CreateRow()">
+    {{ controlNameSuffix }}
+    <!-- {{ muserDataStore }} -->
+    <!-- {{ FormRTObjects.ListHeaders }} -->
+    <!-- {{ schema }} -->
+    <!-- {{ pendingNewItem?.data?.FormData?.UserEntryObjects?.FormName }} -->
+    <!-- Toolbar -->
+    <div class="d-flex align-center justify-space-between px-3 py-2">
+      <span class="text-body-2 text-medium-emphasis">
+        {{ tableItems.length }} {{ tableItems.length === 1 ? 'record' : 'records' }}
+      </span>
+      <v-btn color="primary" size="small" variant="tonal" prepend-icon="mdi:plus" :disabled="!!pendingNewItem"
+        @click="CreateRow()">
         Add Row
       </v-btn>
     </div>
 
-    <!-- Add form panel — shown only while a new row is being composed -->
-    <v-sheet v-if="pendingNewItem" color="green-lighten-5" class="pa-4 mb-3">
-      <div class="text-subtitle-2 font-weight-bold mb-3">New Row</div>
-      <EmcRTcontrolwithingroups v-if="FormRTObjects" :group-object="FormRTObjects" :vbind1="getvbind()"
-        :inputdata="pendingNewItem" />
-      <div class="d-flex justify-end gap-2 pt-3">
-        <v-btn color="primary" size="small" @click="saveNewItem()">Save</v-btn>
-        <v-btn variant="outlined" size="small" @click="cancelNewItem()">Cancel</v-btn>
+    <!-- New row form panel -->
+    <v-card v-if="pendingNewItem" variant="outlined" class="new-row-card mb-4" rounded="lg">
+      <div class="new-row-header px-4 py-3 d-flex align-center gap-2">
+        <v-icon size="16" color="primary">mdi:plus-circle-outline</v-icon>
+        <span class="text-body-2 font-weight-semibold text-primary">New Row</span>
       </div>
-    </v-sheet>
-
+      <v-divider />
+      <div class="pa-4">
+        <EmcRTcontrolwithingroups v-if="FormRTObjects" :group-object="FormRTObjects" :vbind1="getvbind()"
+          :inputdata="pendingNewItem" />
+      </div>
+      <v-divider />
+      <div class="d-flex justify-end gap-2 px-4 py-3">
+        <v-btn variant="text" size="small" @click="cancelNewItem()">Cancel</v-btn>
+        <v-btn color="primary" size="small" variant="flat" @click="saveNewItem()">Save</v-btn>
+      </div>
+    </v-card>
+    <!-- {{ tableItems }}
+    -----
+    {{ tableHeaders }} -->
+    <!-- Data table -->
     <v-data-table v-if="FormRTObjects?.ListHeaders" :headers="tableHeaders" :items="tableItems" item-value="identifier"
-      v-model:expanded="expandedRows" hide-default-footer>
+      v-model:expanded="expandedRows" hide-default-footer density="comfortable">
 
-      <!-- Row action buttons: Edit / View / Delete -->
+      <!-- Row action buttons -->
       <template #item.actions="{ item }">
-        <div class="d-flex justify-end gap-1">
+        <div class="d-flex justify-end">
           <v-tooltip text="Edit" location="top">
             <template #activator="{ props: tip }">
               <v-btn v-bind="tip" icon size="x-small" variant="text" color="primary" @click="editRow(item)">
-                <v-icon>mdi:pencil</v-icon>
+                <v-icon size="16">mdi:pencil</v-icon>
               </v-btn>
             </template>
           </v-tooltip>
-
           <v-tooltip text="View" location="top">
             <template #activator="{ props: tip }">
               <v-btn v-bind="tip" icon size="x-small" variant="text" color="secondary" @click="viewRow(item)">
-                <v-icon>mdi:eye</v-icon>
+                <v-icon size="16">mdi:eye</v-icon>
               </v-btn>
             </template>
           </v-tooltip>
-
           <v-tooltip text="Delete" location="top">
             <template #activator="{ props: tip }">
               <v-btn v-bind="tip" icon size="x-small" variant="text" color="error" @click="deleteVariant(item)">
-                <v-icon>mdi:delete</v-icon>
+                <v-icon size="16">mdi:delete</v-icon>
               </v-btn>
             </template>
           </v-tooltip>
         </div>
       </template>
 
-      <!-- Expanded row: form controls + save button (edit mode only) -->
+      <!-- Expanded row -->
       <template #expanded-row="{ columns, item }">
         <tr>
           <td :colspan="columns.length" class="pa-0">
-            <v-sheet color="blue-lighten-5" class="pa-4">
-
-              <!-- Read-only overlay in view mode -->
+            <div :class="['expanded-row-panel', rowMode[item.identifier] === 'view' ? 'mode-view' : 'mode-edit']">
               <div :class="{ 'view-mode': rowMode[item.identifier] === 'view' }">
                 <EmcRTcontrolwithingroups v-if="FormRTObjects" :group-object="FormRTObjects" :vbind1="getvbind()"
                   :inputdata="item" />
               </div>
-
-              <div class="d-flex justify-end gap-2 pt-3">
-                <v-btn v-if="rowMode[item.identifier] === 'edit'" color="primary" size="small"
-                  @click="saveVariant(item)">
-                  Save
-                </v-btn>
-                <v-btn variant="outlined" size="small" @click="cancelRow(item)">
-                  Cancel
-                </v-btn>
+              <div class="d-flex justify-end align-center gap-2 pt-3">
+                <v-chip v-if="rowMode[item.identifier] === 'view'" size="x-small" color="secondary" variant="tonal">
+                  View only
+                </v-chip>
+                <v-btn variant="text" size="small" @click="cancelRow(item)">Cancel</v-btn>
+                <v-btn v-if="rowMode[item.identifier] === 'edit'" color="primary" size="small" variant="flat"
+                  @click="saveVariant(item)">Save</v-btn>
               </div>
-
-            </v-sheet>
+            </div>
           </td>
         </tr>
       </template>
@@ -504,6 +515,29 @@ const tableItems = computed(() => {
 </template>
 
 <style scoped>
+.new-row-card {
+  border-color: rgb(var(--v-theme-primary)) !important;
+}
+
+.new-row-header {
+  background: rgba(var(--v-theme-primary), 0.06);
+}
+
+.expanded-row-panel {
+  padding: 16px;
+  border-inline-start: 3px solid transparent;
+}
+
+.expanded-row-panel.mode-edit {
+  background: rgba(var(--v-theme-primary), 0.03);
+  border-inline-start-color: rgb(var(--v-theme-primary));
+}
+
+.expanded-row-panel.mode-view {
+  background: rgba(var(--v-theme-secondary), 0.03);
+  border-inline-start-color: rgb(var(--v-theme-secondary));
+}
+
 .view-mode {
   opacity: 0.7;
   pointer-events: none;

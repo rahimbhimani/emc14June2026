@@ -75,8 +75,10 @@ onMounted(async () => {
     // RTData.dataValue.value = getValueByPath(inputdata?.value.data?.FormData?.UserEntryObjects, groupObject.value.dataPath)
   }
 
-  if ((RTData.dataValue.value === undefined || RTData.dataValue.value === '')) lTouched.value = false
-  else lTouched.value = true
+  if (RTData.dataValue.value === undefined || RTData.dataValue.value === null || RTData.dataValue.value === '')
+    lTouched.value = false
+  else
+    lTouched.value = true
 
 })
 

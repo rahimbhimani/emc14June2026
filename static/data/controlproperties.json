@@ -140,6 +140,28 @@
                "ChangedBy": "",
                "keepThisPropertyAtRuntime": "true",
                "data": ""
+            },
+            {
+               "propertyTitle": "ListenToAttributeAndPath",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 55,
+               "Defaultvalue": "",
+               "ChangedBy": "",
+               "keepThisPropertyAtRuntime": "true",
+               "data": ""
+            },
+            {
+               "propertyTitle": "SuffixOfControlName",
+               "controlType": "TextBox",
+               "groupBy": "Main",
+               "dataType": "Text",
+               "size": 25,
+               "Defaultvalue": "",
+               "ChangedBy": "",
+               "keepThisPropertyAtRuntime": "true",
+               "data": ""
             }
          ]
       },

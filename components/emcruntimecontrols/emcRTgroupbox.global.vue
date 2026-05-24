@@ -37,7 +37,7 @@ onMounted(() => {
             }}
           </div>
 
-          <VDivider :thickness="1" class="border-opacity-75 ma-0 mp-0" style="border-color: gray;" />
+          <VDivider :thickness="1" class="border-opacity-75 ma-0 mp-0" />
         </VExpansionPanelTitle>
 
         <VExpansionPanelText elevation="0" density="compact" class="py-1 px-2 text-body-2 no-top-line"
