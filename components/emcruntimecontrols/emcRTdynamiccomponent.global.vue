@@ -46,6 +46,7 @@ const basePath = computed(() => {
 // const idPath = computed(() => "FormName.grpMain.ddProdDetType")
 const idPath = groupObject.value.controlProperties.find(e => e.propertyTitle === 'ListenToAttributeAndPath')?.data
 const controlNameSuffix = groupObject.value.controlProperties.find(e => e.propertyTitle === 'SuffixOfControlName')?.data || ''
+const IsThisArrayList = groupObject.value.controlProperties.find(e => e.propertyTitle === 'IsThisArrayList')?.data === 'true' ? true : false
 // -----------------------------------------------------------------------------
 // Helper
 // -----------------------------------------------------------------------------
@@ -420,8 +421,7 @@ const tableItems = computed(() => {
 
 
 <template>
-  <div>
-    {{ controlNameSuffix }}
+  <div v-show="IsThisArrayList === true">
     <!-- {{ muserDataStore }} -->
     <!-- {{ FormRTObjects.ListHeaders }} -->
     <!-- {{ schema }} -->
@@ -511,6 +511,13 @@ const tableItems = computed(() => {
       </template>
 
     </v-data-table>
+  </div>
+  <div v-show="IsThisArrayList === false">
+    <div class="pa-0 ma-0">
+      <!-- {{ muserDataStore?.data?.FormData?.UserEntryObjects }} -->
+      <EmcRTcontrolwithingroups v-if="FormRTObjects" :group-object="FormRTObjects" :vbind1="getvbind()"
+        :inputdata="muserDataStore" />
+    </div>
   </div>
 </template>
 

@@ -162,6 +162,16 @@
                "ChangedBy": "",
                "keepThisPropertyAtRuntime": "true",
                "data": ""
+            },
+            {
+               "propertyTitle": "IsThisArrayList",
+               "controlType": "CheckBox",
+               "groupBy": "Main",
+               "dataType": "Boolean",
+               "Defaultvalue": "false",
+               "ChangedBy": "",
+               "keepThisPropertyAtRuntime": "true",
+               "data": ""
             }
          ]
       },
