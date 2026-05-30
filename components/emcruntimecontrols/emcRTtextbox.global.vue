@@ -23,7 +23,7 @@ const inputdata = defineModel('inputdata')
 let muserDataStore = props.vbind1.isthisfordialog ? inputdata.value : userDataStore()
 // let muserDataStore = inputdata.value
 let ldataType1 = groupObject.value.controlProperties.filter(e => e.propertyTitle === 'DataType')
-let RTData = useUpdateObject(muserDataStore.data.FormData.UserEntryObjects, groupObject)
+let RTData = useUpdateObject(muserDataStore.data.FormData.UserEntryObjects, groupObject, null, props.vbind1?.overwriteDataPath)
 
 function handleInput(event) {
   //debugger
@@ -109,6 +109,9 @@ let date = ref < Date | null > (null)
 </script>
 
 <template>
+  <!-- {{ groupObject }} -->
+  <!-- {{ typeof props.vbind1?.overwriteDataPath }} -->
+  <!-- {{ groupObject }} -->
   <!-- {{ clientErrors }} -->
   <!-- {{ clientValidate }} -->
   <!-- {{ RTData }} -->

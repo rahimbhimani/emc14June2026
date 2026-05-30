@@ -1814,6 +1814,26 @@ export function extractZodJsonFromDTObjects(controls: any[]): any {
         controlSchema.ignore = true;
         controlSchema.required = false;
       }
+
+      if (
+        control.controlType === 'DynamicComponent'
+      ) {
+        // console.log("RateDefinitioncontrol123999", control)
+        // controlSchema.type = 'object';
+
+        controlSchema.ignore = true;
+        controlSchema.required = false;
+
+        controlSchema.type = control.controlProperties.filter(
+          (e) => e.propertyTitle === 'IsThisArrayList'
+        )[0]?.data === 'true' ? 'Array' : 'object'
+
+        // console.log('controlType12340099', control.controlProperties.filter(
+        //   (e) => e.propertyTitle === 'IsThisArrayList'
+        // )[0]?.data === 'true' ? 'Array' : 'object');
+
+      }
+
       if (
         control.controlType === 'Tabs'
       ) {

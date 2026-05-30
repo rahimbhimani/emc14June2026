@@ -64,16 +64,24 @@ function getControlObject(vControl) {
 }
 
 function getBind(ivbind = {}) {
+
   return {
+
     ...ivbind,
+
+    overwriteDataPath:
+      props.vbind1?.overwriteDataPath,
+
     isthisfordialog:
-      ivbind.isthisfordialog ||
-      (props.vbind1?.isthisfordialog ? 'globeID' : undefined)
+      props.vbind1?.isthisfordialog
+        ? 'globeID'
+        : ivbind.isthisfordialog
   }
 }
 
 </script>
 <template>
+
   <!-- {{ groupObject }} -->
   <!-- {{ getControlswithinData }} -->
   <!-- {{ props.groupObject?.FormRTObjects.Controls[0].controlType === 'Component' }} -->

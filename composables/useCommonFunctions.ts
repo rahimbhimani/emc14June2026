@@ -28,10 +28,12 @@ export function useUpdateObject99(obj, path) {
 }
 
 
-export function useUpdateObject(obj, groupObject, rowIndex = null) {
-  //debugger
+export function useUpdateObject(obj, groupObject, rowIndex = null, overwriteDataPath = null) {
+  debugger
+
   let path = groupObject.value.dataPath
-  if (groupObject.value.ComponentInfo) {
+  // console.log('useUpdateObject909', path, groupObject.value.ComponentInfo, overwriteDataPath)
+  if (groupObject.value.ComponentInfo && overwriteDataPath === null) {
     // alert(groupObject.value.ComponentInfo)
     const dotIndex = groupObject?.value.dataPath?.lastIndexOf(".")
     groupObject.value.dataPath =
@@ -42,6 +44,9 @@ export function useUpdateObject(obj, groupObject, rowIndex = null) {
     path = groupObject.value.dataPath
   }
 
+  if (overwriteDataPath !== null) {
+    path = overwriteDataPath + '.' + groupObject.value.dataPath.replace("FormData.", "")
+  }
 
   const getObjectData = () =>
     path.split('.').reduce((o, key) => (o ? o[key] : undefined), obj)

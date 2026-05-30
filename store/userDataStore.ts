@@ -7,7 +7,6 @@ export const userDataStore = defineStore('userDataStore', () => {
     FormData: { Name: '', DataObject: {}, flattenData: [{}], UserEntryObjects: {} },
   })
 
-
   // const trial = reactive({
   //   rahim: 'rahim trial',
   // })
@@ -28,8 +27,6 @@ export const userDataStore = defineStore('userDataStore', () => {
   }
 
   function updateData(newObject) {
-    debugger
-
     // function upsertObjectInArray(array, newObject, key) {
     // Find the index of the object with the matching key
     const index = data.FormData.flattenData.findIndex(item => item['id'] === newObject.id)
@@ -68,13 +65,82 @@ export const userDataInternalstore = defineStore('userDataInternalstore', () => 
 })
 
 
+// export const useUserDataInternalStore = defineStore(
+//   'userDataInternalstoreForObjects',
+//   () => {
+//     /**
+//      * Creates a fresh FormData object.
+//      * A new object is returned every time so items do not share references.
+//      */
+//     function createDefaultFormData() {
+//       return {
+//         Name: '',
+//         DataObject: {},
+//         flattenData: [{}],
+//         UserEntryObjects: {},
+//         testing: 'testing value'
+//       }
+//     }
+
+//     const data = {
+//       // Default FormData for the store itself (optional)
+//       FormData: createDefaultFormData(),
+
+//       // All runtime objects are stored here
+//       Items: []
+//     }
+
+//     /**
+//      * Returns an existing item if the identifier exists.
+//      * If no identifier is provided, a new item is created with a UUID.
+//      * If the identifier does not exist, a new item is created with that identifier.
+//      *
+//      * @param {string} [identifier]
+//      * @returns {Object}
+//      *
+//      * Returned structure:
+//      * {
+//      *   identifier: 'uuid-or-custom-id',
+//      *   data: {
+//      *     FormData: { ... }
+//      *   }
+//      * }
+//      */
+//     function getOrCreateItem(identifier = crypto.randomUUID()) {
+//       // Check whether an item with this identifier already exists
+//       let item = data.Items.find(
+//         entry => entry.identifier === identifier
+//       )
+
+//       // Create a new item if not found
+//       if (!item) {
+//         item = {
+//           identifier,
+//           data: {
+//             FormData: createDefaultFormData()
+//           }
+//         }
+
+//         data.Items.push(item)
+//       }
+
+//       return item
+//     }
+
+//     return {
+//       data,
+//       getOrCreateItem
+//     }
+//   }
+// )
+
+
 export const useUserDataInternalStore = defineStore(
   'userDataInternalstoreForObjects',
   () => {
-    /**
-     * Creates a fresh FormData object.
-     * A new object is returned every time so items do not share references.
-     */
+
+    const runtimeObjects = reactive({})
+
     function createDefaultFormData() {
       return {
         Name: '',
@@ -85,54 +151,28 @@ export const useUserDataInternalStore = defineStore(
       }
     }
 
-    const data = {
-      // Default FormData for the store itself (optional)
-      FormData: createDefaultFormData(),
+    function getOrCreateRuntimeObject(path) {
 
-      // All runtime objects are stored here
-      Items: []
-    }
+      if (!runtimeObjects[path]) {
 
-    /**
-     * Returns an existing item if the identifier exists.
-     * If no identifier is provided, a new item is created with a UUID.
-     * If the identifier does not exist, a new item is created with that identifier.
-     *
-     * @param {string} [identifier]
-     * @returns {Object}
-     *
-     * Returned structure:
-     * {
-     *   identifier: 'uuid-or-custom-id',
-     *   data: {
-     *     FormData: { ... }
-     *   }
-     * }
-     */
-    function getOrCreateItem(identifier = crypto.randomUUID()) {
-      // Check whether an item with this identifier already exists
-      let item = data.Items.find(
-        entry => entry.identifier === identifier
-      )
+        runtimeObjects[path] = {
 
-      // Create a new item if not found
-      if (!item) {
-        item = {
-          identifier,
           data: {
             FormData: createDefaultFormData()
-          }
-        }
+          },
 
-        data.Items.push(item)
+          Items: []
+        }
       }
 
-      return item
+      return runtimeObjects[path]
     }
 
     return {
-      data,
-      getOrCreateItem
+
+      runtimeObjects,
+
+      getOrCreateRuntimeObject
     }
   }
 )

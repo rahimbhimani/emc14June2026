@@ -650,7 +650,7 @@
   <!-- {{ muserDataStore?.data }} -->
   <!-- {{ muserDataStore.data?.FormData.UserEntryObjects.FormName }} -->
   <!-- <br/> -->
-  <!-- {{ muserDataStore.data?.FormData.UserEntryObjects.FormName }} -->
+  {{ muserDataStore.data?.FormData }}
   <!-- <br/> -->
   <!-- <br/> -->
   <!-- {{ mOutPutFormData.FormData.GridData }} -->
@@ -740,7 +740,8 @@
           {{ mOutPutFormData.FormData.FormParameters?.Title }}
         </h2>
 
-        <h5 class="text-truncate text-medium-emphasis" style="margin: 0; font-style: italic; font-weight: lighter; max-inline-size: 60%;">
+        <h5 class="text-truncate text-medium-emphasis"
+          style="margin: 0; font-style: italic; font-weight: lighter; max-inline-size: 60%;">
           {{ mOutPutFormData.FormData.FormParameters?.Description }}
         </h5>
       </div>
@@ -924,8 +925,8 @@
 
 /* Main side */
 .split-main-btn {
-  border-radius: 6px 0 0 6px !important;
   overflow: hidden !important;
+  border-radius: 6px 0 0 6px !important;
 }
 
 .split-main-btn :deep(.v-btn__overlay) {
@@ -934,13 +935,13 @@
 
 /* Arrow side */
 .split-arrow-btn {
+  overflow: hidden !important;
   padding: 0 !important;
   border-radius: 0 6px 6px 0 !important;
   border-inline-start: 1px solid rgba(var(--v-border-color), 0.12);
   inline-size: 34px !important;
   margin-inline-start: -1px !important;
   min-inline-size: 34px !important;
-  overflow: hidden !important;
 }
 
 .split-arrow-btn :deep(.v-btn__overlay) {
