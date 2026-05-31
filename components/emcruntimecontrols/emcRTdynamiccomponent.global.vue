@@ -1,8 +1,10 @@
 <script setup>
 import {
   computed,
+  inject,
   nextTick,
   onMounted,
+  onUnmounted,
   provide,
   reactive,
   ref,
@@ -46,6 +48,8 @@ const FormRTObjects = ref(null)
 const loadedComponents = new Set()
 
 const isLoading = ref(false)
+
+const lastLoadedComponent = ref({ type: null, name: null })
 
 const schema = ref({})
 
@@ -167,6 +171,25 @@ function setNestedValue(obj, path, value) {
   })
 }
 
+const META_KEYS = ['required', 'type', 'min', 'max', 'message', 'ignore']
+
+function buildDefaultFromSchema(schemaDef) {
+  if (!schemaDef || typeof schemaDef !== 'object') return null
+  const childKeys = Object.keys(schemaDef).filter(k => !META_KEYS.includes(k))
+  if (schemaDef.type || childKeys.length === 0) return null
+  const result = {}
+  for (const key of childKeys) {
+    result[key] = buildDefaultFromSchema(schemaDef[key])
+  }
+  return result
+}
+
+onUnmounted(() => {
+  if (!IsThisArrayList) {
+    unregisterChildValidator?.(groupObject.value.dataPath)
+  }
+})
+
 // -----------------------------------------------------------------------------
 // Initialize
 // -----------------------------------------------------------------------------
@@ -234,6 +257,12 @@ provide('clientErrors', errors)
 provide('clientValidate', clientValidate)
 
 // -----------------------------------------------------------------------------
+// Validator registry (injected from parent, e.g. emclist)
+// -----------------------------------------------------------------------------
+const registerChildValidator = inject('registerChildValidator', null)
+const unregisterChildValidator = inject('unregisterChildValidator', null)
+
+// -----------------------------------------------------------------------------
 // Runtime form loader
 // -----------------------------------------------------------------------------
 watch(
@@ -256,8 +285,8 @@ watch(
       = `${componentType}|${componentName}`
 
     const isSameComponent
-      = oldVal?.ComponentType === componentType
-      && oldVal?.ComponentName === componentName
+      = lastLoadedComponent.value.type === componentType
+      && lastLoadedComponent.value.name === componentName
 
     if (
       isSameComponent
@@ -301,6 +330,60 @@ watch(
             FormRTObjects.value.FormRTObjects.validationSchema,
           )
           : {}
+
+      if (!IsThisArrayList) {
+        const rawSchema = FormRTObjects.value.FormRTObjects.validationSchema
+        const dataPath = groupObject.value.dataPath
+
+        // Existing DB data takes priority; otherwise build a null-keyed default from schema.
+        const globalData = getNestedValue(
+          muserDataStore.value?.data?.FormData?.UserEntryObjects,
+          dataPath,
+        )
+
+        const initialData
+          = globalData && typeof globalData === 'object' && !Array.isArray(globalData)
+            ? JSON.parse(JSON.stringify(globalData))
+            : (rawSchema ? buildDefaultFromSchema(rawSchema) : {}) ?? {}
+
+        // Write to internal store
+        setNestedValue(
+          mUserDataStoreObject.value.data.FormData.UserEntryObjects,
+          dataPath,
+          initialData,
+        )
+
+        // Write to global store so the parent sees the correct shape immediately
+        setNestedValue(
+          muserDataStore.value.data.FormData.UserEntryObjects,
+          dataPath,
+          JSON.parse(JSON.stringify(initialData)),
+        )
+      }
+
+      if (!IsThisArrayList) {
+        const capturedDataPath = groupObject.value.dataPath
+        registerChildValidator?.(
+          capturedDataPath,
+          FormRTObjects.value.FormRTObjects.validationSchema || null,
+          () => {
+            // Read from the global store (always in sync via localData watcher).
+            // Strip the "FormName." prefix so the path is relative to FormName.
+            const schemaRelPath = capturedDataPath.startsWith('FormName.')
+              ? capturedDataPath.slice('FormName.'.length)
+              : capturedDataPath
+            const formData
+              = getNestedValue(
+                muserDataStore.value?.data?.FormData?.UserEntryObjects?.FormName,
+                schemaRelPath,
+              ) ?? {}
+            return validateForm(schema.value, formData)
+          },
+        )
+      }
+
+      // Remember which component is loaded (used by isSameComponent on next trigger)
+      lastLoadedComponent.value = { type: componentType, name: componentName }
 
       await nextTick()
     }
@@ -628,9 +711,9 @@ function getvbind() {
 </script>
 
 <template>
-  {{ FormRTObjects?.FormRTObjects?.validationSchema }}
-  {{ props.groupObject.dataPath }}
-
+  <!-- {{ FormRTObjects?.FormRTObjects?.validationSchema }} -->
+  <!-- {{ props.groupObject.dataPath }} -->
+  <!-- {{ errors }} -->
   <!-- {{ mUserDataStoreObject }} -->
   <div v-show="IsThisArrayList === true">
     <!-- Toolbar -->
@@ -757,6 +840,7 @@ function getvbind() {
   <!-- NON ARRAY MODE -->
   <div v-show="IsThisArrayList === false">
     <div class="pa-0 ma-0">
+      {{ muserDataStore }}
       <EmcRTcontrolwithingroups v-if="FormRTObjects" :group-object="FormRTObjects" :vbind1="getvbind()"
         :inputdata="muserDataStore" />
     </div>
