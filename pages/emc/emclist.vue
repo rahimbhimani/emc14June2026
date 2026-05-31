@@ -25,18 +25,19 @@
   const formRef = ref(null)
 
   let schema = {}
+  let originalValidationSchema = null
+  const childValidatorRegistry = new Map()
   //  { "Code": { "_id": "6885e29af2dae01edb4893d8", "title": "Published" } }
   function formValidate() {
-    //////debugger
-    // muserDataStore.data.FormData.UserEntryObjects.FormName = { "TabRateManagent": { "TbRateMgmt": { "Reference": undefined, "ContractType": { "_id": "6885e29af2dae01edb4893d8", "title": "Published" } } } }
-    const result = validateForm(schema, muserDataStore.data.FormData.UserEntryObjects.FormName)
+    const parentValid = validateForm(schema, muserDataStore.data.FormData.UserEntryObjects.FormName)
 
-    // alert(result)
-
-    if (!result.success) {
-      console.log(result.error);
+    let allChildrenValid = true
+    for (const [, { validateFn }] of childValidatorRegistry) {
+      const ok = validateFn()
+      if (!ok) allChildrenValid = false
     }
-    return result
+
+    return parentValid && allChildrenValid
   }
 
   function areAllChildrenDisabled(children) {
@@ -151,6 +152,7 @@
       mOutPutFormData.FormData.FormParameters = lObj.value?.FormData.FormParameters
       mOutPutFormData.FormData.UserEntryObjects = lObj.value?.FormData.UserEntryObjects
       mOutPutFormData.FormData.validationSchema = lObj.value?.FormData.validationSchema
+      originalValidationSchema = JSON.parse(JSON.stringify(mOutPutFormData.FormData.validationSchema || {}))
       schema = mOutPutFormData.FormData.validationSchema ? buildZodSchema(mOutPutFormData.FormData.validationSchema) : {}
       if (currentMaster.value !== 'ScreenConfigure')
         muserDataStore.data.FormData.UserEntryObjects.FormName = JSON.parse(JSON.stringify((lObj.value?.FormData.UserEntryObjects)))
@@ -629,6 +631,41 @@
 
   provide('clientErrors', errors)
   provide('clientValidate', clientValidate)
+
+  function setSchemaAtPath(obj, path, value) {
+    const keys = path.split('.')
+    let cur = obj
+    for (let i = 0; i < keys.length - 1; i++) {
+      if (!cur[keys[i]] || typeof cur[keys[i]] !== 'object') cur[keys[i]] = {}
+      cur = cur[keys[i]]
+    }
+    cur[keys[keys.length - 1]] = value
+  }
+
+  function rebuildSchema() {
+    if (!originalValidationSchema) return
+    const merged = JSON.parse(JSON.stringify(originalValidationSchema))
+    for (const [dataPath, { rawSchema }] of childValidatorRegistry) {
+      if (!rawSchema) continue
+      // validationSchema is rooted at the FormName level, so strip "FormName." prefix
+      const schemaPath = dataPath.startsWith('FormName.')
+        ? dataPath.slice('FormName.'.length)
+        : dataPath
+      setSchemaAtPath(merged, schemaPath, rawSchema)
+    }
+    mOutPutFormData.FormData.validationSchema = merged
+    schema = buildZodSchema(merged)
+  }
+
+  provide('registerChildValidator', (dataPath, rawSchema, validateFn) => {
+    childValidatorRegistry.set(dataPath, { rawSchema, validateFn })
+    rebuildSchema()
+  })
+
+  provide('unregisterChildValidator', (dataPath) => {
+    childValidatorRegistry.delete(dataPath)
+    rebuildSchema()
+  })
   // In any component
 
   const { organization } = useOrgDetails()
@@ -646,29 +683,32 @@
   {{ organization.logo }} -->
   <!-- {{ muserDataStore.data.FormData.UserEntryObjects }} -->
   <!-- {{ mOutPutFormData.FormData.ListHeaders }} -->
-  <!-- {{ errors }} -->
+  {{ errors }}
   <!-- {{ muserDataStore?.data }} -->
+  <!-- {{ schema }} -->
+  {{ muserDataStore.data?.FormData.UserEntryObjects.FormName }}
   <!-- {{ muserDataStore.data?.FormData.UserEntryObjects.FormName }} -->
   <!-- <br/> -->
-  {{ muserDataStore.data?.FormData }}
+  <!-- {{ muserDataStore.data?.FormData }} -->
   <!-- <br/> -->
   <!-- <br/> -->
   <!-- {{ mOutPutFormData.FormData.GridData }} -->
   <!-- {{ mFormInputData }}   -->
   <!-- <br/> -->
-  <!-- <br/> -->
+  <!-- <br /> -->
   <!-- {{ errors }} -->
   <!-- <br/> -->
   <!-- <br/> -->
   <!-- {{ schema }} -->
   <!-- <br/> -->
   <!-- <br/> -->
-  <!-- {{mOutPutFormData.FormData.UserEntryObjects }} -->
+  <!-- {{ mOutPutFormData?.FormData.validationSchema }} -->
+  <!-- {{ mOutPutFormData.FormData.UserEntryObjects }} -->
   <!-- {{ mOutPutFormData.FormData }} -->
   <!-- <hr/> -->
   <!-- <br/> -->
 
-  <!-- {{ mOutPutFormData?.FormData.validationSchema }} -->
+
   <!-- {{ muserDataStore }} -->
   <!-- <VBtn @click="formValidate">
     Validate 

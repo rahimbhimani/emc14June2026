@@ -109,8 +109,7 @@ let date = ref < Date | null > (null)
 </script>
 
 <template>
-  <!-- {{ groupObject }} -->
-  <!-- {{ typeof props.vbind1?.overwriteDataPath }} -->
+  {{ props.vbind1?.overwriteDataPath + groupObject.dataPath?.replace('FormName.', '') }}
   <!-- {{ groupObject }} -->
   <!-- {{ clientErrors }} -->
   <!-- {{ clientValidate }} -->

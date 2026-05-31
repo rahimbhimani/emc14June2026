@@ -307,6 +307,7 @@ export function useValidator() {
 
   function validateForm(schema: any, data: any) {
     try {
+      debugger
       // Navigate to the underlying ZodObject shape
       // Zod v4 raises "expected nonoptional" at the object level for missing keys before
       // field-schema refines can run — so we iterate fields individually instead.
@@ -353,7 +354,7 @@ export function useValidator() {
 
       return isValid
     } catch (error) {
-      //console.log('InsideErrrorvalidateForm', error)
+      console.log('InsideErrrorvalidateForm', error)
     }
   }
 
