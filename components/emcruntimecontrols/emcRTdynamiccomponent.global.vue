@@ -142,6 +142,7 @@ watch(
 // Helpers
 // -----------------------------------------------------------------------------
 function getNestedValue(obj, path) {
+  debugger
   if (!obj || !path)
     return undefined
 
@@ -234,6 +235,7 @@ onMounted(() => {
 // Selected value
 // -----------------------------------------------------------------------------
 const selectedValue = computed(() => {
+  debugger
   return getNestedValue(
     basePath.value,
     idPath,
@@ -269,18 +271,17 @@ watch(
   selectedValue,
 
   async (newVal, oldVal) => {
+    debugger
+    mUserDataStoreInternal.value = [] // Clear internal store to prevent stale data during load
     if (newVal == null || newVal === '')
       return
-
     const componentType = newVal.ComponentType
 
     const componentName
       = newVal.ComponentName
       + (controlNameSuffix || '')
-
     if (!componentType || !componentName)
       return
-
     const componentKey
       = `${componentType}|${componentName}`
 
@@ -296,7 +297,6 @@ watch(
 
     if (isLoading.value)
       return
-
     clearErrors()
 
     expandedRows.value = []
@@ -313,7 +313,6 @@ watch(
       isLoading.value = true
 
       loadedComponents.add(componentKey)
-
       FormRTObjects.value
         = await useEmcGetReferenceControlData(
           'ComponentData',
@@ -402,6 +401,7 @@ watch(
 
   {
     immediate: true,
+    deep: true,
   },
 )
 
@@ -426,6 +426,8 @@ watch(
       )
     }
   },
+
+  { deep: true },
 )
 
 // -----------------------------------------------------------------------------
@@ -840,7 +842,7 @@ function getvbind() {
   <!-- NON ARRAY MODE -->
   <div v-show="IsThisArrayList === false">
     <div class="pa-0 ma-0">
-      {{ muserDataStore }}
+      <!-- {{ muserDataStore }} -->
       <EmcRTcontrolwithingroups v-if="FormRTObjects" :group-object="FormRTObjects" :vbind1="getvbind()"
         :inputdata="muserDataStore" />
     </div>

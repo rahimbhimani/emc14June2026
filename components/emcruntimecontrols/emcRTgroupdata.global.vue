@@ -132,8 +132,8 @@ function removeRow(index: number) {
   <!-- {{rows}}
   <hr/>-->
   <!-- {{ RTData }}  -->
-  {{ rows }}
-  <VCard variant="outlined">
+  <!-- {{ rows }} -->
+  <VCard variant="outlined" class="ma-0 pa-0" >
     <VCardTitle class="text-subtitle-3 font-weight-bold">
       {{groupObject.controlProperties.find(e => e.propertyTitle === 'Label').data}}
     </VCardTitle>

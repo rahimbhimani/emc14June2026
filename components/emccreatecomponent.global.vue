@@ -57,12 +57,10 @@ onMounted(async () => {
 <template>
   <!-- RAHIM I am here -->
 
-  <VCol v-if="FormData" class="pa-2" style="background-color: transparent;">
+  <VCol v-if="FormData" class="pa-0 ma-0" style="background-color: white;">
     <!-- {{ loading }} -->
     <VSkeletonLoader type="table-row-divider, table-tbody" :loading="loading" style="background-color: transparent;">
-
-      <!-- {{ FormData[0] }} -->
-      <EmcRTcontrolwithingroups :group-object="FormData[0]" />
+      <EmcRTcontrolwithingroups :group-object="FormData[0]" class="pa-0 ma-0" />
     </VSkeletonLoader>
   </VCol>
 </template>
