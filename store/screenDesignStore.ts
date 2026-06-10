@@ -840,6 +840,41 @@ export const useScreenDesignStore = defineStore('screenDesignStore', () => {
     return lLineage.value
   }
 
+  function reorderControls(parentId: string, newOrderedIds: string[]) {
+    const stack: any[] = Array.isArray(board.value) ? [...board.value] : [board.value]
+    let parent: any = null
+    while (stack.length) {
+      const node = stack.pop()
+      if (!node || typeof node !== 'object') continue
+      if (Array.isArray(node)) { stack.push(...node); continue }
+      if (String(node.id) === String(parentId)) { parent = node; break }
+      if (Array.isArray(node.Controls)) stack.push(...node.Controls)
+    }
+    console.log('[reorderControls] parent found:', parent?.ControlName, '| Controls length:', parent?.Controls?.length)
+    if (!parent?.Controls) { console.warn('[reorderControls] parent not found or has no Controls, aborting'); return }
+
+    // Build id → control map from the current Controls array
+    const controlMap = new Map(parent.Controls.map((c: any) => [String(c.id), c]))
+
+    // Rebuild Controls in the new order
+    const reordered: any[] = newOrderedIds
+      .map(id => controlMap.get(String(id)))
+      .filter(Boolean)
+
+    // Splice in-place so Vue's reactivity detects the array mutation
+    parent.Controls.splice(0, parent.Controls.length, ...reordered)
+    console.log('[reorderControls] spliced OK — new order:', reordered.map((c: any) => c.ControlName))
+
+    // Also update the Order property if it exists (for persistence after save/reload)
+    reordered.forEach((ctrl: any, index: number) => {
+      const orderProp = ctrl.controlProperties?.find((p: any) => p.propertyTitle === 'Order')
+      if (orderProp) {
+        orderProp.data = index + 1
+        orderProp.ChangedBy = 'user'
+      }
+    })
+  }
+
   function deleteColumn(columnIndex) {
     board.value.columns.splice(columnIndex, 1)
   }
@@ -878,5 +913,6 @@ export const useScreenDesignStore = defineStore('screenDesignStore', () => {
     saveForm,
     returnData,
     mergeObjects,
+    reorderControls,
   }
 })

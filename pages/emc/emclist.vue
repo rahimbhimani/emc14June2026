@@ -308,6 +308,7 @@
       screenDesignStore.board = lTemp.FormDTObjects.board
       if (vAction === 'copy') {
         delete muserDataStore.data.FormData.DataObject['_id']
+        delete screenDesignStore['_id']
         alert('Screen design copied. Please make necessary changes and save with a new name to avoid confusion with existing design.')
       }
       else {

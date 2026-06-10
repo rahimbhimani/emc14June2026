@@ -46,8 +46,7 @@ onMounted(() => {
               <VRow>
                 <EmcDTcontrolwithingroups
                   :group-object="props.groupObject.Controls"
-                  :ParentID="larrParents"
-                  style="background-color: yellow"
+                  :parent-id="props.groupObject.id"
                 />
               </VRow>
             </VContainer>

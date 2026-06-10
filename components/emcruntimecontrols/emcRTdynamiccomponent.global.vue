@@ -745,7 +745,7 @@ function getvbind() {
 
       <VDivider />
 
-      <div class="pa-4">
+      <div class="pa-0 ma-0">
         <EmcRTcontrolwithingroups v-if="FormRTObjects" :group-object="FormRTObjects" :vbind1="getvbind()"
           :inputdata="pendingNewItem" />
       </div>
@@ -840,12 +840,9 @@ function getvbind() {
   </div>
 
   <!-- NON ARRAY MODE -->
-  <div v-show="IsThisArrayList === false">
-    <div class="pa-0 ma-0">
-      <!-- {{ muserDataStore }} -->
-      <EmcRTcontrolwithingroups v-if="FormRTObjects" :group-object="FormRTObjects" :vbind1="getvbind()"
-        :inputdata="muserDataStore" />
-    </div>
+  <div class="pa-0 ma-0" v-show="IsThisArrayList === false">
+    <EmcRTcontrolwithingroups class="pa-0 ma-0" v-if="FormRTObjects" :group-object="FormRTObjects" :vbind1="getvbind()"
+      :inputdata="muserDataStore" />
   </div>
 </template>
 

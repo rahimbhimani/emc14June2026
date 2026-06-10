@@ -72,7 +72,7 @@ watch(
       <VRow>
           <EmcDTcontrolwithingroups
             :group-object="IndividualTabs.Controls"
-            :ParentID="larrParents"
+            :parent-id="IndividualTabs.id"
           />
       </VRow>
     </VContainer>
