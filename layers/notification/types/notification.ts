@@ -1,6 +1,22 @@
 // ── Channel ────────────────────────────────────────────────────────────────
 export type NotificationChannel = 'email' | 'sms' | 'whatsapp' | 'phone' | 'in_app'
 
+// ── Address / Contact ──────────────────────────────────────────────────────
+// Represents a sender or recipient. Each channel reads the relevant field.
+//   email    → email + name
+//   sms      → phone
+//   whatsapp → phone + name
+//   phone    → phone
+//   in_app   → userId + name
+// role is informational — resolution happens upstream in resolveRecipients().
+export interface ContactAddress {
+  name?: string
+  email?: string
+  phone?: string
+  userId?: string
+  role?: string
+}
+
 // ── Direction ──────────────────────────────────────────────────────────────
 // Who sends to whom
 export type NotificationDirection =
@@ -27,8 +43,9 @@ export interface NotificationTarget {
 }
 
 // ── Status ─────────────────────────────────────────────────────────────────
-export type NotificationStatus = 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed'
+export type NotificationStatus = 'draft' | 'scheduled' | 'queued' | 'sent' | 'failed'
 export type ReceiptStatus = 'pending' | 'delivered' | 'read' | 'failed'
+export type JobStatus = 'pending' | 'processing' | 'done' | 'failed'
 
 // ── Core entity ────────────────────────────────────────────────────────────
 export interface IEmcNotification {
@@ -84,6 +101,28 @@ export interface NotificationView extends IEmcNotification {
   receiptId?: string
   channel?: NotificationChannel  // the channel this receipt was delivered on
   deliveredAt?: Date | string
+}
+
+// ── Job (queue entry) ───────────────────────────────────────────────────────
+export interface INotificationJob {
+  _id?: string
+  notificationId: string
+  receiptId?: string         // linked NotificationReceipt _id
+  channel: NotificationChannel
+  from: ContactAddress
+  to: ContactAddress
+  subject: string
+  body: string
+  html?: string
+  metadata?: Record<string, unknown>
+  status: JobStatus
+  attempts: number
+  maxAttempts: number
+  nextAttemptAt: Date | string
+  lastError?: string
+  processedAt?: Date | string
+  createdAt?: Date | string
+  updatedAt?: Date | string
 }
 
 // ── UI helpers ─────────────────────────────────────────────────────────────

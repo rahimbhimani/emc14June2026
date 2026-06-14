@@ -1,57 +1,32 @@
 import EmcUser from '~~/server/models/emcUser'
 import { EmcNotification, NotificationReceipt } from '../../models/emcNotification'
-import { sendViaChannel } from '../../utils/notificationSender'
-import type { CreateNotificationDto, NotificationChannel, NotificationTarget } from '../../../types/notification'
+import { NotificationJob } from '../../models/emcNotificationJob'
+import { getChannelConfig } from '../../utils/notificationConfig'
+import type { CreateNotificationDto, NotificationChannel, NotificationTarget, ContactAddress } from '../../../types/notification'
 
 // ── Resolve recipients from target descriptors ──────────────────────────────
 async function resolveRecipients(targets: NotificationTarget[], senderOrgId?: number) {
   const orQueries = targets.flatMap((t): Record<string, unknown>[] => {
     switch (t.type) {
-      case 'all':
-        return [{}]
-      case 'role':
-        return [{ role: t.value }]
-      case 'user':
-        return [{ _id: t.value }]
-      case 'organization_users':
-        return [{ organizationId: t.value ?? senderOrgId }]
-      case 'status':
-        return [{ isActive: t.value === 'active' }]
-      default:
-        return []
+      case 'all':                return [{}]
+      case 'role':               return [{ role: t.value }]
+      case 'user':               return [{ _id: t.value }]
+      case 'organization_users': return [{ organizationId: t.value ?? senderOrgId }]
+      case 'status':             return [{ isActive: t.value === 'active' }]
+      default:                   return []
     }
   })
-
   if (!orQueries.length) return []
   return EmcUser.find({ $or: orQueries }).lean()
 }
 
-// ── Resolve the delivery address for a channel ──────────────────────────────
-function resolveAddress(user: any, channel: NotificationChannel): string | null {
-  switch (channel) {
-    case 'email':    return user.email ?? null
-    case 'sms':      return user.phone ?? null
-    case 'whatsapp': return user.phone ?? null
-    case 'phone':    return user.phone ?? null
-    case 'in_app':   return String(user._id)
-    default:         return null
-  }
-}
-
 // POST /api/notifications
-// Creates and dispatches a notification.
-// Direction rules enforced server-side:
-//   platform_to_community    → role must be platform_admin
-//   platform_to_organization → role must be platform_admin
-//   organization_to_users    → org admins; targets scoped to sender's org
-//   direct                   → any authenticated user within their org scope
 export default defineEventHandler(async (event) => {
   const user = await getUserFromEvent(event)
   const body = await readBody<CreateNotificationDto>(event)
 
   const isPlatformAdmin = user.role === 'platform_admin'
 
-  // Scope guard: only platform admins can broadcast across organisations
   if (
     (body.direction === 'platform_to_community' || body.direction === 'platform_to_organization')
     && !isPlatformAdmin
@@ -59,74 +34,111 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 403, statusMessage: 'Forbidden: platform admin role required' })
   }
 
-  // For org-scoped directions, restrict targets to the sender's own org
   const effectiveTargets: NotificationTarget[] =
     body.direction === 'organization_to_users'
       ? [{ type: 'organization_users', value: user.organizationId }]
       : body.targets
 
   const notification = await EmcNotification.create({
-    title: body.title,
-    body: body.body,
-    channels: body.channels,
-    direction: body.direction,
-    targets: effectiveTargets,
-    metadata: body.metadata,
+    title:       body.title,
+    body:        body.body,
+    channels:    body.channels,
+    direction:   body.direction,
+    targets:     effectiveTargets,
+    metadata:    body.metadata,
     scheduledAt: body.scheduledAt ? new Date(body.scheduledAt) : undefined,
-    senderType: isPlatformAdmin ? 'platform' : 'organization',
-    senderId: String(user.organizationId ?? user.id),
-    senderName: user.fullName ?? user.email,
-    status: body.scheduledAt ? 'scheduled' : 'sending',
+    senderType:  isPlatformAdmin ? 'platform' : 'organization',
+    senderId:    String(user.organizationId ?? user.id),
+    senderName:  user.fullName ?? user.email,
+    status:      body.scheduledAt ? 'scheduled' : 'queued',
   })
 
-  // Scheduled notifications are dispatched by a separate job — return early
+  // Scheduled notifications are picked up by the queue when scheduledAt is reached
   if (body.scheduledAt) {
     return { ok: true, notificationId: String(notification._id), status: 'scheduled' }
   }
 
-  // ── Dispatch now ──────────────────────────────────────────────────────────
+  // ── Enqueue one job per recipient × channel ───────────────────────────────
+  const { systemSender } = getChannelConfig()
+
+  const from: ContactAddress = {
+    name:   user.fullName ?? systemSender.name,
+    email:  systemSender.email,
+    userId: user.id,
+  }
+
   const recipients = await resolveRecipients(effectiveTargets, user.organizationId)
   const receiptDocs: Record<string, unknown>[] = []
+  const jobDocs:     Record<string, unknown>[] = []
 
   for (const recipient of recipients) {
-    for (const channel of body.channels as NotificationChannel[]) {
-      const address = resolveAddress(recipient, channel)
-      if (!address) continue
+    const to: ContactAddress = {
+      name:   recipient.fullName,
+      email:  recipient.email,
+      phone:  (recipient as any).phone,
+      userId: String(recipient._id),
+      role:   recipient.role,
+    }
 
-      const result = await sendViaChannel({
-        channel,
-        address,
-        title: body.title,
-        body: body.body,
-        metadata: body.metadata,
-      })
+    for (const channel of body.channels as NotificationChannel[]) {
+      // Skip if the channel has no delivery address for this recipient
+      const hasAddress =
+        channel === 'email'    ? !!to.email :
+        channel === 'sms'      ? !!to.phone :
+        channel === 'whatsapp' ? !!to.phone :
+        channel === 'phone'    ? !!to.phone :
+        true // in_app always has userId
+
+      if (!hasAddress) continue
 
       receiptDocs.push({
         notificationId: String(notification._id),
-        userId: String(recipient._id),
-        userEmail: recipient.email,
-        userPhone: (recipient as any).phone,
+        userId:         String(recipient._id),
+        userEmail:      recipient.email,
+        userPhone:      (recipient as any).phone,
         organizationId: recipient.organizationId,
         channel,
-        address,
-        status: result.ok ? 'delivered' : 'failed',
-        deliveredAt: result.ok ? new Date() : undefined,
-        errorMessage: result.error,
+        address: to.email ?? to.phone ?? String(recipient._id),
+        status:  'pending',
       })
     }
   }
 
-  if (receiptDocs.length) await NotificationReceipt.insertMany(receiptDocs)
+  const receipts = receiptDocs.length
+    ? await NotificationReceipt.insertMany(receiptDocs)
+    : []
 
-  await EmcNotification.findByIdAndUpdate(notification._id, {
-    status: receiptDocs.length ? 'sent' : 'failed',
-    sentAt: new Date(),
-  })
+  // Build job docs now that we have receipt _ids
+  for (let i = 0; i < receipts.length; i++) {
+    const rd = receiptDocs[i] as any
+    jobDocs.push({
+      notificationId: String(notification._id),
+      receiptId:      String(receipts[i]._id),
+      channel:        rd.channel,
+      from,
+      to: {
+        name:   recipients.find(r => String(r._id) === rd.userId)?.fullName,
+        email:  rd.userEmail,
+        phone:  rd.userPhone,
+        userId: rd.userId,
+      },
+      subject:      body.title,
+      body:         body.body,
+      metadata:     body.metadata,
+      status:       'pending',
+      attempts:     0,
+      maxAttempts:  3,
+      nextAttemptAt: new Date(),
+    })
+  }
+
+  if (jobDocs.length) await NotificationJob.insertMany(jobDocs)
 
   return {
     ok: true,
     notificationId: String(notification._id),
+    status: 'queued',
     recipients: recipients.length,
-    receipts: receiptDocs.length,
+    jobs: jobDocs.length,
   }
 })
