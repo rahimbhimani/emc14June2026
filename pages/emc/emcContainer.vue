@@ -1332,7 +1332,7 @@
   </VContainer>
 </template>
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import type { Container, ContainerAction } from '~/types/emcContainer'
 import type { ConfigAction, ContainerConfig } from '~/types/emcContainerConfig'
 import { containerConfigs } from '~/utils/emcContainerConfig'
@@ -1351,6 +1351,10 @@ interface ContainerMovementRecord {
   movedAt?: string
   createdAt?: string
 }
+
+// Auth-aware fetch: always sends session cookie so server middleware can validate it.
+const api = <T = any>(url: string, opts?: Parameters<typeof $fetch>[1]): Promise<T> =>
+  $fetch<T>(url, { credentials: 'include', ...opts })
 
 // Get user session/auth context
 const { data: sessionData } = useAuth()
@@ -1469,7 +1473,7 @@ const fetchContainers = async (containerType?: string) => {
       url += `&containerType=${containerType}`
     }
 
-    const response = await $fetch<any>(url)
+    const response = await api<any>(url)
 
     if (response?.success) {
       containers.value = response.data || []
@@ -1506,7 +1510,7 @@ const fetchOrganizationConfigs = async () => {
   error.value = null
 
   try {
-    const response = await $fetch<any>('/api/emc/emcContainerManagement?type=organizationConfigs')
+    const response = await api<any>('/api/emc/emcContainerManagement?type=organizationConfigs')
 
     if (response?.success) {
       organizationConfigs.value = response.data
@@ -1546,7 +1550,7 @@ const fetchAssociations = async () => {
 
   try {
     console.log('🔍 Fetching associations for:', viewingContainer.value.id)
-    const response = await $fetch<any>('/api/emc/container-associations?parentContainerId=' + viewingContainer.value.id)
+    const response = await api<any>('/api/emc/container-associations?parentContainerId=' + viewingContainer.value.id)
 
     if (response?.success) {
       associations.value = response.data || []
@@ -1587,7 +1591,7 @@ const fetchItemsByIds = async (itemIds: string[]) => {
     console.log(`📥 Fetching ${itemIds.length} items by ID`)
 
     // Try to fetch items from inventory API
-    const response = await $fetch<any>('/api/emc/inventory/items-by-ids', {
+    const response = await api<any>('/api/emc/inventory/items-by-ids', {
       method: 'POST',
       body: { itemIds }
     })
@@ -1612,7 +1616,7 @@ const fetchWarehouseInventory = async (itemIds?: string[]) => {
     if (itemIds && itemIds.length > 0) {
       // For each item, fetch inventory
       const responses = await Promise.all(
-        itemIds.map(id => $fetch<any>(`/api/emc/warehouse-inventory?itemId=${id}`))
+        itemIds.map(id => api<any>(`/api/emc/warehouse-inventory?itemId=${id}`))
       )
       responses.forEach((resp: any) => {
         if (resp?.success && resp.data && resp.data.length > 0) {
@@ -1622,7 +1626,7 @@ const fetchWarehouseInventory = async (itemIds?: string[]) => {
         }
       })
     } else {
-      const response = await $fetch<any>(url)
+      const response = await api<any>(url)
       if (response?.success && response.data) {
         response.data.forEach((inv: any) => {
           warehouseInventory.value.set(inv.itemId, inv)
@@ -1642,7 +1646,7 @@ const fetchAllInvItems = async (warehouseId?: string) => {
 
     // If a warehouse ID is provided, use the unified endpoint that returns both associated and all products
     if (warehouseId) {
-      const response = await $fetch<any>('/api/emc/warehouse-items', {
+      const response = await api<any>('/api/emc/warehouse-items', {
         query: {
           organizationId: 12313,
           status: 'active',
@@ -1663,7 +1667,7 @@ const fetchAllInvItems = async (warehouseId?: string) => {
       }
     } else {
       // If no warehouse ID, fetch all items from emcInvItem
-      const response = await $fetch<any>('/api/emc/inventory/all-items')
+      const response = await api<any>('/api/emc/inventory/all-items')
 
       if (response?.success && Array.isArray(response.data)) {
         allInvItems.value = response.data
@@ -1679,9 +1683,11 @@ const fetchAllInvItems = async (warehouseId?: string) => {
   }
 }
 
-// Load data on mount
-await Promise.all([fetchContainers(), fetchOrganizationConfigs(), fetchAllInvItems()])
-await fetchWarehouseInventory()
+// Load data client-side so session cookies are available
+onMounted(async () => {
+  await Promise.all([fetchContainers(), fetchOrganizationConfigs(), fetchAllInvItems()])
+  await fetchWarehouseInventory()
+})
 
 // Get available configs for organization
 const availableConfigs = computed((): ContainerConfig[] => {
@@ -2285,7 +2291,7 @@ const handleContainerCardClick = async (container: Container) => {
 const fetchContainerHistory = async (containerId: string) => {
   historyLoading.value = true
   try {
-    const response = await $fetch<any>(`/api/emc/container-movement?containerId=${encodeURIComponent(containerId)}`)
+    const response = await api<any>(`/api/emc/container-movement?containerId=${encodeURIComponent(containerId)}`)
     if (response?.success) {
       movementHistory.value = (response.data || []) as ContainerMovementRecord[]
     } else {
@@ -2383,7 +2389,7 @@ const fetchWarehouseItemsForTrolley = async () => {
     console.log('   ✅ Set loading flag to true')
 
     console.log('   📡 Calling API: /api/emc/inventory/warehouse-items')
-    const response = await $fetch<any>('/api/emc/inventory/warehouse-items')
+    const response = await api<any>('/api/emc/inventory/warehouse-items')
 
     console.log('   📦 API Response received:')
     console.log('      - Type:', typeof response)
@@ -2447,7 +2453,7 @@ const fetchAvailableTrolleysForFlight = async () => {
     console.log('   ✅ Set loading flag to true')
 
     console.log('   📡 Calling API: /api/emc/inventory/available-trolleys')
-    const response = await $fetch<any>('/api/emc/inventory/available-trolleys')
+    const response = await api<any>('/api/emc/inventory/available-trolleys')
 
     console.log('   📦 API Response received:')
     console.log('      - Type:', typeof response)
@@ -2532,7 +2538,7 @@ const confirmTrolleyLoad = async () => {
 
     console.log('📦 Transferring inventory:', payload)
 
-    const response = await $fetch<any>('/api/emc/inventory/transfer', {
+    const response = await api<any>('/api/emc/inventory/transfer', {
       method: 'POST',
       body: payload
     })
@@ -2595,7 +2601,7 @@ const confirmFlightLoad = async () => {
 
     console.log('🚁 Transferring trolley to flight:', payload)
 
-    const response = await $fetch<any>('/api/emc/inventory/trolley-transfer', {
+    const response = await api<any>('/api/emc/inventory/trolley-transfer', {
       method: 'POST',
       body: payload
     })
@@ -2681,7 +2687,7 @@ const fetchTrolleyItemCounts = async (trolleyIds: string[]) => {
     // For each trolley, fetch its associations to count items
     for (const trolleyId of trolleyIds) {
       try {
-        const response = await $fetch<any>(`/api/emc/container-associations?parentContainerId=${trolleyId}`)
+        const response = await api<any>(`/api/emc/container-associations?parentContainerId=${trolleyId}`)
         if (response?.success && response.data) {
           const itemCount = response.data.reduce((total: number, assoc: any) =>
             total + (assoc.childContainerIds?.length || 0), 0)
@@ -2886,7 +2892,7 @@ const handleAction = async (action: ConfigAction | ContainerAction, containerFro
 
         console.log('Detaching container:', payload)
 
-        const response = await $fetch<any>('/api/emc/container-remove', {
+        const response = await api<any>('/api/emc/container-remove', {
           method: 'POST',
           body: payload
         })
@@ -2929,7 +2935,7 @@ const handleAction = async (action: ConfigAction | ContainerAction, containerFro
 
       console.log('Closing container:', payload)
 
-      const response = await $fetch<any>('/api/emc/container-complete', {
+      const response = await api<any>('/api/emc/container-complete', {
         method: 'POST',
         body: payload
       })
@@ -2967,7 +2973,7 @@ const handleAction = async (action: ConfigAction | ContainerAction, containerFro
         organizationId: container.organizationId || 'default'
       }
 
-      const response = await $fetch<any>('/api/emc/container-activate', {
+      const response = await api<any>('/api/emc/container-activate', {
         method: 'POST',
         body: payload
       })
@@ -3000,7 +3006,7 @@ const handleAction = async (action: ConfigAction | ContainerAction, containerFro
         organizationId: container.organizationId || 'default'
       }
 
-      const response = await $fetch<any>('/api/emc/container-reopen', {
+      const response = await api<any>('/api/emc/container-reopen', {
         method: 'POST',
         body: payload
       })
@@ -3036,7 +3042,7 @@ const handleAction = async (action: ConfigAction | ContainerAction, containerFro
 
       console.log('Archiving container:', payload)
 
-      const response = await $fetch<any>('/api/emc/container-archive', {
+      const response = await api<any>('/api/emc/container-archive', {
         method: 'POST',
         body: payload
       })
@@ -3125,7 +3131,7 @@ const confirmQuantityAndAttach = async () => {
     }
 
     console.log('Sending API payload:', payload)
-    const response = await $fetch<any>('/api/emc/container-associations', {
+    const response = await api<any>('/api/emc/container-associations', {
       method: 'POST',
       body: payload
     })

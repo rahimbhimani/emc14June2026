@@ -29,8 +29,6 @@ export function useUpdateObject99(obj, path) {
 
 
 export function useUpdateObject(obj, groupObject, rowIndex = null, overwriteDataPath = null) {
-  debugger
-
   let path = groupObject.value.dataPath
   // console.log('useUpdateObject909', path, groupObject.value.ComponentInfo, overwriteDataPath)
   if (groupObject.value.ComponentInfo && overwriteDataPath === null) {

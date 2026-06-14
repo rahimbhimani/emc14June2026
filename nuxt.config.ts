@@ -4,6 +4,9 @@ import svgLoader from 'vite-svg-loader'
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  extends: ['./layers/auth', './layers/OrganizationOnBoarding', './layers/notification'],
+
+
   app: {
     head: {
       titleTemplate: '%s - Sales on Board',
@@ -60,17 +63,7 @@ export default defineNuxtConfig({
     }],
   },
 
-  auth: {
-    baseURL: process.env.AUTH_ORIGIN,
-    globalAppMiddleware: false,
-
-    provider: {
-      type: 'authjs',
-    },
-  },
-
   plugins: [
-    '@/plugins/casl/index.ts',
     '@/plugins/vuetify/index.ts',
     '@/plugins/iconify/index.ts',
   ],
@@ -161,7 +154,7 @@ export default defineNuxtConfig({
     },
 
     optimizeDeps: {
-      exclude: ['vuetify'],
+      exclude: ['vuetify', '#components', '#imports', '#app'],
       entries: [
         './**/*.vue',
       ],
@@ -195,7 +188,6 @@ export default defineNuxtConfig({
     '@vueuse/nuxt',
     '@nuxtjs/i18n',
     '@nuxtjs/device',
-    '@sidebase/nuxt-auth',
     '@pinia/nuxt',
   ],
 })

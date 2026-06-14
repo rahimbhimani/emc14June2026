@@ -2,111 +2,123 @@
 definePageMeta({ layout: 'blank', public: true })
 
 // ── Types ────────────────────────────────────────────────────────────────────
-interface BusinessDomain   { id: string; name: string; icon: string; description: string; color: string }
-interface Product          { id: string; domainId: string; name: string; description: string; startingPrice: string; icon: string }
-interface StakeholderType  { id: string; domainId: string; productIds: string[]; name: string; icon: string; description: string }
+interface BusinessDomain { id: string; name: string; icon: string; description: string; color: string }
+interface Product { id: string; domainId: string; name: string; description: string; startingPrice: string; icon: string }
+interface StakeholderType { id: string; domainId: string; productIds: string[]; name: string; icon: string; description: string }
 interface SubscriptionPlan { id: string; name: string; price: string; priceValue: number; priceSubtext: string; description: string; features: string[]; badge?: string }
-interface AdditionalService{ id: string; name: string; description: string; price: string; priceValue: number; icon: string; category: string }
-interface Address          { addressLine1: string; addressLine2: string; city: string; state: string; country: string; postalCode: string }
-interface FormOptions      { countries: string[]; timezones: string[]; organizationSizes: string[]; industries: string[]; operationalRegions: string[]; ghaServicesList: string[] }
+interface AdditionalService { id: string; name: string; description: string; price: string; priceValue: number; icon: string; category: string }
+interface Address { addressLine1: string; addressLine2: string; city: string; state: string; country: string; postalCode: string }
+interface FormOptions { countries: string[]; timezones: string[]; organizationSizes: string[]; industries: string[]; operationalRegions: string[]; ghaServicesList: string[] }
 
 // ── Static UI config (no API needed) ─────────────────────────────────────────
 const STEPS = [
-  { title: 'Domain',        desc: 'Choose your industry domain',                 icon: 'ri-global-line'          },
-  { title: 'Products',      desc: 'Select the products you need',                icon: 'ri-apps-line'            },
-  { title: 'Stakeholder',   desc: 'Define your role in the supply chain',        icon: 'ri-user-star-line'       },
-  { title: 'Organisation',  desc: 'Your organisation and administrator details',  icon: 'ri-building-2-line'      },
-  { title: 'Plan & Address',desc: 'Subscription plan and billing address',       icon: 'ri-price-tag-3-line'     },
-  { title: 'Review',        desc: 'Add services and confirm your setup',         icon: 'ri-checkbox-circle-line' },
+  { title: 'Domain', desc: 'Choose your industry domain', icon: 'ri-global-line' },
+  { title: 'Products', desc: 'Select the products you need', icon: 'ri-apps-line' },
+  { title: 'Stakeholder', desc: 'Define your role in the supply chain', icon: 'ri-user-star-line' },
+  { title: 'Organisation', desc: 'Your organisation and administrator details', icon: 'ri-building-2-line' },
+  { title: 'Plan & Address', desc: 'Subscription plan and billing address', icon: 'ri-price-tag-3-line' },
+  { title: 'Review', desc: 'Add services and confirm your setup', icon: 'ri-checkbox-circle-line' },
 ]
 
 // ── Lazy API State ────────────────────────────────────────────────────────────
 // Step 1 — domains: fetched on page load (await so the page renders with data)
-const { data: domainsRaw } = await useFetch<BusinessDomain[]>('/api/emc/onboarding/domains')
+const { data: domainsRaw } = await useFetch<BusinessDomain[]>('/api/emc/onOrganizationOnboarding/domains')
 const businessDomains = computed<BusinessDomain[]>(() => domainsRaw.value ?? [])
 
 // Step 2 — products: fetched when a domain is selected (domainId FK filter)
-const products           = ref<Product[]>([])
+const products = ref<Product[]>([])
 const isFetchingProducts = ref(false)
 
-// Step 3 — stakeholders: fetched when navigating to step 3 (domainId + productIds FK filter)
-const stakeholders           = ref<StakeholderType[]>([])
-const isFetchingStakeholders = ref(false)
+// Step 3 — stakeholders: fetched per-product when a product is toggled
+const stakeholdersByProduct = ref<Record<string, StakeholderType[]>>({})
+const isFetchingStakeholdersFor = ref<Record<string, boolean>>({})
 
 // Step 4 — form-options: fetched once when navigating to step 4
-const formOptions           = ref<FormOptions | null>(null)
+const formOptions = ref<FormOptions | null>(null)
 const isFetchingFormOptions = ref(false)
-const countries          = computed<string[]>(() => formOptions.value?.countries         ?? [])
-const timezones          = computed<string[]>(() => formOptions.value?.timezones         ?? [])
-const organizationSizes  = computed<string[]>(() => formOptions.value?.organizationSizes ?? [])
-const industries         = computed<string[]>(() => formOptions.value?.industries        ?? [])
+const countries = computed<string[]>(() => formOptions.value?.countries ?? [])
+const timezones = computed<string[]>(() => formOptions.value?.timezones ?? [])
+const organizationSizes = computed<string[]>(() => formOptions.value?.organizationSizes ?? [])
+const industries = computed<string[]>(() => formOptions.value?.industries ?? [])
 const operationalRegions = computed<string[]>(() => formOptions.value?.operationalRegions ?? [])
-const ghaServicesList    = computed<string[]>(() => formOptions.value?.ghaServicesList   ?? [])
+const ghaServicesList = computed<string[]>(() => formOptions.value?.ghaServicesList ?? [])
 
 // Step 5 — plans: fetched once when navigating to step 5
-const subscriptionPlans  = ref<SubscriptionPlan[]>([])
-const isFetchingPlans    = ref(false)
+const subscriptionPlans = ref<SubscriptionPlan[]>([])
+const isFetchingPlans = ref(false)
 
 // Step 6 — services: fetched once when navigating to step 6
-const serviceAddons      = ref<AdditionalService[]>([])
+const serviceAddons = ref<AdditionalService[]>([])
 const isFetchingServices = ref(false)
 
 // ── State ─────────────────────────────────────────────────────────────────────
-const currentStep  = ref(0)
+const currentStep = ref(0)
 const isSubmitting = ref(false)
-const addressTab   = ref('billing')
-const snackbar     = reactive({ show: false, message: '', color: 'success' })
-const orgSection   = ref<'org' | 'admin'>('org')
+const addressTab = ref('billing')
+const snackbar = reactive({ show: false, message: '', color: 'success' })
+const orgSection = ref<'org' | 'admin'>('org')
 
-const isPwVisible  = ref(false)
+const isPwVisible = ref(false)
 const isCpwVisible = ref(false)
 
-const emptyAddr = (): Address => ({ addressLine1:'', addressLine2:'', city:'', state:'', country:'', postalCode:'' })
+const emptyAddr = (): Address => ({ addressLine1: '', addressLine2: '', city: '', state: '', country: '', postalCode: '' })
 
 const form = reactive({
-  domain:      '',
-  products:    [] as string[],
-  stakeholder: '',
+  domain: '',
+  products: [] as string[],
+  stakeholders: {} as Record<string, string[]>,
   org: {
     organizationName: 'SkyCargo Logistics',
-    legalName:        'SkyCargo Logistics Pvt Ltd',
-    businessRegNumber:'CIN-U63010MH2020PTC123456',
-    taxRegNumber:     'GSTIN-27AADCS1234A1Z5',
-    website:          'https://www.skycargo-logistics.com',
-    industry:         '',
-    country:          '',
-    timeZone:         '',
+    legalName: 'SkyCargo Logistics Pvt Ltd',
+    businessRegNumber: 'CIN-U63010MH2020PTC123456',
+    taxRegNumber: 'GSTIN-27AADCS1234A1Z5',
+    website: 'https://www.skycargo-logistics.com',
+    industry: '',
+    country: '',
+    timeZone: '',
     organizationSize: '',
-    logoFile:         null as File | null,
+    logoFile: null as File | null,
   },
   admin: {
-    firstName:       'Ahmed',
-    lastName:        'Rahman',
-    designation:     'Operations Director',
-    email:           'ahmed.rahman@skycargo.com',
-    mobile:          '+91 9876543210',
-    password:        '',
+    firstName: 'Ahmed',
+    lastName: 'Rahman',
+    designation: 'Operations Director',
+    email: 'ahmed.rahman@skycargo.com',
+    mobile: '+91 9876543210',
+    password: '',
     confirmPassword: '',
   },
-  airline: { iataCode:'XY', icaoCode:'XYZ', cargoPrefix:'123', primaryHubAirport:'Mumbai (BOM)', operationalRegion:'' },
-  gha:     { airport:'', handlingLicenseNumber:'', servicesOffered:[] as string[] },
-  address: { billing: { addressLine1:'Cargo Terminal Building, CSIA', addressLine2:'Sahar Road', city:'Mumbai', state:'Maharashtra', country:'India', postalCode:'400099' }, communication: emptyAddr(), operational: emptyAddr() },
-  plan:     'professional',
-  services: ['cargo-imp','ai'] as string[],
-  termsAccepted:   false,
+  airline: { iataCode: 'XY', icaoCode: 'XYZ', cargoPrefix: '123', primaryHubAirport: 'Mumbai (BOM)', operationalRegion: '' },
+  gha: { airport: '', handlingLicenseNumber: '', servicesOffered: [] as string[] },
+  address: { billing: { addressLine1: 'Cargo Terminal Building, CSIA', addressLine2: 'Sahar Road', city: 'Mumbai', state: 'Maharashtra', country: 'India', postalCode: '400099' }, communication: emptyAddr(), operational: emptyAddr() },
+  plan: 'professional',
+  services: ['cargo-imp', 'ai'] as string[],
+  termsAccepted: false,
   privacyAccepted: false,
 })
 
 // ── Computed ──────────────────────────────────────────────────────────────────
-const domainObj           = computed(() => businessDomains.value.find(d => d.id === form.domain))
+const domainObj = computed(() => businessDomains.value.find(d => d.id === form.domain))
 const selectedProductObjs = computed(() => products.value.filter(p => form.products.includes(p.id)))
-const stakeholderObj      = computed(() => stakeholders.value.find(s => s.id === form.stakeholder))
-const planObj             = computed(() => subscriptionPlans.value.find(p => p.id === form.plan))
-const serviceObjs         = computed(() => serviceAddons.value.filter(s => form.services.includes(s.id)))
-const servicesTotal       = computed(() => serviceObjs.value.reduce((a, s) => a + s.priceValue, 0))
-const totalMonthly        = computed(() => (planObj.value?.priceValue ?? 0) + servicesTotal.value)
-const isLastStep          = computed(() => currentStep.value === STEPS.length - 1)
-const progress            = computed(() => Math.round((currentStep.value / (STEPS.length - 1)) * 100))
+const planObj = computed(() => subscriptionPlans.value.find(p => p.id === form.plan))
+
+const selectedStakeholderCount = computed(() =>
+  Object.values(form.stakeholders).reduce((n, ids) => n + ids.length, 0)
+)
+const hasStakeholderType = (typeId: string) =>
+  Object.values(form.stakeholders).some(ids => ids.includes(typeId))
+const selectedStakeholdersByProduct = computed(() =>
+  form.products.map(pid => ({
+    product: products.value.find(p => p.id === pid)!,
+    stakeholders: (stakeholdersByProduct.value[pid] ?? [])
+      .filter(s => (form.stakeholders[pid] ?? []).includes(s.id)),
+  }))
+)
+const serviceObjs = computed(() => serviceAddons.value.filter(s => form.services.includes(s.id)))
+const servicesTotal = computed(() => serviceObjs.value.reduce((a, s) => a + s.priceValue, 0))
+const totalMonthly = computed(() => (planObj.value?.priceValue ?? 0) + servicesTotal.value)
+const isLastStep = computed(() => currentStep.value === STEPS.length - 1)
+const progress = computed(() => Math.round((currentStep.value / (STEPS.length - 1)) * 100))
 
 function stepStatus(idx: number): 'done' | 'active' | 'pending' {
   if (idx < currentStep.value) return 'done'
@@ -117,10 +129,12 @@ function stepStatus(idx: number): 'done' | 'active' | 'pending' {
 const contextMessage = computed(() => {
   if (currentStep.value === 1 && domainObj.value)
     return `Great! You selected ${domainObj.value.name}. Now choose the products you need.`
+  if (currentStep.value === 2 && selectedStakeholderCount.value)
+    return `${selectedStakeholderCount.value} stakeholder${selectedStakeholderCount.value > 1 ? 's' : ''} selected. Fill in your organisation details next.`
   if (currentStep.value === 2 && form.products.length)
-    return `You selected ${form.products.length} product${form.products.length > 1 ? 's' : ''}. Now define your role in the supply chain.`
-  if (currentStep.value === 3 && stakeholderObj.value)
-    return `Perfect! You are a ${stakeholderObj.value.name}. Let's set up your organisation.`
+    return `You selected ${form.products.length} product${form.products.length > 1 ? 's' : ''}. Now assign stakeholders for each product.`
+  if (currentStep.value === 3 && selectedStakeholderCount.value)
+    return `${selectedStakeholderCount.value} stakeholder${selectedStakeholderCount.value > 1 ? 's' : ''} defined. Let's set up your organisation.`
   if (currentStep.value === 4)
     return `${form.org.organizationName || 'Your organisation'} is almost ready. Choose a plan and add your address.`
   if (currentStep.value === 5)
@@ -132,33 +146,33 @@ const contextMessage = computed(() => {
 async function fetchProducts(domainId: string) {
   isFetchingProducts.value = true
   try {
-    products.value = await $fetch<Product[]>('/api/emc/onboarding/products', { query: { domainId } })
+    products.value = await $fetch<Product[]>('/api/emc/onOrganizationOnboarding/products', { query: { domainId } })
   }
   catch {
     snackbar.message = 'Failed to load products. Please try again.'
-    snackbar.color   = 'error'
-    snackbar.show    = true
+    snackbar.color = 'error'
+    snackbar.show = true
   }
   finally {
     isFetchingProducts.value = false
   }
 }
 
-async function fetchStakeholders() {
-  if (!form.domain) return
-  isFetchingStakeholders.value = true
+async function fetchStakeholdersForProduct(productId: string) {
+  if (stakeholdersByProduct.value[productId] !== undefined) return
+  isFetchingStakeholdersFor.value[productId] = true
   try {
-    stakeholders.value = await $fetch<StakeholderType[]>('/api/emc/onboarding/stakeholders', {
-      query: { domainId: form.domain, productIds: form.products },
+    stakeholdersByProduct.value[productId] = await $fetch<StakeholderType[]>('/api/emc/onOrganizationOnboarding/stakeholders', {
+      query: { domainId: form.domain, productIds: [productId] },
     })
   }
   catch {
     snackbar.message = 'Failed to load stakeholders. Please try again.'
-    snackbar.color   = 'error'
-    snackbar.show    = true
+    snackbar.color = 'error'
+    snackbar.show = true
   }
   finally {
-    isFetchingStakeholders.value = false
+    isFetchingStakeholdersFor.value[productId] = false
   }
 }
 
@@ -166,12 +180,12 @@ async function fetchFormOptions() {
   if (formOptions.value) return
   isFetchingFormOptions.value = true
   try {
-    formOptions.value = await $fetch<FormOptions>('/api/emc/onboarding/form-options')
+    formOptions.value = await $fetch<FormOptions>('/api/emc/onOrganizationOnboarding/form-options')
   }
   catch {
     snackbar.message = 'Failed to load form options. Please try again.'
-    snackbar.color   = 'error'
-    snackbar.show    = true
+    snackbar.color = 'error'
+    snackbar.show = true
   }
   finally {
     isFetchingFormOptions.value = false
@@ -182,12 +196,12 @@ async function fetchPlans() {
   if (subscriptionPlans.value.length) return
   isFetchingPlans.value = true
   try {
-    subscriptionPlans.value = await $fetch<SubscriptionPlan[]>('/api/emc/onboarding/plans')
+    subscriptionPlans.value = await $fetch<SubscriptionPlan[]>('/api/emc/onOrganizationOnboarding/plans')
   }
   catch {
     snackbar.message = 'Failed to load subscription plans. Please try again.'
-    snackbar.color   = 'error'
-    snackbar.show    = true
+    snackbar.color = 'error'
+    snackbar.show = true
   }
   finally {
     isFetchingPlans.value = false
@@ -198,12 +212,12 @@ async function fetchServices() {
   if (serviceAddons.value.length) return
   isFetchingServices.value = true
   try {
-    serviceAddons.value = await $fetch<AdditionalService[]>('/api/emc/onboarding/services')
+    serviceAddons.value = await $fetch<AdditionalService[]>('/api/emc/onOrganizationOnboarding/services')
   }
   catch {
     snackbar.message = 'Failed to load add-on services. Please try again.'
-    snackbar.color   = 'error'
-    snackbar.show    = true
+    snackbar.color = 'error'
+    snackbar.show = true
   }
   finally {
     isFetchingServices.value = false
@@ -212,18 +226,33 @@ async function fetchServices() {
 
 // ── Methods ───────────────────────────────────────────────────────────────────
 async function onDomainSelect(id: string) {
-  form.domain      = id
-  form.products    = []
-  form.stakeholder = ''
-  products.value   = []
-  stakeholders.value = []
+  form.domain = id
+  form.products = []
+  form.stakeholders = {}
+  products.value = []
+  stakeholdersByProduct.value = {}
+  isFetchingStakeholdersFor.value = {}
   await fetchProducts(id)
 }
 
 function toggleProduct(id: string) {
   const i = form.products.indexOf(id)
-  if (i === -1) form.products.push(id)
-  else form.products.splice(i, 1)
+  if (i === -1) {
+    form.products.push(id)
+    form.stakeholders[id] = []
+    fetchStakeholdersForProduct(id)
+  }
+  else {
+    form.products.splice(i, 1)
+    delete form.stakeholders[id]
+  }
+}
+
+function toggleStakeholder(productId: string, stakeholderId: string) {
+  if (!form.stakeholders[productId]) form.stakeholders[productId] = []
+  const idx = form.stakeholders[productId].indexOf(stakeholderId)
+  if (idx === -1) form.stakeholders[productId].push(stakeholderId)
+  else form.stakeholders[productId].splice(idx, 1)
 }
 
 function toggleService(id: string) {
@@ -240,7 +269,6 @@ async function next() {
   if (currentStep.value >= STEPS.length - 1) return
   currentStep.value++
   // Fire-and-forget fetch for the newly entered step; each step shows its own loader
-  if (currentStep.value === 2) fetchStakeholders()
   if (currentStep.value === 3) fetchFormOptions()
   if (currentStep.value === 4) fetchPlans()
   if (currentStep.value === 5) fetchServices()
@@ -250,26 +278,26 @@ function prev() { if (currentStep.value > 0) currentStep.value-- }
 
 function saveDraft() {
   snackbar.message = 'Draft saved. Your progress is preserved.'
-  snackbar.color   = 'success'
-  snackbar.show    = true
+  snackbar.color = 'success'
+  snackbar.show = true
 }
 
 async function submit() {
   isSubmitting.value = true
   await new Promise(r => setTimeout(r, 2000))
-  snackbar.message   = 'Organisation created! Redirecting to your dashboard...'
-  snackbar.color     = 'success'
-  snackbar.show      = true
+  snackbar.message = 'Organisation created! Redirecting to your dashboard...'
+  snackbar.color = 'success'
+  snackbar.show = true
   isSubmitting.value = false
 }
 
 const rules = {
-  required:  (v: string) => !!v || 'Required',
-  email:     (v: string) => /.+@.+\..+/.test(v) || 'Invalid email',
-  minLen:    (n: number) => (v: string) => (v?.length ?? 0) >= n || `Min ${n} characters`,
-  maxLen:    (n: number) => (v: string) => (v?.length ?? 0) <= n || `Max ${n} characters`,
-  url:       (v: string) => !v || /^https?:\/\/.+/.test(v) || 'Must start with https://',
-  pwMatch:   (v: string) => v === form.admin.password || 'Passwords do not match',
+  required: (v: string) => !!v || 'Required',
+  email: (v: string) => /.+@.+\..+/.test(v) || 'Invalid email',
+  minLen: (n: number) => (v: string) => (v?.length ?? 0) >= n || `Min ${n} characters`,
+  maxLen: (n: number) => (v: string) => (v?.length ?? 0) <= n || `Max ${n} characters`,
+  url: (v: string) => !v || /^https?:\/\/.+/.test(v) || 'Must start with https://',
+  pwMatch: (v: string) => v === form.admin.password || 'Passwords do not match',
 }
 </script>
 
@@ -293,19 +321,15 @@ const rules = {
 
     <!-- ── MOBILE STEP STRIP (hidden on lg+) ────────────────────────────────── -->
     <div class="ob-mobile-strip d-flex d-lg-none">
-      <div
-        v-for="(step, idx) in STEPS"
-        :key="idx"
-        class="ob-mobile-strip__dot"
-        :class="{
-          'ob-mobile-strip__dot--done':   idx < currentStep,
-          'ob-mobile-strip__dot--active': idx === currentStep,
-        }"
-      >
+      <div v-for="(step, idx) in STEPS" :key="idx" class="ob-mobile-strip__dot" :class="{
+        'ob-mobile-strip__dot--done': idx < currentStep,
+        'ob-mobile-strip__dot--active': idx === currentStep,
+      }">
         <div class="ob-mobile-strip__circle">
           <VIcon v-if="idx < currentStep" icon="ri-check-line" size="10" color="white" />
         </div>
-        <div v-if="idx < STEPS.length - 1" class="ob-mobile-strip__line" :class="{ 'ob-mobile-strip__line--done': idx < currentStep }" />
+        <div v-if="idx < STEPS.length - 1" class="ob-mobile-strip__line"
+          :class="{ 'ob-mobile-strip__line--done': idx < currentStep }" />
       </div>
       <div class="ob-mobile-strip__label">
         <span class="ob-mobile-strip__step">Step {{ currentStep + 1 }} / {{ STEPS.length }}</span>
@@ -336,15 +360,11 @@ const rules = {
 
         <!-- Step journey list -->
         <nav class="ob-journey">
-          <div
-            v-for="(step, idx) in STEPS"
-            :key="step.title"
-            class="ob-step"
-            :class="`ob-step--${stepStatus(idx)}`"
-            @click="currentStep = idx"
-          >
+          <div v-for="(step, idx) in STEPS" :key="step.title" class="ob-step" :class="`ob-step--${stepStatus(idx)}`"
+            @click="currentStep = idx">
             <!-- connector line -->
-            <div v-if="idx < STEPS.length - 1" class="ob-step__line" :class="{ 'ob-step__line--done': idx < currentStep }" />
+            <div v-if="idx < STEPS.length - 1" class="ob-step__line"
+              :class="{ 'ob-step__line--done': idx < currentStep }" />
 
             <div class="ob-step__dot">
               <VIcon v-if="stepStatus(idx) === 'done'" icon="ri-check-line" size="11" color="white" />
@@ -359,10 +379,12 @@ const rules = {
                 <template v-else-if="idx === 1 && selectedProductObjs.length">
                   {{ selectedProductObjs.length }} product{{ selectedProductObjs.length > 1 ? 's' : '' }}
                 </template>
-                <template v-else-if="idx === 2 && stakeholderObj">{{ stakeholderObj.name }}</template>
+                <template v-else-if="idx === 2 && selectedStakeholderCount">{{ selectedStakeholderCount }} stakeholder{{
+                  selectedStakeholderCount > 1 ? 's' : '' }}</template>
                 <template v-else-if="idx === 3 && form.org.organizationName">{{ form.org.organizationName }}</template>
                 <template v-else-if="idx === 4 && planObj">{{ planObj.name }}</template>
-                <template v-else-if="idx === 5 && form.services.length">{{ form.services.length }} add-on{{ form.services.length > 1 ? 's' : '' }}</template>
+                <template v-else-if="idx === 5 && form.services.length">{{ form.services.length }} add-on{{
+                  form.services.length > 1 ? 's' : '' }}</template>
               </div>
             </div>
           </div>
@@ -399,16 +421,17 @@ const rules = {
           <!-- Top row: domain pill left, step counter right -->
           <div class="ob-hero__top-row">
             <Transition name="fade">
-              <div v-if="domainObj && currentStep > 0" class="ob-hero__domain-pill">
+              <div v-if="domainObj && currentStep > 0" key="pill-active" class="ob-hero__domain-pill">
                 <VIcon :icon="domainObj.icon" size="13" />
                 {{ domainObj.name }}
               </div>
-              <div v-else class="ob-hero__domain-pill ob-hero__domain-pill--ghost" />
+              <div v-else key="pill-ghost" class="ob-hero__domain-pill ob-hero__domain-pill--ghost" />
             </Transition>
             <div class="ob-hero__step-right">
               <div class="ob-hero__step-label">Step {{ currentStep + 1 }} of {{ STEPS.length }}</div>
               <div class="ob-hero__step-progress">
-                <VProgressLinear :model-value="progress" color="primary" rounded height="4" class="ob-hero__progress-bar" />
+                <VProgressLinear :model-value="progress" color="primary" rounded height="4"
+                  class="ob-hero__progress-bar" />
                 <span class="ob-hero__pct">{{ progress }}%</span>
               </div>
             </div>
@@ -435,11 +458,8 @@ const rules = {
               <div class="ob-pane">
                 <VRow>
                   <VCol v-for="d in businessDomains" :key="d.id" cols="12" sm="6" lg="4">
-                    <div
-                      class="ob-card ob-card--domain"
-                      :class="{ 'ob-card--active': form.domain === d.id }"
-                      @click="onDomainSelect(d.id)"
-                    >
+                    <div class="ob-card ob-card--domain" :class="{ 'ob-card--active': form.domain === d.id }"
+                      @click="onDomainSelect(d.id)">
                       <div :class="`ob-dicon ob-dicon--${d.color}`">
                         <VIcon :icon="d.icon" size="24" />
                       </div>
@@ -472,11 +492,8 @@ const rules = {
 
                 <VRow>
                   <VCol v-for="p in products" :key="p.id" cols="12" sm="6" md="4">
-                    <div
-                      class="ob-card ob-card--product"
-                      :class="{ 'ob-card--active': form.products.includes(p.id) }"
-                      @click="toggleProduct(p.id)"
-                    >
+                    <div class="ob-card ob-card--product" :class="{ 'ob-card--active': form.products.includes(p.id) }"
+                      @click="toggleProduct(p.id)">
                       <div class="ob-card__top-row">
                         <div class="ob-picon">
                           <VIcon :icon="p.icon" size="18" color="primary" />
@@ -500,43 +517,61 @@ const rules = {
             <!-- ── STEP 3: STAKEHOLDER ────────────────────────────────────── -->
             <VWindowItem :value="2">
               <div class="ob-pane">
-                <!-- Products context reminder -->
-                <div v-if="selectedProductObjs.length" class="ob-context-bar mb-5">
-                  <span class="ob-context-bar__label">Based on your products:</span>
-                  <VChip
-                    v-for="p in selectedProductObjs"
-                    :key="p.id"
-                    size="x-small"
-                    color="primary"
-                    variant="tonal"
-                    class="ms-1"
-                  >{{ p.name }}</VChip>
-                </div>
-
                 <VAlert v-if="!form.products.length" type="warning" variant="tonal" class="mb-5" density="compact">
                   Go back and select at least one product first.
                 </VAlert>
 
-                <VRow v-else>
-                  <VCol v-for="s in stakeholders" :key="s.id" cols="12" sm="6" md="4">
-                    <div
-                      class="ob-card ob-card--stakeholder"
-                      :class="{ 'ob-card--active': form.stakeholder === s.id }"
-                      @click="form.stakeholder = s.id"
-                    >
-                      <div class="ob-card__top-row">
-                        <div class="ob-picon">
-                          <VIcon :icon="s.icon" size="18" color="primary" />
-                        </div>
-                        <div class="ob-card__check" :class="{ 'ob-card__check--on': form.stakeholder === s.id }">
-                          <VIcon v-if="form.stakeholder === s.id" icon="ri-check-line" size="13" color="white" />
-                        </div>
+                <template v-else>
+                  <div v-for="(productId, pIdx) in form.products" :key="productId" class="ob-product-sh-group">
+                    <!-- Product section header -->
+                    <div class="ob-product-sh-header">
+                      <div class="ob-picon">
+                        <VIcon :icon="products.find(p => p.id === productId)?.icon" size="18" color="primary" />
                       </div>
-                      <div class="ob-card__title">{{ s.name }}</div>
-                      <div class="ob-card__sub">{{ s.description }}</div>
+                      <div class="flex-grow-1">
+                        <div class="ob-sh-product-name">{{products.find(p => p.id === productId)?.name}}</div>
+                        <div class="ob-sh-product-hint">Select one or more stakeholder types for this product</div>
+                      </div>
+                      <VChip v-if="form.stakeholders[productId]?.length" size="x-small" color="primary" variant="tonal">
+                        {{ form.stakeholders[productId].length }} selected
+                      </VChip>
                     </div>
-                  </VCol>
-                </VRow>
+
+                    <!-- Loading -->
+                    <div v-if="isFetchingStakeholdersFor[productId]" class="d-flex justify-center pa-6">
+                      <VProgressCircular indeterminate color="primary" size="28" />
+                    </div>
+
+                    <!-- Stakeholder cards -->
+                    <VRow v-else-if="stakeholdersByProduct[productId]?.length" class="mt-1">
+                      <VCol v-for="s in stakeholdersByProduct[productId]" :key="s.id" cols="12" sm="6" md="4">
+                        <div class="ob-card ob-card--stakeholder"
+                          :class="{ 'ob-card--active': (form.stakeholders[productId] ?? []).includes(s.id) }"
+                          @click="toggleStakeholder(productId, s.id)">
+                          <div class="ob-card__top-row">
+                            <div class="ob-picon">
+                              <VIcon :icon="s.icon" size="18" color="primary" />
+                            </div>
+                            <div class="ob-mcheck"
+                              :class="{ 'ob-mcheck--on': (form.stakeholders[productId] ?? []).includes(s.id) }">
+                              <VIcon v-if="(form.stakeholders[productId] ?? []).includes(s.id)" icon="ri-check-line"
+                                size="13" color="white" />
+                            </div>
+                          </div>
+                          <div class="ob-card__title">{{ s.name }}</div>
+                          <div class="ob-card__sub">{{ s.description }}</div>
+                        </div>
+                      </VCol>
+                    </VRow>
+
+                    <VAlert v-else-if="stakeholdersByProduct[productId]" type="info" variant="tonal" density="compact"
+                      class="mt-2">
+                      No stakeholders available for this product.
+                    </VAlert>
+
+                    <VDivider v-if="pIdx < form.products.length - 1" class="my-6" />
+                  </div>
+                </template>
               </div>
             </VWindowItem>
 
@@ -545,19 +580,13 @@ const rules = {
               <div class="ob-pane">
                 <!-- Sub-section tabs -->
                 <div class="ob-subsec-tabs mb-6">
-                  <button
-                    class="ob-subsec-tab"
-                    :class="{ 'ob-subsec-tab--active': orgSection === 'org' }"
-                    @click="orgSection = 'org'"
-                  >
+                  <button class="ob-subsec-tab" :class="{ 'ob-subsec-tab--active': orgSection === 'org' }"
+                    @click="orgSection = 'org'">
                     <VIcon icon="ri-building-2-line" size="15" />
                     Organisation Details
                   </button>
-                  <button
-                    class="ob-subsec-tab"
-                    :class="{ 'ob-subsec-tab--active': orgSection === 'admin' }"
-                    @click="orgSection = 'admin'"
-                  >
+                  <button class="ob-subsec-tab" :class="{ 'ob-subsec-tab--active': orgSection === 'admin' }"
+                    @click="orgSection = 'admin'">
                     <VIcon icon="ri-shield-user-line" size="15" />
                     Administrator Account
                   </button>
@@ -568,38 +597,55 @@ const rules = {
                   <VForm v-if="orgSection === 'org'" key="org" @submit.prevent>
                     <VRow>
                       <VCol cols="12" md="6">
-                        <VTextField v-model="form.org.organizationName" label="Organisation Name *" :rules="[rules.required]" prepend-inner-icon="ri-building-2-line" variant="outlined" density="comfortable" />
+                        <VTextField v-model="form.org.organizationName" label="Organisation Name *"
+                          :rules="[rules.required]" prepend-inner-icon="ri-building-2-line" variant="outlined"
+                          density="comfortable" />
                       </VCol>
                       <VCol cols="12" md="6">
-                        <VTextField v-model="form.org.legalName" label="Legal Name *" :rules="[rules.required]" prepend-inner-icon="ri-bank-line" variant="outlined" density="comfortable" />
+                        <VTextField v-model="form.org.legalName" label="Legal Name *" :rules="[rules.required]"
+                          prepend-inner-icon="ri-bank-line" variant="outlined" density="comfortable" />
                       </VCol>
                       <VCol cols="12" md="6">
-                        <VTextField v-model="form.org.businessRegNumber" label="Business Registration Number" prepend-inner-icon="ri-file-list-3-line" variant="outlined" density="comfortable" />
+                        <VTextField v-model="form.org.businessRegNumber" label="Business Registration Number"
+                          prepend-inner-icon="ri-file-list-3-line" variant="outlined" density="comfortable" />
                       </VCol>
                       <VCol cols="12" md="6">
-                        <VTextField v-model="form.org.taxRegNumber" label="Tax Registration (GST/VAT)" prepend-inner-icon="ri-bill-line" variant="outlined" density="comfortable" />
+                        <VTextField v-model="form.org.taxRegNumber" label="Tax Registration (GST/VAT)"
+                          prepend-inner-icon="ri-bill-line" variant="outlined" density="comfortable" />
                       </VCol>
                       <VCol cols="12" md="6">
-                        <VTextField v-model="form.org.website" label="Website" :rules="[rules.url]" prepend-inner-icon="ri-global-line" variant="outlined" density="comfortable" />
+                        <VTextField v-model="form.org.website" label="Website" :rules="[rules.url]"
+                          prepend-inner-icon="ri-global-line" variant="outlined" density="comfortable" />
                       </VCol>
                       <VCol cols="12" md="6">
-                        <VSelect v-model="form.org.industry" label="Industry *" :items="industries" :rules="[rules.required]" prepend-inner-icon="ri-briefcase-line" variant="outlined" density="comfortable" />
+                        <VSelect v-model="form.org.industry" label="Industry *" :items="industries"
+                          :rules="[rules.required]" prepend-inner-icon="ri-briefcase-line" variant="outlined"
+                          density="comfortable" />
                       </VCol>
                       <VCol cols="12" md="4">
-                        <VSelect v-model="form.org.country" label="Country *" :items="countries" :rules="[rules.required]" prepend-inner-icon="ri-map-pin-line" variant="outlined" density="comfortable" />
+                        <VSelect v-model="form.org.country" label="Country *" :items="countries"
+                          :rules="[rules.required]" prepend-inner-icon="ri-map-pin-line" variant="outlined"
+                          density="comfortable" />
                       </VCol>
                       <VCol cols="12" md="4">
-                        <VSelect v-model="form.org.timeZone" label="Time Zone *" :items="timezones" :rules="[rules.required]" prepend-inner-icon="ri-time-line" variant="outlined" density="comfortable" />
+                        <VSelect v-model="form.org.timeZone" label="Time Zone *" :items="timezones"
+                          :rules="[rules.required]" prepend-inner-icon="ri-time-line" variant="outlined"
+                          density="comfortable" />
                       </VCol>
                       <VCol cols="12" md="4">
-                        <VSelect v-model="form.org.organizationSize" label="Organisation Size" :items="organizationSizes" prepend-inner-icon="ri-group-line" variant="outlined" density="comfortable" />
+                        <VSelect v-model="form.org.organizationSize" label="Organisation Size"
+                          :items="organizationSizes" prepend-inner-icon="ri-group-line" variant="outlined"
+                          density="comfortable" />
                       </VCol>
                       <VCol cols="12">
-                        <VFileInput v-model="form.org.logoFile" label="Organisation Logo (PNG / SVG)" accept="image/*" prepend-inner-icon="ri-image-line" prepend-icon="" variant="outlined" density="comfortable" show-size chips />
+                        <VFileInput v-model="form.org.logoFile" label="Organisation Logo (PNG / SVG)" accept="image/*"
+                          prepend-inner-icon="ri-image-line" prepend-icon="" variant="outlined" density="comfortable"
+                          show-size chips />
                       </VCol>
                     </VRow>
                     <div class="ob-nextsec">
-                      <VBtn variant="tonal" color="primary" append-icon="ri-arrow-right-line" @click="orgSection = 'admin'">
+                      <VBtn variant="tonal" color="primary" append-icon="ri-arrow-right-line"
+                        @click="orgSection = 'admin'">
                         Next: Administrator Account
                       </VBtn>
                     </div>
@@ -609,64 +655,99 @@ const rules = {
                   <VForm v-else key="admin" @submit.prevent>
                     <VRow>
                       <VCol cols="12" md="6">
-                        <VTextField v-model="form.admin.firstName" label="First Name *" :rules="[rules.required, rules.minLen(2)]" prepend-inner-icon="ri-user-line" variant="outlined" density="comfortable" />
+                        <VTextField v-model="form.admin.firstName" label="First Name *"
+                          :rules="[rules.required, rules.minLen(2)]" prepend-inner-icon="ri-user-line"
+                          variant="outlined" density="comfortable" />
                       </VCol>
                       <VCol cols="12" md="6">
-                        <VTextField v-model="form.admin.lastName" label="Last Name *" :rules="[rules.required, rules.minLen(2)]" prepend-inner-icon="ri-user-line" variant="outlined" density="comfortable" />
+                        <VTextField v-model="form.admin.lastName" label="Last Name *"
+                          :rules="[rules.required, rules.minLen(2)]" prepend-inner-icon="ri-user-line"
+                          variant="outlined" density="comfortable" />
                       </VCol>
                       <VCol cols="12" md="6">
-                        <VTextField v-model="form.admin.designation" label="Designation *" :rules="[rules.required]" prepend-inner-icon="ri-briefcase-line" variant="outlined" density="comfortable" />
+                        <VTextField v-model="form.admin.designation" label="Designation *" :rules="[rules.required]"
+                          prepend-inner-icon="ri-briefcase-line" variant="outlined" density="comfortable" />
                       </VCol>
                       <VCol cols="12" md="6">
-                        <VTextField v-model="form.admin.email" label="Email Address *" type="email" :rules="[rules.required, rules.email]" prepend-inner-icon="ri-mail-line" variant="outlined" density="comfortable" />
+                        <VTextField v-model="form.admin.email" label="Email Address *" type="email"
+                          :rules="[rules.required, rules.email]" prepend-inner-icon="ri-mail-line" variant="outlined"
+                          density="comfortable" />
                       </VCol>
                       <VCol cols="12" md="6">
-                        <VTextField v-model="form.admin.mobile" label="Mobile Number *" :rules="[rules.required]" prepend-inner-icon="ri-smartphone-line" variant="outlined" density="comfortable" />
+                        <VTextField v-model="form.admin.mobile" label="Mobile Number *" :rules="[rules.required]"
+                          prepend-inner-icon="ri-smartphone-line" variant="outlined" density="comfortable" />
                       </VCol>
                       <VCol cols="12">
-                        <VDivider class="my-2"><span class="text-caption text-medium-emphasis px-3">Set Password</span></VDivider>
+                        <VDivider class="my-2"><span class="text-caption text-medium-emphasis px-3">Set Password</span>
+                        </VDivider>
                       </VCol>
                       <VCol cols="12" md="6">
-                        <VTextField v-model="form.admin.password" label="Password *" :type="isPwVisible ? 'text' : 'password'" :rules="[rules.required, rules.minLen(8)]" prepend-inner-icon="ri-lock-line" :append-inner-icon="isPwVisible ? 'ri-eye-off-line' : 'ri-eye-line'" variant="outlined" density="comfortable" @click:append-inner="isPwVisible = !isPwVisible" />
+                        <VTextField v-model="form.admin.password" label="Password *"
+                          :type="isPwVisible ? 'text' : 'password'" :rules="[rules.required, rules.minLen(8)]"
+                          prepend-inner-icon="ri-lock-line"
+                          :append-inner-icon="isPwVisible ? 'ri-eye-off-line' : 'ri-eye-line'" variant="outlined"
+                          density="comfortable" @click:append-inner="isPwVisible = !isPwVisible" />
                       </VCol>
                       <VCol cols="12" md="6">
-                        <VTextField v-model="form.admin.confirmPassword" label="Confirm Password *" :type="isCpwVisible ? 'text' : 'password'" :rules="[rules.required, rules.pwMatch]" prepend-inner-icon="ri-lock-2-line" :append-inner-icon="isCpwVisible ? 'ri-eye-off-line' : 'ri-eye-line'" variant="outlined" density="comfortable" @click:append-inner="isCpwVisible = !isCpwVisible" />
+                        <VTextField v-model="form.admin.confirmPassword" label="Confirm Password *"
+                          :type="isCpwVisible ? 'text' : 'password'" :rules="[rules.required, rules.pwMatch]"
+                          prepend-inner-icon="ri-lock-2-line"
+                          :append-inner-icon="isCpwVisible ? 'ri-eye-off-line' : 'ri-eye-line'" variant="outlined"
+                          density="comfortable" @click:append-inner="isCpwVisible = !isCpwVisible" />
                       </VCol>
 
                       <!-- Stakeholder specifics inline -->
-                      <VCol v-if="form.stakeholder === 'airline'" cols="12">
-                        <VDivider class="my-2"><span class="text-caption text-medium-emphasis px-3">Airline Credentials</span></VDivider>
+                      <VCol v-if="hasStakeholderType('airline')" cols="12">
+                        <VDivider class="my-2"><span class="text-caption text-medium-emphasis px-3">Airline
+                            Credentials</span>
+                        </VDivider>
                       </VCol>
-                      <template v-if="form.stakeholder === 'airline'">
+                      <template v-if="hasStakeholderType('airline')">
                         <VCol cols="12" md="4">
-                          <VTextField v-model="form.airline.iataCode" label="IATA Code *" :rules="[rules.required, rules.maxLen(2)]" prepend-inner-icon="ri-barcode-line" variant="outlined" density="comfortable" counter="2" hint="2-letter" persistent-hint />
+                          <VTextField v-model="form.airline.iataCode" label="IATA Code *"
+                            :rules="[rules.required, rules.maxLen(2)]" prepend-inner-icon="ri-barcode-line"
+                            variant="outlined" density="comfortable" counter="2" hint="2-letter" persistent-hint />
                         </VCol>
                         <VCol cols="12" md="4">
-                          <VTextField v-model="form.airline.icaoCode" label="ICAO Code *" :rules="[rules.required, rules.maxLen(3)]" prepend-inner-icon="ri-barcode-line" variant="outlined" density="comfortable" counter="3" hint="3-letter" persistent-hint />
+                          <VTextField v-model="form.airline.icaoCode" label="ICAO Code *"
+                            :rules="[rules.required, rules.maxLen(3)]" prepend-inner-icon="ri-barcode-line"
+                            variant="outlined" density="comfortable" counter="3" hint="3-letter" persistent-hint />
                         </VCol>
                         <VCol cols="12" md="4">
-                          <VTextField v-model="form.airline.cargoPrefix" label="Cargo Prefix *" :rules="[rules.required]" prepend-inner-icon="ri-hashtag" variant="outlined" density="comfortable" hint="3-digit" persistent-hint />
+                          <VTextField v-model="form.airline.cargoPrefix" label="Cargo Prefix *"
+                            :rules="[rules.required]" prepend-inner-icon="ri-hashtag" variant="outlined"
+                            density="comfortable" hint="3-digit" persistent-hint />
                         </VCol>
                         <VCol cols="12" md="6">
-                          <VTextField v-model="form.airline.primaryHubAirport" label="Primary Hub Airport *" :rules="[rules.required]" prepend-inner-icon="ri-map-pin-line" variant="outlined" density="comfortable" />
+                          <VTextField v-model="form.airline.primaryHubAirport" label="Primary Hub Airport *"
+                            :rules="[rules.required]" prepend-inner-icon="ri-map-pin-line" variant="outlined"
+                            density="comfortable" />
                         </VCol>
                         <VCol cols="12" md="6">
-                          <VSelect v-model="form.airline.operationalRegion" label="Operational Region *" :items="operationalRegions" :rules="[rules.required]" prepend-inner-icon="ri-global-line" variant="outlined" density="comfortable" />
+                          <VSelect v-model="form.airline.operationalRegion" label="Operational Region *"
+                            :items="operationalRegions" :rules="[rules.required]" prepend-inner-icon="ri-global-line"
+                            variant="outlined" density="comfortable" />
                         </VCol>
                       </template>
 
-                      <template v-if="form.stakeholder === 'gha'">
+                      <template v-if="hasStakeholderType('gha')">
                         <VCol cols="12">
-                          <VDivider class="my-2"><span class="text-caption text-medium-emphasis px-3">Ground Handler Details</span></VDivider>
+                          <VDivider class="my-2"><span class="text-caption text-medium-emphasis px-3">Ground Handler
+                              Details</span></VDivider>
                         </VCol>
                         <VCol cols="12" md="6">
-                          <VTextField v-model="form.gha.airport" label="Primary Airport *" :rules="[rules.required]" prepend-inner-icon="ri-map-pin-line" variant="outlined" density="comfortable" />
+                          <VTextField v-model="form.gha.airport" label="Primary Airport *" :rules="[rules.required]"
+                            prepend-inner-icon="ri-map-pin-line" variant="outlined" density="comfortable" />
                         </VCol>
                         <VCol cols="12" md="6">
-                          <VTextField v-model="form.gha.handlingLicenseNumber" label="Handling Licence *" :rules="[rules.required]" prepend-inner-icon="ri-file-list-3-line" variant="outlined" density="comfortable" />
+                          <VTextField v-model="form.gha.handlingLicenseNumber" label="Handling Licence *"
+                            :rules="[rules.required]" prepend-inner-icon="ri-file-list-3-line" variant="outlined"
+                            density="comfortable" />
                         </VCol>
                         <VCol cols="12">
-                          <VSelect v-model="form.gha.servicesOffered" label="Services Offered" :items="ghaServicesList" multiple chips closable-chips prepend-inner-icon="ri-service-line" variant="outlined" density="comfortable" />
+                          <VSelect v-model="form.gha.servicesOffered" label="Services Offered" :items="ghaServicesList"
+                            multiple chips closable-chips prepend-inner-icon="ri-service-line" variant="outlined"
+                            density="comfortable" />
                         </VCol>
                       </template>
                     </VRow>
@@ -687,11 +768,9 @@ const rules = {
                     </div>
                   </VCol>
                   <VCol v-for="plan in subscriptionPlans" :key="plan.id" cols="12" sm="6" md="4">
-                    <div
-                      class="ob-plan-card"
+                    <div class="ob-plan-card"
                       :class="{ 'ob-plan-card--active': form.plan === plan.id, 'ob-plan-card--popular': !!plan.badge }"
-                      @click="form.plan = plan.id"
-                    >
+                      @click="form.plan = plan.id">
                       <div v-if="plan.badge" class="ob-plan-badge">
                         <VChip size="x-small" color="primary" variant="flat">{{ plan.badge }}</VChip>
                       </div>
@@ -706,13 +785,8 @@ const rules = {
                         {{ f }}
                       </div>
                       <div class="ob-plan-footer">
-                        <VBtn
-                          block
-                          rounded="lg"
-                          :color="form.plan === plan.id ? 'primary' : 'default'"
-                          :variant="form.plan === plan.id ? 'flat' : 'tonal'"
-                          size="small"
-                        >
+                        <VBtn block rounded="lg" :color="form.plan === plan.id ? 'primary' : 'default'"
+                          :variant="form.plan === plan.id ? 'flat' : 'tonal'" size="small">
                           <VIcon v-if="form.plan === plan.id" start icon="ri-checkbox-circle-line" size="14" />
                           {{ form.plan === plan.id ? 'Selected' : 'Choose' }}
                         </VBtn>
@@ -727,46 +801,111 @@ const rules = {
                       Billing & Contact Addresses
                     </div>
                     <VTabs v-model="addressTab" color="primary" class="mb-5">
-                      <VTab value="billing">      <VIcon start icon="ri-bill-line" size="14" />Billing</VTab>
-                      <VTab value="communication"><VIcon start icon="ri-mail-line" size="14" />Communication</VTab>
-                      <VTab value="operational">  <VIcon start icon="ri-building-2-line" size="14" />Operational</VTab>
+                      <VTab value="billing">
+                        <VIcon start icon="ri-bill-line" size="14" />Billing
+                      </VTab>
+                      <VTab value="communication">
+                        <VIcon start icon="ri-mail-line" size="14" />Communication
+                      </VTab>
+                      <VTab value="operational">
+                        <VIcon start icon="ri-building-2-line" size="14" />Operational
+                      </VTab>
                     </VTabs>
                     <VWindow v-model="addressTab">
                       <VWindowItem value="billing">
                         <VForm @submit.prevent>
                           <VRow>
-                            <VCol cols="12" md="8"><VTextField v-model="form.address.billing.addressLine1" label="Address Line 1 *" :rules="[rules.required]" prepend-inner-icon="ri-home-line" variant="outlined" density="comfortable" /></VCol>
-                            <VCol cols="12" md="4"><VTextField v-model="form.address.billing.addressLine2" label="Address Line 2" prepend-inner-icon="ri-map-2-line" variant="outlined" density="comfortable" /></VCol>
-                            <VCol cols="12" sm="4"><VTextField v-model="form.address.billing.city" label="City *" :rules="[rules.required]" prepend-inner-icon="ri-building-line" variant="outlined" density="comfortable" /></VCol>
-                            <VCol cols="12" sm="4"><VTextField v-model="form.address.billing.state" label="State / Province" prepend-inner-icon="ri-map-line" variant="outlined" density="comfortable" /></VCol>
-                            <VCol cols="12" sm="4"><VTextField v-model="form.address.billing.postalCode" label="Postal Code *" :rules="[rules.required]" prepend-inner-icon="ri-map-pin-2-line" variant="outlined" density="comfortable" /></VCol>
-                            <VCol cols="12"><VSelect v-model="form.address.billing.country" label="Country *" :items="countries" :rules="[rules.required]" prepend-inner-icon="ri-map-pin-line" variant="outlined" density="comfortable" /></VCol>
+                            <VCol cols="12" md="8">
+                              <VTextField v-model="form.address.billing.addressLine1" label="Address Line 1 *"
+                                :rules="[rules.required]" prepend-inner-icon="ri-home-line" variant="outlined"
+                                density="comfortable" />
+                            </VCol>
+                            <VCol cols="12" md="4">
+                              <VTextField v-model="form.address.billing.addressLine2" label="Address Line 2"
+                                prepend-inner-icon="ri-map-2-line" variant="outlined" density="comfortable" />
+                            </VCol>
+                            <VCol cols="12" sm="4">
+                              <VTextField v-model="form.address.billing.city" label="City *" :rules="[rules.required]"
+                                prepend-inner-icon="ri-building-line" variant="outlined" density="comfortable" />
+                            </VCol>
+                            <VCol cols="12" sm="4">
+                              <VTextField v-model="form.address.billing.state" label="State / Province"
+                                prepend-inner-icon="ri-map-line" variant="outlined" density="comfortable" />
+                            </VCol>
+                            <VCol cols="12" sm="4">
+                              <VTextField v-model="form.address.billing.postalCode" label="Postal Code *"
+                                :rules="[rules.required]" prepend-inner-icon="ri-map-pin-2-line" variant="outlined"
+                                density="comfortable" />
+                            </VCol>
+                            <VCol cols="12">
+                              <VSelect v-model="form.address.billing.country" label="Country *" :items="countries"
+                                :rules="[rules.required]" prepend-inner-icon="ri-map-pin-line" variant="outlined"
+                                density="comfortable" />
+                            </VCol>
                           </VRow>
                         </VForm>
                       </VWindowItem>
                       <VWindowItem value="communication">
-                        <VBtn variant="tonal" color="primary" size="small" prepend-icon="ri-file-copy-line" class="mb-4" @click="copyBilling('communication')">Same as Billing</VBtn>
+                        <VBtn variant="tonal" color="primary" size="small" prepend-icon="ri-file-copy-line" class="mb-4"
+                          @click="copyBilling('communication')">Same as Billing</VBtn>
                         <VForm @submit.prevent>
                           <VRow>
-                            <VCol cols="12" md="8"><VTextField v-model="form.address.communication.addressLine1" label="Address Line 1" prepend-inner-icon="ri-home-line" variant="outlined" density="comfortable" /></VCol>
-                            <VCol cols="12" md="4"><VTextField v-model="form.address.communication.addressLine2" label="Address Line 2" prepend-inner-icon="ri-map-2-line" variant="outlined" density="comfortable" /></VCol>
-                            <VCol cols="12" sm="4"><VTextField v-model="form.address.communication.city" label="City" prepend-inner-icon="ri-building-line" variant="outlined" density="comfortable" /></VCol>
-                            <VCol cols="12" sm="4"><VTextField v-model="form.address.communication.state" label="State" prepend-inner-icon="ri-map-line" variant="outlined" density="comfortable" /></VCol>
-                            <VCol cols="12" sm="4"><VTextField v-model="form.address.communication.postalCode" label="Postal Code" prepend-inner-icon="ri-map-pin-2-line" variant="outlined" density="comfortable" /></VCol>
-                            <VCol cols="12"><VSelect v-model="form.address.communication.country" label="Country" :items="countries" prepend-inner-icon="ri-map-pin-line" variant="outlined" density="comfortable" /></VCol>
+                            <VCol cols="12" md="8">
+                              <VTextField v-model="form.address.communication.addressLine1" label="Address Line 1"
+                                prepend-inner-icon="ri-home-line" variant="outlined" density="comfortable" />
+                            </VCol>
+                            <VCol cols="12" md="4">
+                              <VTextField v-model="form.address.communication.addressLine2" label="Address Line 2"
+                                prepend-inner-icon="ri-map-2-line" variant="outlined" density="comfortable" />
+                            </VCol>
+                            <VCol cols="12" sm="4">
+                              <VTextField v-model="form.address.communication.city" label="City"
+                                prepend-inner-icon="ri-building-line" variant="outlined" density="comfortable" />
+                            </VCol>
+                            <VCol cols="12" sm="4">
+                              <VTextField v-model="form.address.communication.state" label="State"
+                                prepend-inner-icon="ri-map-line" variant="outlined" density="comfortable" />
+                            </VCol>
+                            <VCol cols="12" sm="4">
+                              <VTextField v-model="form.address.communication.postalCode" label="Postal Code"
+                                prepend-inner-icon="ri-map-pin-2-line" variant="outlined" density="comfortable" />
+                            </VCol>
+                            <VCol cols="12">
+                              <VSelect v-model="form.address.communication.country" label="Country" :items="countries"
+                                prepend-inner-icon="ri-map-pin-line" variant="outlined" density="comfortable" />
+                            </VCol>
                           </VRow>
                         </VForm>
                       </VWindowItem>
                       <VWindowItem value="operational">
-                        <VBtn variant="tonal" color="primary" size="small" prepend-icon="ri-file-copy-line" class="mb-4" @click="copyBilling('operational')">Same as Billing</VBtn>
+                        <VBtn variant="tonal" color="primary" size="small" prepend-icon="ri-file-copy-line" class="mb-4"
+                          @click="copyBilling('operational')">Same as Billing</VBtn>
                         <VForm @submit.prevent>
                           <VRow>
-                            <VCol cols="12" md="8"><VTextField v-model="form.address.operational.addressLine1" label="Address Line 1" prepend-inner-icon="ri-home-line" variant="outlined" density="comfortable" /></VCol>
-                            <VCol cols="12" md="4"><VTextField v-model="form.address.operational.addressLine2" label="Address Line 2" prepend-inner-icon="ri-map-2-line" variant="outlined" density="comfortable" /></VCol>
-                            <VCol cols="12" sm="4"><VTextField v-model="form.address.operational.city" label="City" prepend-inner-icon="ri-building-line" variant="outlined" density="comfortable" /></VCol>
-                            <VCol cols="12" sm="4"><VTextField v-model="form.address.operational.state" label="State" prepend-inner-icon="ri-map-line" variant="outlined" density="comfortable" /></VCol>
-                            <VCol cols="12" sm="4"><VTextField v-model="form.address.operational.postalCode" label="Postal Code" prepend-inner-icon="ri-map-pin-2-line" variant="outlined" density="comfortable" /></VCol>
-                            <VCol cols="12"><VSelect v-model="form.address.operational.country" label="Country" :items="countries" prepend-inner-icon="ri-map-pin-line" variant="outlined" density="comfortable" /></VCol>
+                            <VCol cols="12" md="8">
+                              <VTextField v-model="form.address.operational.addressLine1" label="Address Line 1"
+                                prepend-inner-icon="ri-home-line" variant="outlined" density="comfortable" />
+                            </VCol>
+                            <VCol cols="12" md="4">
+                              <VTextField v-model="form.address.operational.addressLine2" label="Address Line 2"
+                                prepend-inner-icon="ri-map-2-line" variant="outlined" density="comfortable" />
+                            </VCol>
+                            <VCol cols="12" sm="4">
+                              <VTextField v-model="form.address.operational.city" label="City"
+                                prepend-inner-icon="ri-building-line" variant="outlined" density="comfortable" />
+                            </VCol>
+                            <VCol cols="12" sm="4">
+                              <VTextField v-model="form.address.operational.state" label="State"
+                                prepend-inner-icon="ri-map-line" variant="outlined" density="comfortable" />
+                            </VCol>
+                            <VCol cols="12" sm="4">
+                              <VTextField v-model="form.address.operational.postalCode" label="Postal Code"
+                                prepend-inner-icon="ri-map-pin-2-line" variant="outlined" density="comfortable" />
+                            </VCol>
+                            <VCol cols="12">
+                              <VSelect v-model="form.address.operational.country" label="Country" :items="countries"
+                                prepend-inner-icon="ri-map-pin-line" variant="outlined" density="comfortable" />
+                            </VCol>
                           </VRow>
                         </VForm>
                       </VWindowItem>
@@ -783,16 +922,14 @@ const rules = {
                 <div class="ob-section-label mb-4">
                   <VIcon icon="ri-add-circle-line" size="15" color="primary" />
                   Optional Add-on Services
-                  <span v-if="form.services.length" class="ob-section-label__count">{{ form.services.length }} selected</span>
+                  <span v-if="form.services.length" class="ob-section-label__count">{{ form.services.length }}
+                    selected</span>
                 </div>
 
                 <VRow class="mb-6">
                   <VCol v-for="s in serviceAddons" :key="s.id" cols="12" sm="6" md="4" lg="3">
-                    <div
-                      class="ob-card ob-card--service"
-                      :class="{ 'ob-card--active': form.services.includes(s.id) }"
-                      @click="toggleService(s.id)"
-                    >
+                    <div class="ob-card ob-card--service" :class="{ 'ob-card--active': form.services.includes(s.id) }"
+                      @click="toggleService(s.id)">
                       <div class="ob-card__top-row">
                         <div class="ob-picon">
                           <VIcon :icon="s.icon" size="16" color="primary" />
@@ -836,11 +973,17 @@ const rules = {
                           </VCol>
                           <VCol cols="12" sm="4" class="mb-3">
                             <div class="ob-rl">Products</div>
-                            <div class="ob-rv">{{ selectedProductObjs.map(p => p.name).join(', ') || '—' }}</div>
+                            <div class="ob-rv">{{selectedProductObjs.map(p => p.name).join(', ') || '—'}}</div>
                           </VCol>
                           <VCol cols="12" sm="4">
-                            <div class="ob-rl">Stakeholder</div>
-                            <div class="ob-rv">{{ stakeholderObj?.name ?? '—' }}</div>
+                            <div class="ob-rl">Stakeholders</div>
+                            <template v-if="selectedStakeholdersByProduct.some(p => p.stakeholders.length)">
+                              <div v-for="item in selectedStakeholdersByProduct" :key="item.product?.id" class="ob-rv">
+                                <span class="text-caption text-medium-emphasis me-1">{{ item.product?.name }}:</span>{{
+                                  item.stakeholders.map(s => s.name).join(', ') || '—' }}
+                              </div>
+                            </template>
+                            <div v-else class="ob-rv">—</div>
                           </VCol>
                         </VRow>
                       </VCardText>
@@ -857,10 +1000,22 @@ const rules = {
                       <VDivider />
                       <VCardText class="pa-4">
                         <VRow no-gutters>
-                          <VCol cols="12" sm="6" class="mb-3"><div class="ob-rl">Organisation</div><div class="ob-rv">{{ form.org.organizationName }}</div></VCol>
-                          <VCol cols="12" sm="6" class="mb-3"><div class="ob-rl">Country</div><div class="ob-rv">{{ form.org.country }}</div></VCol>
-                          <VCol cols="12" sm="6" class="mb-3"><div class="ob-rl">Administrator</div><div class="ob-rv">{{ form.admin.firstName }} {{ form.admin.lastName }}</div></VCol>
-                          <VCol cols="12" sm="6"><div class="ob-rl">Email</div><div class="ob-rv text-primary">{{ form.admin.email }}</div></VCol>
+                          <VCol cols="12" sm="6" class="mb-3">
+                            <div class="ob-rl">Organisation</div>
+                            <div class="ob-rv">{{ form.org.organizationName }}</div>
+                          </VCol>
+                          <VCol cols="12" sm="6" class="mb-3">
+                            <div class="ob-rl">Country</div>
+                            <div class="ob-rv">{{ form.org.country }}</div>
+                          </VCol>
+                          <VCol cols="12" sm="6" class="mb-3">
+                            <div class="ob-rl">Administrator</div>
+                            <div class="ob-rv">{{ form.admin.firstName }} {{ form.admin.lastName }}</div>
+                          </VCol>
+                          <VCol cols="12" sm="6">
+                            <div class="ob-rl">Email</div>
+                            <div class="ob-rv text-primary">{{ form.admin.email }}</div>
+                          </VCol>
                         </VRow>
                       </VCardText>
                     </VCard>
@@ -868,11 +1023,16 @@ const rules = {
                     <!-- Terms -->
                     <VCard variant="outlined" rounded="lg">
                       <VCardText class="pa-4">
-                        <VCheckbox v-model="form.termsAccepted" color="primary" density="compact" hide-details class="mb-2">
-                          <template #label><span class="text-body-2">I agree to the <a href="#" class="text-primary text-decoration-none font-weight-medium">Terms of Service</a></span></template>
+                        <VCheckbox v-model="form.termsAccepted" color="primary" density="compact" hide-details
+                          class="mb-2">
+                          <template #label><span class="text-body-2">I agree to the <a href="#"
+                                class="text-primary text-decoration-none font-weight-medium">Terms of
+                                Service</a></span></template>
                         </VCheckbox>
                         <VCheckbox v-model="form.privacyAccepted" color="primary" density="compact" hide-details>
-                          <template #label><span class="text-body-2">I agree to the <a href="#" class="text-primary text-decoration-none font-weight-medium">Privacy Policy</a></span></template>
+                          <template #label><span class="text-body-2">I agree to the <a href="#"
+                                class="text-primary text-decoration-none font-weight-medium">Privacy
+                                Policy</a></span></template>
                         </VCheckbox>
                       </VCardText>
                     </VCard>
@@ -901,13 +1061,20 @@ const rules = {
                         <span>Total</span>
                         <span>{{ totalMonthly > 0 ? `$${totalMonthly}/mo` : 'Free' }}</span>
                       </div>
-                      <VAlert v-if="form.plan !== 'enterprise'" type="success" variant="tonal" density="compact" rounded="lg" icon="ri-gift-line" class="mt-3">
+                      <VAlert v-if="form.plan !== 'enterprise'" type="success" variant="tonal" density="compact"
+                        rounded="lg" icon="ri-gift-line" class="mt-3">
                         <template #text><span class="text-caption">30-day free trial · Cancel anytime</span></template>
                       </VAlert>
                       <div class="ob-trust-row">
-                        <span><VIcon icon="ri-shield-check-line" size="12" class="me-1" />SOC 2</span>
-                        <span><VIcon icon="ri-lock-line" size="12" class="me-1" />256-bit SSL</span>
-                        <span><VIcon icon="ri-gdpr-line" size="12" class="me-1" />GDPR</span>
+                        <span>
+                          <VIcon icon="ri-shield-check-line" size="12" class="me-1" />SOC 2
+                        </span>
+                        <span>
+                          <VIcon icon="ri-lock-line" size="12" class="me-1" />256-bit SSL
+                        </span>
+                        <span>
+                          <VIcon icon="ri-gdpr-line" size="12" class="me-1" />GDPR
+                        </span>
                       </div>
                     </div>
                   </VCol>
@@ -921,13 +1088,7 @@ const rules = {
 
         <!-- ── STICKY FOOTER ──────────────────────────────────────────────── -->
         <div class="ob-footer">
-          <VBtn
-            v-if="currentStep > 0"
-            variant="tonal"
-            rounded="lg"
-            prepend-icon="ri-arrow-left-line"
-            @click="prev"
-          >
+          <VBtn v-if="currentStep > 0" variant="tonal" rounded="lg" prepend-icon="ri-arrow-left-line" @click="prev">
             Back
           </VBtn>
 
@@ -937,25 +1098,12 @@ const rules = {
             Save Draft
           </VBtn>
 
-          <VBtn
-            v-if="!isLastStep"
-            color="primary"
-            rounded="lg"
-            append-icon="ri-arrow-right-line"
-            elevation="0"
-            @click="next"
-          >
+          <VBtn v-if="!isLastStep" color="primary" rounded="lg" append-icon="ri-arrow-right-line" elevation="0"
+            @click="next">
             Continue
           </VBtn>
-          <VBtn
-            v-else
-            color="success"
-            rounded="lg"
-            prepend-icon="ri-building-2-line"
-            :loading="isSubmitting"
-            :disabled="!form.termsAccepted || !form.privacyAccepted"
-            @click="submit"
-          >
+          <VBtn v-else color="success" rounded="lg" prepend-icon="ri-building-2-line" :loading="isSubmitting"
+            :disabled="!form.termsAccepted || !form.privacyAccepted" @click="submit">
             Create Organisation
           </VBtn>
         </div>
@@ -1038,7 +1186,9 @@ const rules = {
   gap: 4px;
   text-decoration: none;
 
-  &:hover { color: rgb(var(--v-theme-primary)); }
+  &:hover {
+    color: rgb(var(--v-theme-primary));
+  }
 }
 
 // ── Body ──────────────────────────────────────────────────────────────────────
@@ -1376,8 +1526,14 @@ const rules = {
   overflow-y: auto;
 }
 
-.ob-window {
-  block-size: 100%;
+// Pierce Vuetify VWindow: its container defaults to overflow:hidden which clips tall steps.
+// Removing that lets .ob-content (the real scroll host) handle overflow naturally.
+.ob-window :deep(.v-window__container) {
+  overflow: visible;
+}
+
+.ob-window :deep(.v-window-item) {
+  block-size: auto;
 }
 
 .ob-pane {
@@ -1582,18 +1738,27 @@ const rules = {
   font-size: 0.8125rem;
 }
 
-// Products-to-stakeholder context bar
-.ob-context-bar {
+// Per-product stakeholder sections
+.ob-product-sh-header {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  border: 1px solid rgba(var(--v-theme-on-surface), 8%);
+  border-radius: 12px;
+  background: rgb(var(--v-theme-surface));
+  gap: 12px;
+  margin-block-end: 16px;
+  padding-block: 12px;
+  padding-inline: 14px;
 }
 
-.ob-context-bar__label {
+.ob-sh-product-name {
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.ob-sh-product-hint {
   color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
-  font-size: 0.8125rem;
-  font-weight: 500;
+  font-size: 0.78rem;
 }
 
 // Sub-section tabs (step 4)
@@ -1881,9 +2046,17 @@ const rules = {
 
 // Tablet (< 1280px = lg breakpoint where sidebar disappears)
 @media (max-width: 1279px) {
-  .ob-hero { padding-inline: 20px; }
-  .ob-pane { padding-inline: 20px; }
-  .ob-footer { padding-inline: 20px; }
+  .ob-hero {
+    padding-inline: 20px;
+  }
+
+  .ob-pane {
+    padding-inline: 20px;
+  }
+
+  .ob-footer {
+    padding-inline: 20px;
+  }
 }
 
 // Mobile (< 600px = Vuetify xs)
@@ -1893,18 +2066,26 @@ const rules = {
     padding-inline: 14px;
   }
 
-  .ob-nav__brand { font-size: 0.875rem; }
+  .ob-nav__brand {
+    font-size: 0.875rem;
+  }
 
-  .ob-nav__help { display: none; }
+  .ob-nav__help {
+    display: none;
+  }
 
   .ob-hero {
     padding-block: 10px 8px;
     padding-inline: 14px;
   }
 
-  .ob-hero__title { font-size: 1.1875rem; }
+  .ob-hero__title {
+    font-size: 1.1875rem;
+  }
 
-  .ob-hero__desc { font-size: 0.8125rem; }
+  .ob-hero__desc {
+    font-size: 0.8125rem;
+  }
 
   .ob-hero__context {
     font-size: 0.75rem;
@@ -1931,8 +2112,13 @@ const rules = {
   }
 
   // Reduce plan card padding
-  .ob-plan-card { padding: 14px; }
-  .ob-plan-price { font-size: 1.25rem; }
+  .ob-plan-card {
+    padding: 14px;
+  }
+
+  .ob-plan-price {
+    font-size: 1.25rem;
+  }
 
   // Sub-section tabs — allow horizontal scroll if labels overflow
   .ob-subsec-tabs {
@@ -1940,7 +2126,9 @@ const rules = {
     overflow-x: auto;
     scrollbar-width: none;
 
-    &::-webkit-scrollbar { display: none; }
+    &::-webkit-scrollbar {
+      display: none;
+    }
   }
 
   .ob-subsec-tab {
@@ -1950,7 +2138,9 @@ const rules = {
   }
 
   // Summary card full width on mobile
-  .ob-summary-card { margin-block-start: 0; }
+  .ob-summary-card {
+    margin-block-start: 0;
+  }
 
   // Footer: tighter, ensure buttons never clip
   .ob-footer {
@@ -1962,8 +2152,13 @@ const rules = {
 
 // Very small phones (< 400px)
 @media (max-width: 399px) {
-  .ob-hero__title { font-size: 1.0625rem; }
-  .ob-mobile-strip__line { inline-size: 10px; }
+  .ob-hero__title {
+    font-size: 1.0625rem;
+  }
+
+  .ob-mobile-strip__line {
+    inline-size: 10px;
+  }
 }
 
 // ── Transitions ───────────────────────────────────────────────────────────────

@@ -14,16 +14,21 @@ const props = defineProps({
   },
 })
 
-const clientValidate = inject('clientValidate')
-let clientErrors = inject('clientErrors')
-// import { getObjectData, setObjectData } from '@/@core/composable/useCommonFunctions'
+const clientValidate = inject('clientValidate', () => [])
+const clientErrors = inject('clientErrors', reactive({}))
 
 const groupObject = defineModel('groupObject')
 const inputdata = defineModel('inputdata')
 let muserDataStore = props.vbind1.isthisfordialog ? inputdata.value : userDataStore()
-// let muserDataStore = inputdata.value
 let ldataType1 = groupObject.value.controlProperties.filter(e => e.propertyTitle === 'DataType')
 let RTData = useUpdateObject(muserDataStore.data.FormData.UserEntryObjects, groupObject, null, props.vbind1?.overwriteDataPath)
+
+// Stable computed path & error messages so Vue tracks reactivity correctly
+const fieldPath = computed(() => groupObject.value?.dataPath?.replace('FormName.', '') ?? '')
+const fieldErrors = computed(() => {
+  const errs = clientErrors[fieldPath.value]
+  return Array.isArray(errs) ? errs : []
+})
 
 function handleInput(event) {
   //debugger
@@ -95,11 +100,10 @@ onMounted(async () => {
 //   clientValidate(groupObject.value.dataPath.replace('FormName.', ''))
 // })
 function localclientValidate() {
-  // alert(RTData.dataValue.value)
   if (lTouched.value === false && (RTData.dataValue.value === undefined || RTData.dataValue.value === null))
-    return
+    return []
 
-  return clientValidate(groupObject.value.dataPath.replace('FormName.', ''))
+  return clientValidate(fieldPath.value)
 }
 
 function onFocus() {
@@ -130,7 +134,7 @@ let date = ref < Date | null > (null)
     :style="`background-color: ${props.vbind1?.style['background-color'] && props.vbind1?.style['background-color'] !== '' ? props.vbind1.style['background-color'] : groupObject.controlProperties.filter(e => e.propertyTitle === 'Mandatory')[0]?.data.value === 'true' ? props.FormParameters?.ColorForMandatory : ''}`"
     :label="props.vbind1?.label ? `${props.vbind1?.label} ${props.FormParameters?.Mandatory.value === 'Astrix' ? groupObject.controlProperties.filter(e => e.propertyTitle === 'Mandatory')[0]?.data.value === 'true' ? '*' : '' : groupObject.controlProperties.filter(e => e.propertyTitle === 'Mandatory')[0]?.data.value === 'false' ? '(Opt.)' : ''}` : ''"
     :class="groupObject.controlProperties.filter(e => e.propertyTitle === 'Align')[0]?.data.value"
-    :rules="localclientValidate()" :error-messages="clientErrors[groupObject.dataPath.replace('FormName.', '')]"
+    :rules="localclientValidate()" :error-messages="fieldErrors"
     @focus="onFocus" @input="handleInput" />
 
   <!-- <VTextField

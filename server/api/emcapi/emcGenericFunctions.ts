@@ -11,7 +11,6 @@ let mDTObject: any;
 
 import { createError } from 'h3';
 import { generateId } from '~/server/services/emc/emcIdGenerator';
-import { getUserFromEvent } from '~/server/utils/auth';
 
 let currentUser = null;
 export async function getDataFromEvent(event: any) {
@@ -1767,10 +1766,10 @@ export function extractZodJsonFromDTObjects(controls: any[]): any {
   controls.forEach((control) => {
     let controlName = control.ControlName;
     let controlSchema: any = {};
-
+    console.log('controlType123459986', control);
     if (control.controlProperties) {
       control.controlProperties.forEach((prop) => {
-        if (prop.propertyTitle === 'DataType') {
+        if (prop.propertyTitle.toLowerCase() === 'datatype') {
           controlSchema.type =
             prop.data === 'number'
               ? 'number'
@@ -1782,13 +1781,16 @@ export function extractZodJsonFromDTObjects(controls: any[]): any {
         if (prop.propertyTitle === 'Mandatory') {
           controlSchema.required = prop.data?.value === 'true';
           // controlSchema.allowNull = !controlSchema.required
+          console.log('controlType1234599', control.controlType);
           if (
-            controlSchema.required === true &&
-            (controlSchema.type === 'DropDown' ||
-              controlSchema.type === 'AutoComplete' ||
-              controlSchema.type === 'GroupData')
+            (control.controlType === 'DropDown' ||
+              control.controlType === 'AutoComplete' ||
+              control.controlType === 'GroupData')
           ) {
-            controlSchema.message = 'Data missing';
+            controlSchema.type = 'object';
+            controlSchema.lookup = true;
+            // controlSchema.message = 'Mandatory data missing';
+            console.log('controlType12345', control);
           }
         }
 
@@ -1804,7 +1806,7 @@ export function extractZodJsonFromDTObjects(controls: any[]): any {
           controlName = prop.data;
         }
       });
-      console.log('controlType1234', control.controlType);
+      console.log('controlType1234', controlSchema.type || controlSchema.Type);
       if (
         control.controlType === 'RateDefinition' ||
         control.controlType === 'Image' || control.controlType === 'Pricing'

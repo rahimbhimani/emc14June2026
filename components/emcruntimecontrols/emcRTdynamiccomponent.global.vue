@@ -142,7 +142,6 @@ watch(
 // Helpers
 // -----------------------------------------------------------------------------
 function getNestedValue(obj, path) {
-  debugger
   if (!obj || !path)
     return undefined
 
@@ -235,7 +234,6 @@ onMounted(() => {
 // Selected value
 // -----------------------------------------------------------------------------
 const selectedValue = computed(() => {
-  debugger
   return getNestedValue(
     basePath.value,
     idPath,
@@ -271,7 +269,6 @@ watch(
   selectedValue,
 
   async (newVal, oldVal) => {
-    debugger
     mUserDataStoreInternal.value = [] // Clear internal store to prevent stale data during load
     if (newVal == null || newVal === '')
       return
@@ -366,8 +363,8 @@ watch(
           capturedDataPath,
           FormRTObjects.value.FormRTObjects.validationSchema || null,
           () => {
-            // Read from the global store (always in sync via localData watcher).
-            // Strip the "FormName." prefix so the path is relative to FormName.
+            if (!schema.value?.safeParse)
+              return true
             const schemaRelPath = capturedDataPath.startsWith('FormName.')
               ? capturedDataPath.slice('FormName.'.length)
               : capturedDataPath
@@ -715,7 +712,7 @@ function getvbind() {
 <template>
   <!-- {{ FormRTObjects?.FormRTObjects?.validationSchema }} -->
   <!-- {{ props.groupObject.dataPath }} -->
-  <!-- {{ errors }} -->
+  {{ errors }}
   <!-- {{ mUserDataStoreObject }} -->
   <div v-show="IsThisArrayList === true">
     <!-- Toolbar -->

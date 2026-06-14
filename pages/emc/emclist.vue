@@ -29,6 +29,7 @@
   const childValidatorRegistry = new Map()
   //  { "Code": { "_id": "6885e29af2dae01edb4893d8", "title": "Published" } }
   function formValidate() {
+    debugger
     const parentValid = validateForm(schema, muserDataStore.data.FormData.UserEntryObjects.FormName)
 
     let allChildrenValid = true
@@ -682,11 +683,11 @@
   {{ organization.Name }}
   {{ organization.icon }}
   {{ organization.logo }} -->
-  <!-- {{ muserDataStore.data.FormData.UserEntryObjects }} -->
+  <!-- User entry {{ muserDataStore.data.FormData.UserEntryObjects }} -->
   <!-- {{ mOutPutFormData.FormData.ListHeaders }} -->
-  <!-- {{ errors }} -->
+  <!-- errors {{ errors }} -->
   <!-- {{ muserDataStore?.data }} -->
-  <!-- {{ schema }} -->
+  <!-- Schema {{ schema }} -->
   <!-- {{ muserDataStore.data?.FormData.UserEntryObjects.FormName }} -->
   <!-- {{ muserDataStore.data?.FormData.UserEntryObjects.FormName }} -->
   <!-- <br/> -->
@@ -703,7 +704,7 @@
   <!-- {{ schema }} -->
   <!-- <br/> -->
   <!-- <br/> -->
-  <!-- {{ mOutPutFormData?.FormData.validationSchema }} -->
+  <!-- validation schema text {{ mOutPutFormData?.FormData.validationSchema }} -->
   <!-- {{ mOutPutFormData.FormData.UserEntryObjects }} -->
   <!-- {{ mOutPutFormData.FormData }} -->
   <!-- <hr/> -->

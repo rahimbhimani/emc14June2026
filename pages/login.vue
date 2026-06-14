@@ -1,81 +1,76 @@
 <script setup lang="ts">
 import airplaneWing from '@images/airplanewing.png'
-import type { User } from 'next-auth'
 import type { NuxtError } from 'nuxt/app'
 import { VForm } from 'vuetify/components/VForm'
-
-const { signIn, data: sessionData } = useAuth()
 
 definePageMeta({
   layout: 'blank',
   unauthenticatedOnly: true,
 })
 
-const isPasswordVisible = ref(false)
-const route = useRoute()
+const { signIn, data: sessionData } = useAuth()
 const ability = useAbility()
+const route = useRoute()
 
-const errors = ref<Record<string, string | undefined>>({
-  email: undefined,
-  password: undefined,
-})
+const refVForm = ref<InstanceType<typeof VForm>>()
+const isPasswordVisible = ref(false)
+const isCredentialLoading = ref(false)
+const isSsoLoading = ref(false)
 
-const refVForm = ref<VForm>()
+const credentials = ref({ email: '', password: '' })
+const errors = ref<Record<string, string | undefined>>({ email: undefined, password: undefined })
 
-const credentials = ref({
-  email: 'admin@demo.com',
-  password: 'admin',
-})
+// ── Credential login ───────────────────────────────────────────────────────
+async function loginWithCredentials() {
+  isCredentialLoading.value = true
+  errors.value = {}
 
-const rememberMe = ref(false)
-
-async function login() {
   const response = await signIn('credentials', {
     callbackUrl: '/',
     redirect: false,
     ...credentials.value,
   })
 
-  if (response && response.error) {
-    const apiStringifiedError = response.error
-    const apiError: NuxtError = JSON.parse(apiStringifiedError)
-
+  if (response?.error) {
+    const apiError: NuxtError = JSON.parse(response.error)
     errors.value = apiError.data as Record<string, string | undefined>
-
+    isCredentialLoading.value = false
     return
   }
 
-  errors.value = {}
-
   const { user } = sessionData.value!
 
-  useCookie<Partial<User>>('userData').value = user
-  useCookie<User['abilityRules']>('userAbilityRules').value = user.abilityRules
-  
-  // Store organization details
+  useCookie('userData').value = user as any
+  useCookie<any[]>('userAbilityRules').value = user.abilityRules ?? []
+  ability.update(user.abilityRules ?? [])
+
   if (user.organizationId) {
-    useCookie('organizationId').value = user.organizationId
+    useCookie('organizationId').value = String(user.organizationId)
     useCookie('organizationName').value = user.organizationName || ''
     useCookie('organizationIcon').value = user.organizationIcon || ''
     useCookie('organizationLogo').value = user.organizationLogo || ''
   }
-  
-  ability.update(user.abilityRules ?? [])
-  navigateTo(route.query.to ? String(route.query.to) : '/', { replace: true })
+
+  navigateTo(route.query.to ? String(route.query.to) : '/dashboards/analytics', { replace: true })
 }
 
 const onSubmit = () => {
-  refVForm.value?.validate()
-    .then(({ valid: isValid }) => {
-      if (isValid)
-        login()
-    })
+  refVForm.value?.validate().then(({ valid }) => {
+    if (valid)
+      loginWithCredentials()
+  })
+}
+
+// ── SSO login ──────────────────────────────────────────────────────────────
+async function loginWithSSO() {
+  isSsoLoading.value = true
+  await signIn('keycloak', { callbackUrl: route.query.to ? String(route.query.to) : '/' })
 }
 </script>
 
 <template>
   <div class="flight-login-container">
-    <!-- Background with flight image -->
+    <!-- Background -->
     <div class="flight-background">
       <img
         :src="airplaneWing"
@@ -85,30 +80,25 @@ const onSubmit = () => {
       <div class="flight-overlay" />
     </div>
 
-    <!-- Marketing Text - Left side -->
-
-    <!-- Login Form - Right side -->
-
+    <!-- Login card -->
     <div class="login-form-container">
-      <VCard
-        class="login-card elevation-12"
-        align="right"
-      >
+      <VCard class="login-card elevation-12">
         <VCardText>
           <div class="text-center mb-6">
-            <h2 class="text-h4 font-weight-bold mb-2">
-              Welcome✈️
+            <h2 class="text-h4 font-weight-bold mb-1">
+              Welcome ✈️
             </h2>
-            <p class="text-body-1 text-medium-emphasis">
+            <p class="text-body-2 text-medium-emphasis">
               Sign in to your account
             </p>
           </div>
 
+          <!-- Credential form -->
           <VForm
             ref="refVForm"
             @submit.prevent="onSubmit"
           >
-            <VRow>
+            <VRow dense>
               <VCol cols="12">
                 <VTextField
                   v-model="credentials.email"
@@ -119,6 +109,7 @@ const onSubmit = () => {
                   prepend-inner-icon="ri-mail-line"
                   :rules="[requiredValidator, emailValidator]"
                   :error-messages="errors.email"
+                  density="comfortable"
                 />
               </VCol>
 
@@ -133,19 +124,15 @@ const onSubmit = () => {
                   :append-inner-icon="isPasswordVisible ? 'ri-eye-off-line' : 'ri-eye-line'"
                   :rules="[requiredValidator]"
                   :error-messages="errors.password"
+                  density="comfortable"
                   @click:append-inner="isPasswordVisible = !isPasswordVisible"
                 />
               </VCol>
 
               <VCol cols="12">
-                <div class="d-flex justify-space-between align-center">
-                  <VCheckbox
-                    v-model="rememberMe"
-                    label="Remember me"
-                    hide-details
-                  />
+                <div class="d-flex justify-end">
                   <NuxtLink
-                    class="text-primary"
+                    class="text-primary text-body-2"
                     :to="{ name: 'forgot-password' }"
                   >
                     Forgot Password?
@@ -159,25 +146,51 @@ const onSubmit = () => {
                   type="submit"
                   size="large"
                   class="flight-login-btn"
+                  :loading="isCredentialLoading"
+                  :disabled="isCredentialLoading || isSsoLoading"
                 >
                   Sign In
                 </VBtn>
               </VCol>
-
-              <VCol
-                cols="12"
-                class="text-center"
-              >
-                <span class="text-body-2">Don't have an account? </span>
-                <NuxtLink
-                  class="text-primary font-weight-medium"
-                  :to="{ name: 'register' }"
-                >
-                  Create one
-                </NuxtLink>
-              </VCol>
             </VRow>
           </VForm>
+
+          <!-- Divider -->
+          <div class="divider-row my-4">
+            <VDivider />
+            <span class="divider-label text-caption text-medium-emphasis px-3">OR</span>
+            <VDivider />
+          </div>
+
+          <!-- SSO button -->
+          <VBtn
+            block
+            variant="outlined"
+            size="large"
+            class="sso-btn"
+            :loading="isSsoLoading"
+            :disabled="isCredentialLoading || isSsoLoading"
+            prepend-icon="ri-shield-keyhole-line"
+            @click="loginWithSSO"
+          >
+            Sign In with SSO
+          </VBtn>
+
+          <p class="text-center text-caption text-medium-emphasis mt-2">
+            Secured by Keycloak
+          </p>
+
+          <VDivider class="my-4" />
+
+          <p class="text-center text-body-2 text-medium-emphasis">
+            Don't have an account?
+            <NuxtLink
+              :to="{ path: '/emc/emcOrganizationOnboarding' }"
+              class="text-primary font-weight-semibold text-decoration-none"
+            >
+              Sign Up
+            </NuxtLink>
+          </p>
         </VCardText>
       </VCard>
     </div>
@@ -189,9 +202,8 @@ const onSubmit = () => {
   position: relative;
   display: flex;
   overflow: hidden;
-  flex-direction: row;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   min-block-size: 100vh;
 }
 
@@ -205,7 +217,6 @@ const onSubmit = () => {
 }
 
 .flight-bg-image {
-  z-index: 0;
   block-size: 100%;
   inline-size: 100%;
   object-fit: cover;
@@ -215,146 +226,82 @@ const onSubmit = () => {
 .flight-overlay {
   position: absolute;
   z-index: 1;
-  background:
-    linear-gradient(
-      135deg,
-      rgba(25, 118, 210, 20%) 0%,
-      rgba(13, 71, 161, 30%) 100%
-    );
+  background: linear-gradient(135deg, rgba(25, 118, 210, 20%) 0%, rgba(13, 71, 161, 30%) 100%);
   block-size: 100%;
   inline-size: 100%;
   inset-block-start: 0;
   inset-inline-start: 0;
 }
 
-/* Marketing Text - Left side */
-.marketing-text {
-  position: relative;
-  z-index: 10;
-  display: flex;
-  flex: 1 1 auto;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 2rem;
-
-  &::before,
-  &::after {
-    display: none !important;
-    content: none !important;
-  }
-}
-
-.marketing-title {
-  position: relative;
-  z-index: 1;
-  color: #fff;
-  font-size: 4rem;
-  font-weight: 300;
-  letter-spacing: -0.02em;
-  line-height: 1.15;
-  text-align: center;
-  text-shadow:
-    0 2px 8px rgba(0, 0, 0, 70%),
-    0 4px 16px rgba(0, 0, 0, 50%),
-    0 8px 32px rgba(0, 0, 0, 30%);
-  white-space: normal;
-  word-wrap: break-word;
-
-  &::before,
-  &::after {
-    display: none !important;
-    content: none !important;
-  }
-}
-
-/* Login Form - Right, just before the text */
 .login-form-container {
   position: relative;
   z-index: 10;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  inline-size: 190px;
-  margin-block-start: 75px;
-  margin-inline: 10rem;
-  min-inline-size: 400px;
-  padding-block: 1.5rem;
-  padding-inline: 0;
+  justify-content: center;
+  inline-size: 440px;
+  margin-inline-end: 8rem;
 }
 
 .login-card {
-  border: 1px solid rgba(255, 255, 255, 30%);
-  border-radius: 16px !important;
-  backdrop-filter: blur(15px);
-  background: transparent !important;
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 15%) !important;
+  border: none;
+  border-radius: 20px !important;
+  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 92%) !important;
+  box-shadow: 0 32px 64px rgba(0, 0, 0, 25%) !important;
   inline-size: 100%;
-  padding-block: 32px !important;
-  padding-inline: 24px !important;
+  padding-block: 40px !important;
+  padding-inline: 36px !important;
 }
 
 .flight-login-btn {
-  border-radius: 8px !important;
+  border-radius: 10px !important;
   background: linear-gradient(45deg, #1976d2, #1565c0) !important;
+  font-size: 1rem !important;
   font-weight: 600;
   letter-spacing: 0.5px;
   text-transform: none;
 }
 
+.sso-btn {
+  border-color: rgba(25, 118, 210, 60%) !important;
+  border-radius: 10px !important;
+  color: #1565c0 !important;
+  font-size: 1rem !important;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: none;
+}
+
+.divider-row {
+  display: flex;
+  align-items: center;
+}
+
+/* stylelint-disable-next-line selector-pseudo-class-no-unknown */
 :deep(.v-field) {
   border-radius: 8px !important;
 }
 
-:deep(.v-field__input) {
-  padding-block: 16px;
-  padding-inline: 0;
-}
-
-/* Responsive Design */
-@media (max-width: 1200px) {
-  .marketing-title {
-    font-size: 3rem;
-  }
-
-  .login-form-container {
-    inline-size: 400px;
-    min-inline-size: 350px;
-  }
-}
-
 @media (max-width: 960px) {
   .flight-login-container {
-    flex-direction: column;
-  }
-
-  .marketing-text {
-    flex: none;
-    padding: 1rem;
-    min-block-size: 40vh;
-  }
-
-  .marketing-title {
-    font-size: 2.5rem;
+    justify-content: center;
   }
 
   .login-form-container {
-    padding: 1rem;
-    inline-size: 100%;
-    min-inline-size: auto;
+    inline-size: 90%;
+    margin-inline-end: 0;
   }
 }
 
 @media (max-width: 600px) {
-  .marketing-text {
-    min-block-size: 30vh;
-  }
-
-  .marketing-title {
-    font-size: 2rem;
+  .login-form-container {
+    padding: 1.5rem;
+    inline-size: 100%;
   }
 
   .login-card {
-    padding-block: 24px !important;
+    padding-block: 28px !important;
     padding-inline: 20px !important;
   }
 }

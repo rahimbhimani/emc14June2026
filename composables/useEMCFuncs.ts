@@ -16,256 +16,186 @@ const uuid = () => {
 }
 
 export async function useEmcList(vMaster: string, vInputData?: object, vRetreiveConfData: boolean = false) {
-  //console.log('useEmcList started')
+  const headers = import.meta.server ? useRequestHeaders(['cookie']) : {}
 
-  //console.log((vInputData))
-
-  //console.log('useEmcList aftervinput')
-
-  // const lObjToStart = JSON.stringify(vInputData)
-
-  const { data } = await useFetch('/api/emcapi/emcGenericFunctions', {
+  const data = await $fetch('/api/emcapi/emcGenericFunctions', {
     method: 'POST',
-    body: JSON.stringify({
+    credentials: 'include',
+    headers,
+    body: {
       master: vMaster,
       data: vInputData?.searchCriteria,
       retreiveConfData: vRetreiveConfData,
       PageParameters: vInputData?.PageParameters,
       action: 'List',
-      key: Date.now().toString()
-    }),
-    headers: {
-      'Content-Type': 'application/json',
+      key: Date.now().toString(),
     },
-
   })
 
-  //console.log('before EMCLIST')
-  //console.log(data)
-
-  return data
+  return ref(data)
 }
 
 
 export async function useEmcReferenceDataList(vMaster: string, vInputData?: object, vRetreiveConfData: boolean = false, vRetryCount = 0) {
   try {
-
-
-    //console.log('useEmcReferenceDataList started', vInputData)
-
-    // alert(`/api/emcapi/emcGenericFunctions?q=${vInputData?.id}`)
-
-    //console.log(vInputData?.id)
-
-    //console.log('useEmcReferenceDataList aftervinput')
-
-    // const lObjToStart = JSON.stringify(vInputData)
-
+    const headers = import.meta.server ? useRequestHeaders(['cookie']) : {}
     const requestId = vInputData?.id ?? uuid()
-    const { data, error } = await useFetch(`/api/emcapi/emcGenericFunctions?q=${requestId}`, {
+    const data = await $fetch(`/api/emcapi/emcGenericFunctions?q=${requestId}`, {
       method: 'POST',
+      credentials: 'include',
+      headers,
       body: {
         master: vMaster,
         data: vInputData,
         retreiveConfData: vRetreiveConfData,
         PageParameters: vInputData?.PageParameters,
         action: vMaster,
-        key: Date.now().toString()
+        key: Date.now().toString(),
       },
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      server: false,
     })
 
-
-    if (error.value) {
-      if (error.value.statusCode === 503) {
-        let vRetryCountLocal = vRetryCount + 1
-        if (vRetryCountLocal > 3) {
-          throw error.value
-        }
-        nextTick()
-        nextTick()
-        await useEmcReferenceDataList(vMaster, vInputData, vRetreiveConfData, vRetryCountLocal)
-      }
+    return ref(data)
+  }
+  catch (error: any) {
+    if (error?.statusCode === 503) {
+      const vRetryCountLocal = vRetryCount + 1
+      if (vRetryCountLocal > 3)
+        throw error
+      await nextTick()
+      await nextTick()
+      return await useEmcReferenceDataList(vMaster, vInputData, vRetreiveConfData, vRetryCountLocal)
     }
-
-    //console.log('post useEmcReferenceDataList')
-    //console.log(data)
-    return data
-  } catch (error) {
     alert('error')
   }
 }
 
 export async function useEmcGetDetail(vMaster: string, vInputData?: object, vRetreiveConfData: boolean = false) {
-  //console.log('useEmcGetDetail started')
+  const headers = import.meta.server ? useRequestHeaders(['cookie']) : {}
 
-  //console.log('useEmcGetDetail aftervinput', vInputData?.data)
-
-  //console.log('useEmcGetDetail aftervinput')
-
-  // const lObjToStart = JSON.stringify(vInputData)
-
-  const { data } = await useFetch('/api/emcapi/emcGenericFunctions', {
+  const data = await $fetch('/api/emcapi/emcGenericFunctions', {
     method: 'POST',
-    body: JSON.stringify({
+    credentials: 'include',
+    headers,
+    body: {
       master: vMaster,
       data: vInputData?.data,
       retreiveConfData: null,
       PageParameters: null,
       action: 'getDetail',
-      key: Date.now().toString()
-    }),
-    headers: {
-      'Content-Type': 'application/json',
+      key: Date.now().toString(),
     },
   })
 
-
-  //console.log('before useEmcGetDetail')
-  //console.log(data)
-
-  return data
+  return ref(data)
 }
 
 export async function useEmcGetControlsData(vMaster: string) {
-  //console.log('useEmcGetControlsData started')
+  const headers = import.meta.server ? useRequestHeaders(['cookie']) : {}
 
-  // const lObjToStart = JSON.stringify(vInputData)
-
-  const { data } = await useFetch('/api/emcapi/emcGenericFunctions', {
+  return await $fetch('/api/emcapi/emcGenericFunctions', {
     method: 'POST',
-    body: JSON.stringify({
+    credentials: 'include',
+    headers,
+    body: {
       master: vMaster,
       data: null,
       retreiveConfData: null,
       PageParameters: null,
       action: 'GetControlsData',
-    }),
-    headers: {
-      'Content-Type': 'application/json',
     },
   })
-
-  //console.log('get constrols data11')
-  //console.log(data.value)
-
-  return data.value
 }
 
 
 async function insertWithBinarydata(vMaster: string, vData: object) {
   debugger
-  //console.log('useEmcInsert started', vData)
   const fd = new FormData()
-  fd.append("data", JSON.stringify({
+  fd.append('data', JSON.stringify({
     master: vMaster,
     action: 'Insert',
     data: vData.FormName,
   }))
 
   const binArr = vData?.BinaryData || []
-  binArr.forEach((x: any, index: number) => {
+  binArr.forEach((x: any) => {
     const file = x?.dataValue
     if (file instanceof File) {
-      fd.append("BinaryFile", file) // ✅ multiple same key
-      fd.append("BinaryDataPath", x.datapath || "") // optional
-      fd.append("Type", x.Type || "") // optional
-    } else {
-      //console.log(`❌ BinaryData[${index}] is not File`, file)
+      fd.append('BinaryFile', file)
+      fd.append('BinaryDataPath', x.datapath || '')
+      fd.append('Type', x.Type || '')
     }
   })
 
-  //console.log('FormData prepared for useEmcInsert', fd)
-  const retValue = await $fetch('/api/emcapi/emcGenericFunctions', {
+  return await $fetch('/api/emcapi/emcGenericFunctions', {
     method: 'POST',
+    credentials: 'include',
     body: fd,
   })
-
-  return retValue
 }
 
 export async function useEmcInsert(vMaster: string, vData: object) {
   if (vData?.BinaryData) {
-    return await insertWithBinarydata(vMaster, vData)
+    const result = await insertWithBinarydata(vMaster, vData)
+    return { status: ref('success'), data: ref(result), ...(result as any) }
   }
 
-  //console.log('useEmcInsert started')
-
-  const retValue = await $fetch('/api/emcapi/emcGenericFunctions', {
-    method: 'POST',
-    body: JSON.stringify({
-      master: vMaster,
-      action: 'Insert',
-      data: vData,
-      key: Date.now().toString()
-    }),
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  })
-
-  return retValue
-
+  try {
+    const result = await $fetch('/api/emcapi/emcGenericFunctions', {
+      method: 'POST',
+      credentials: 'include',
+      body: {
+        master: vMaster,
+        action: 'Insert',
+        data: vData,
+        key: Date.now().toString(),
+      },
+    })
+    return { status: ref('success'), data: ref(result), ...(result as any) }
+  }
+  catch (err: any) {
+    return { status: ref('error'), data: ref(null), success: false, message: err?.message || 'Insert failed' }
+  }
 }
 
 export async function useEmcDelete(vMaster: string, vData: object) {
-  //console.log('useEmcDelete started')
-
-  return await useFetch('/api/emcapi/emcGenericFunctions', {
-    method: 'POST',
-    body: JSON.stringify({
-      master: vMaster,
-      action: 'Delete',
-      data: vData,
-    }),
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  })
+  try {
+    const result = await $fetch('/api/emcapi/emcGenericFunctions', {
+      method: 'POST',
+      credentials: 'include',
+      body: {
+        master: vMaster,
+        action: 'Delete',
+        data: vData,
+      },
+    })
+    return { status: ref('success'), data: ref(result), ...(result as any) }
+  }
+  catch (err: any) {
+    return { status: ref('error'), data: ref(null), success: false, message: err?.message || 'Delete failed' }
+  }
 }
 
 export async function useEmcGetReferenceControlData(
   vMaster: string,
-  vData: object
+  vData: object,
 ) {
   return await $fetch('/api/emcapi/emcGenericFunctions', {
     method: 'POST',
+    credentials: 'include',
     body: {
       master: vMaster,
       action: 'GetControlsWithinComponent',
       data: vData,
     },
-    headers: {
-      'Content-Type': 'application/json',
-    },
   })
 }
-
-// export async function useEmcGetReferenceControlData(vMaster: string, vData: object) {
-//   //console.log('useEmcDelete started', vData)
-
-//   return await useFetch('/api/emcapi/emcGenericFunctions', {
-//     method: 'POST',
-//     body: JSON.stringify({
-//       master: vMaster,
-//       action: 'GetControlsWithinComponent',
-//       data: vData,
-//     }),
-//     headers: {
-//       'Content-Type': 'application/json',
-//     },
-//   })
-// }
 
 export function useEmcfindObjectByName(obj, targetName) {
   if (!obj || typeof obj !== 'object') return null
 
   for (const key in obj) {
     if (key === targetName) {
-      return obj[key]   // ✅ Found the target object
+      return obj[key]
     }
 
     const found = useEmcfindObjectByName(obj[key], targetName)
@@ -276,13 +206,10 @@ export function useEmcfindObjectByName(obj, targetName) {
 }
 
 export async function useEmcGenericList(vUrl: string, InputObject: object) {
-  //console.log('useEmcGenericList started')
-
-  return await useFetch(vUrl, {
+  const data = await $fetch(vUrl, {
     method: 'POST',
-    body: JSON.stringify(InputObject),
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    credentials: 'include',
+    body: InputObject,
   })
+  return { data: ref(data), status: ref('success') }
 }
