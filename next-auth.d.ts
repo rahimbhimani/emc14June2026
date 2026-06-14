@@ -1,5 +1,5 @@
 import type { DefaultSession } from 'next-auth'
-import { Rule } from './plugins/casl/ability'
+import { Rule } from './layers/auth/plugins/casl/ability'
 
 
 interface UserAdditionalData {
@@ -31,8 +31,12 @@ interface UserAdditionalData {
 }
 
 declare module 'next-auth/jwt' {
-  /** Returned by the `jwt` callback and `getToken`, when using JWT sessions */
-  interface JWT extends UserAdditionalData { }
+  interface JWT extends UserAdditionalData {
+    accessToken?: string
+    refreshToken?: string
+    accessTokenExpires?: number
+    error?: 'RefreshAccessTokenError'
+  }
 }
 
 declare module "next-auth" {

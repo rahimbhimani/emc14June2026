@@ -29,8 +29,6 @@ export function useUpdateObject99(obj, path) {
 
 
 export function useUpdateObject(obj, groupObject, rowIndex = null, overwriteDataPath = null) {
-  debugger
-
   let path = groupObject.value.dataPath
   // console.log('useUpdateObject909', path, groupObject.value.ComponentInfo, overwriteDataPath)
   if (groupObject.value.ComponentInfo && overwriteDataPath === null) {
@@ -45,7 +43,8 @@ export function useUpdateObject(obj, groupObject, rowIndex = null, overwriteData
   }
 
   if (overwriteDataPath !== null) {
-    path = overwriteDataPath + '.' + groupObject.value.dataPath.replace("FormData.", "")
+    path = overwriteDataPath + '.' + groupObject.value.dataPath.replace("FormName.", "")
+    // alert('final path: ' + path)
   }
 
   const getObjectData = () =>

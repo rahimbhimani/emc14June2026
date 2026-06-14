@@ -1,5 +1,4 @@
 import { emcOrganization } from '~/server/models/emcOrganization'
-import { getUserFromEvent } from '~/server/utils/auth'
 
 export default defineEventHandler(async event => {
     // Get user from session

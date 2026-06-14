@@ -2,7 +2,6 @@ import {
   emcRunGenericReport
 } from "~/server/services/report/emcGenericReportEngine"
 import { emcOrganization } from "~/server/models/emcOrganization"
-import { getUser } from "~/server/utils/auth"
 
 export default defineEventHandler(
   async event => {

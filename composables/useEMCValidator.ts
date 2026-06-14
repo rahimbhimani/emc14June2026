@@ -80,140 +80,396 @@ export function useValidator() {
   }
 
 
+  // function buildZodSchema(def: any): any {
+  //   // If explicitly ignored
+  //   if (def?.ignore === true) {
+  //     // alert(def?.type)
+  //     return z.any().optional().nullable(); // keep key, skip validation
+  //   }
+
+  //   // Detect if this node has children (non-meta keys)
+  //   const hasChildren =
+  //     typeof def === "object" &&
+  //     Object.keys(def).some(
+  //       k => !["required", "type", "min", "max", "message", "ignore"].includes(k)
+  //     );
+
+  //   // Default type to string ONLY if not structural
+  //   if (!def?.type && !hasChildren) {
+  //     def.type = "string";
+  //   }
+
+  //   // ---- Primitive types ----
+  //   // z.any() base ensures .refine() always executes in Zod v4 (optional() short-circuits for undefined)
+  //   if (def.type === "string" || def.min !== undefined || def.max !== undefined) {
+  //     const msg = def.message || "This field is required"
+  //     let schema: any = z.any()
+
+  //     if (def.required) {
+  //       schema = schema.refine(
+  //         (val: any) => val !== null && val !== undefined && val !== '',
+  //         { message: msg }
+  //       )
+  //     }
+  //     if (def.min !== undefined) {
+  //       schema = schema.refine(
+  //         (val: any) => val == null || val === '' || String(val).length >= def.min,
+  //         { message: def.message || `Minimum ${def.min} characters required` }
+  //       )
+  //     }
+  //     if (def.max !== undefined) {
+  //       schema = schema.refine(
+  //         (val: any) => val == null || val === '' || String(val).length <= def.max,
+  //         { message: def.message || `Maximum ${def.max} characters allowed` }
+  //       )
+  //     }
+  //     return schema
+  //   }
+
+  //   if (def.type === "number") {
+  //     const msg = def.message || "This field is required"
+  //     let schema: any = z.any()
+  //     if (def.required) {
+  //       schema = schema.refine(
+  //         (val: any) => val !== null && val !== undefined,
+  //         { message: msg }
+  //       )
+  //     }
+  //     if (def.min !== undefined) {
+  //       schema = schema.refine(
+  //         (val: any) => val == null || val >= def.min,
+  //         { message: def.message || `Minimum value is ${def.min}` }
+  //       )
+  //     }
+  //     if (def.max !== undefined) {
+  //       schema = schema.refine(
+  //         (val: any) => val == null || val <= def.max,
+  //         { message: def.message || `Maximum value is ${def.max}` }
+  //       )
+  //     }
+  //     return schema
+  //   }
+
+  //   if (def.type === "Array") {
+  //     const childKeys = Object.keys(def).filter(k => !["type", "required", "ignore"].includes(k));
+  //     const childSchema = z
+  //       .object(
+  //         childKeys.reduce((acc: any, key) => {
+  //           acc[key] = buildZodSchema(def[key]);
+  //           return acc;
+  //         }, {})
+  //       )
+  //       .passthrough();
+
+  //     let schema = z.array(childSchema);
+  //     if (def.required) schema = schema.nonempty("Array is required");
+  //     return schema;
+  //   }
+
+  //   if (def.type === "boolean") {
+  //     let schema = z.boolean();
+  //     if (!def.required) schema = schema.optional();
+  //     return schema;
+  //   }
+
+  //   // ---- Explicit object fields (e.g. dropdown return value) ----
+  //   // Use z.any() so refines always run for undefined in Zod v4
+  //   if (def.type === "object") {
+  //     let schema: any = z.any()
+  //     if (def.required) {
+  //       schema = schema
+  //         .refine((val: any) => val !== null && val !== undefined, {
+  //           message: def.message || "This field is required",
+  //         })
+  //         .refine((val: any) => val == null || (typeof val === "object" && Object.keys(val).length > 0), {
+  //           message: "Invalid data",
+  //         })
+  //     }
+  //     return schema
+  //   }
+
+  //   // ---- Structural objects (root form definition — no explicit type) ----
+  //   // Keeps z.object(shape) so getSchemaAtPath can navigate into field schemas
+  //   if (typeof def === "object") {
+  //     const shape: Record<string, any> = {};
+
+  //     for (const key in def) {
+  //       if (["required", "type", "min", "max", "message", "ignore"].includes(key)) continue;
+  //       const subSchema = buildZodSchema(def[key]);
+  //       if (subSchema) shape[key] = subSchema;
+  //     }
+
+  //     let schema: any = z.object(shape).passthrough().nullable().optional();
+
+  //     if (def.required) {
+  //       schema = schema
+  //         .refine((val: any) => val !== null && val !== undefined, {
+  //           message: def.message || "This field is required",
+  //         })
+  //         .refine((val: any) => val == null || (typeof val === "object" && Object.keys(val).length > 0), {
+  //           message: "Invalid data",
+  //         });
+  //     }
+  //     return schema;
+  //   }
+
+  //   // ---- Fallback ----
+  //   return z.any();
+  // }
+
   function buildZodSchema(def: any): any {
-    // If explicitly ignored
+
+    // Ignore field
     if (def?.ignore === true) {
-      // alert(def?.type)
-      return z.any().optional().nullable(); // keep key, skip validation
+      return z.any().optional().nullable();
     }
 
-    // Detect if this node has children (non-meta keys)
+    // Determine if this is a structural node
     const hasChildren =
       typeof def === "object" &&
+      def !== null &&
       Object.keys(def).some(
-        k => !["required", "type", "min", "max", "message", "ignore"].includes(k)
+        k =>
+          ![
+            "required",
+            "type",
+            "min",
+            "max",
+            "message",
+            "ignore"
+          ].includes(k)
       );
 
-    // Default type to string ONLY if not structural
-    if (!def?.type && !hasChildren) {
-      def.type = "string";
-    }
+    // -------------------------
+    // STRING
+    // -------------------------
+    console.log('def.type', def?.type)
+    if (def?.type === "string") {
 
-    // ---- Primitive types ----
-    // z.any() base ensures .refine() always executes in Zod v4 (optional() short-circuits for undefined)
-    if (def.type === "string" || def.min !== undefined || def.max !== undefined) {
-      const msg = def.message || "This field is required"
-      let schema: any = z.any()
+      let schema: any = z.string({
+        message: def.message || "This field is required"
+      });
 
-      if (def.required) {
-        schema = schema.refine(
-          (val: any) => val !== null && val !== undefined && val !== '',
-          { message: msg }
-        )
-      }
       if (def.min !== undefined) {
-        schema = schema.refine(
-          (val: any) => val == null || val === '' || String(val).length >= def.min,
-          { message: def.message || `Minimum ${def.min} characters required` }
-        )
+        schema = schema.min(
+          def.min,
+          def.message || `Minimum ${def.min} characters required`
+        );
       }
+
       if (def.max !== undefined) {
-        schema = schema.refine(
-          (val: any) => val == null || val === '' || String(val).length <= def.max,
-          { message: def.message || `Maximum ${def.max} characters allowed` }
-        )
+        schema = schema.max(
+          def.max,
+          def.message || `Maximum ${def.max} characters allowed`
+        );
       }
-      return schema
-    }
 
-    if (def.type === "number") {
-      const msg = def.message || "This field is required"
-      let schema: any = z.any()
-      if (def.required) {
-        schema = schema.refine(
-          (val: any) => val !== null && val !== undefined,
-          { message: msg }
-        )
+      if (!def.required) {
+        schema = schema.optional().nullable();
       }
-      if (def.min !== undefined) {
-        schema = schema.refine(
-          (val: any) => val == null || val >= def.min,
-          { message: def.message || `Minimum value is ${def.min}` }
-        )
-      }
-      if (def.max !== undefined) {
-        schema = schema.refine(
-          (val: any) => val == null || val <= def.max,
-          { message: def.message || `Maximum value is ${def.max}` }
-        )
-      }
-      return schema
-    }
 
-    if (def.type === "Array") {
-      const childKeys = Object.keys(def).filter(k => !["type", "required", "ignore"].includes(k));
-      const childSchema = z
-        .object(
-          childKeys.reduce((acc: any, key) => {
-            acc[key] = buildZodSchema(def[key]);
-            return acc;
-          }, {})
-        )
-        .passthrough();
-
-      let schema = z.array(childSchema);
-      if (def.required) schema = schema.nonempty("Array is required");
       return schema;
     }
 
-    if (def.type === "boolean") {
-      let schema = z.boolean();
-      if (!def.required) schema = schema.optional();
+    // -------------------------
+    // NUMBER
+    // -------------------------
+
+    if (def?.type === "number") {
+
+      let schema: any = z.number({
+        message: def.message || "This field is required"
+      });
+
+      if (def.min !== undefined) {
+        schema = schema.min(
+          def.min,
+          def.message || `Minimum value is ${def.min}`
+        );
+      }
+
+      if (def.max !== undefined) {
+        schema = schema.max(
+          def.max,
+          def.message || `Maximum value is ${def.max}`
+        );
+      }
+
+      if (!def.required) {
+        schema = schema.optional().nullable();
+      }
+
       return schema;
     }
 
-    // ---- Explicit object fields (e.g. dropdown return value) ----
-    // Use z.any() so refines always run for undefined in Zod v4
-    if (def.type === "object") {
-      let schema: any = z.any()
-      if (def.required) {
-        schema = schema
-          .refine((val: any) => val !== null && val !== undefined, {
-            message: def.message || "This field is required",
-          })
-          .refine((val: any) => val == null || (typeof val === "object" && Object.keys(val).length > 0), {
-            message: "Invalid data",
-          })
+    // -------------------------
+    // BOOLEAN
+    // -------------------------
+
+    if (def?.type === "boolean") {
+
+      let schema: any = z.boolean();
+
+      if (!def.required) {
+        schema = schema.optional().nullable();
       }
+
+      return schema;
+    }
+
+    // -------------------------
+    // OBJECT (Dropdown / Lookup)
+    // -------------------------
+
+    if (def?.type === "object") {
+
+      if (def.lookup === true) {
+
+        let schema = z.any()
+
+        if (def.required) {
+
+          schema = schema.refine(
+            val => !!val?._id,
+            {
+              message: def.message || "This field is required"
+            }
+          )
+
+        } else {
+
+          schema = schema.optional().nullable()
+
+        }
+
+        return schema
+      }
+
+      const childKeys = Object.keys(def).filter(
+        k =>
+          ![
+            "type",
+            "required",
+            "message",
+            "ignore"
+          ].includes(k)
+      )
+
+      // Lookup object
+      if (childKeys.length === 0) {
+
+        let schema: any = z.object({}).passthrough()
+
+        if (def.required) {
+          schema = schema.refine(
+            val => val !== null && val !== undefined,
+            {
+              message: def.message || "This field is required"
+            }
+          )
+        } else {
+          schema = schema.optional().nullable()
+        }
+
+        return schema
+      }
+
+      // Structural object
+      const shape: Record<string, any> = {}
+
+      childKeys.forEach(key => {
+        shape[key] = buildZodSchema(def[key])
+      })
+
+      let schema: any = z.object(shape).passthrough()
+
+      if (!def.required)
+        schema = schema.optional().nullable()
+
       return schema
     }
 
-    // ---- Structural objects (root form definition — no explicit type) ----
-    // Keeps z.object(shape) so getSchemaAtPath can navigate into field schemas
-    if (typeof def === "object") {
+    // -------------------------
+    // ARRAY
+    // -------------------------
+
+    if (def?.type === "Array") {
+
+      const childShape: Record<string, any> = {};
+
+      Object.keys(def).forEach(key => {
+
+        if (
+          [
+            "type",
+            "required",
+            "message",
+            "ignore"
+          ].includes(key)
+        ) {
+          return;
+        }
+
+        childShape[key] = buildZodSchema(def[key]);
+
+      });
+
+      let schema: any = z.array(
+        z.object(childShape).passthrough()
+      );
+
+      if (def.required) {
+        schema = schema.min(
+          1,
+          def.message || "At least one record is required"
+        );
+      } else {
+        schema = schema.optional().nullable();
+      }
+
+      return schema;
+    }
+
+    // -------------------------
+    // STRUCTURAL OBJECT
+    // -------------------------
+
+    if (hasChildren) {
+
       const shape: Record<string, any> = {};
 
-      for (const key in def) {
-        if (["required", "type", "min", "max", "message", "ignore"].includes(key)) continue;
-        const subSchema = buildZodSchema(def[key]);
-        if (subSchema) shape[key] = subSchema;
+      Object.keys(def).forEach(key => {
+
+        if (
+          [
+            "required",
+            "type",
+            "min",
+            "max",
+            "message",
+            "ignore"
+          ].includes(key)
+        ) {
+          return;
+        }
+
+        shape[key] = buildZodSchema(def[key]);
+
+      });
+
+      let schema: any = z.object(shape).passthrough();
+
+      if (!def.required) {
+        schema = schema.optional().nullable();
       }
 
-      let schema: any = z.object(shape).passthrough().nullable().optional();
-
-      if (def.required) {
-        schema = schema
-          .refine((val: any) => val !== null && val !== undefined, {
-            message: def.message || "This field is required",
-          })
-          .refine((val: any) => val == null || (typeof val === "object" && Object.keys(val).length > 0), {
-            message: "Invalid data",
-          });
-      }
       return schema;
     }
 
-    // ---- Fallback ----
+    // -------------------------
+    // FALLBACK
+    // -------------------------
+
     return z.any();
   }
 
@@ -305,56 +561,96 @@ export function useValidator() {
     )
   }
 
+  // function validateForm(schema: any, data: any) {
+  //   try {
+  //     // Navigate to the underlying ZodObject shape
+  //     // Zod v4 raises "expected nonoptional" at the object level for missing keys before
+  //     // field-schema refines can run — so we iterate fields individually instead.
+  //     let objectSchema: any = schema
+  //     let depth = 0
+  //     while (depth++ < 10) {
+  //       if (objectSchema?.shape) break
+  //       if (typeof objectSchema?.unwrap === 'function') { objectSchema = objectSchema.unwrap(); continue }
+  //       if (objectSchema?._def?.innerType) { objectSchema = objectSchema._def.innerType; continue }
+  //       break
+  //     }
+
+  //     if (!objectSchema?.shape) {
+  //       // Fallback: direct parse (non-object schemas)
+  //       const result = schema.safeParse(nullsToUndefined(data))
+  //       if (!result.success) {
+  //         result.error.issues.forEach((err: any) => {
+  //           const fieldName = err.path.join(".")
+  //           errors[fieldName] = errors[fieldName] || []
+  //           errors[fieldName].push(err.message)
+  //         })
+  //       }
+  //       return result.success
+  //     }
+
+  //     // Validate each field's schema directly — avoids Zod v4 object-level "nonoptional" errors
+  //     const normalizedData: any = nullsToUndefined(data) || {}
+  //     let isValid = true
+
+  //     for (const fieldName in objectSchema.shape) {
+  //       const fieldSchema = objectSchema.shape[fieldName]
+  //       const value = normalizedData[fieldName]
+  //       const result = fieldSchema.safeParse(value)
+  //       if (!result.success) {
+  //         isValid = false
+  //         if (!errors[fieldName]) errors[fieldName] = []
+  //         result.error.issues.forEach((issue: any) => {
+  //           if (!errors[fieldName]!.includes(issue.message)) {
+  //             errors[fieldName]!.push(issue.message)
+  //           }
+  //         })
+  //       } else {
+  //         // Clear stale errors for fields that now pass
+  //         errors[fieldName] = []
+  //       }
+  //     }
+
+  //     return isValid
+  //   } catch (error) {
+  //     console.log('InsideErrrorvalidateForm', error)
+  //   }
+  // }
+
   function validateForm(schema: any, data: any) {
-    try {
-      // Navigate to the underlying ZodObject shape
-      // Zod v4 raises "expected nonoptional" at the object level for missing keys before
-      // field-schema refines can run — so we iterate fields individually instead.
-      let objectSchema: any = schema
-      let depth = 0
-      while (depth++ < 10) {
-        if (objectSchema?.shape) break
-        if (typeof objectSchema?.unwrap === 'function') { objectSchema = objectSchema.unwrap(); continue }
-        if (objectSchema?._def?.innerType) { objectSchema = objectSchema._def.innerType; continue }
-        break
-      }
 
-      if (!objectSchema?.shape) {
-        // Fallback: direct parse (non-object schemas)
-        const result = schema.safeParse(nullsToUndefined(data))
-        if (!result.success) {
-          result.error.issues.forEach((err: any) => {
-            const fieldName = err.path.join(".")
-            errors[fieldName] = errors[fieldName] || []
-            errors[fieldName].push(err.message)
-          })
-        }
-        return result.success
-      }
+    clearErrors()
 
-      // Validate each field's schema directly — avoids Zod v4 object-level "nonoptional" errors
-      const normalizedData: any = nullsToUndefined(data) || {}
-      let isValid = true
+    const result = schema.safeParse(
+      nullsToUndefined(data)
+    )
 
-      for (const fieldName in objectSchema.shape) {
-        const fieldSchema = objectSchema.shape[fieldName]
-        const value = normalizedData[fieldName]
-        const result = fieldSchema.safeParse(value)
-        if (!result.success) {
-          isValid = false
-          if (!errors[fieldName]) errors[fieldName] = []
-          result.error.issues.forEach((issue: any) => {
-            if (!errors[fieldName]!.includes(issue.message)) {
-              errors[fieldName]!.push(issue.message)
-            }
-          })
-        }
-      }
+    console.log(
+      "VALIDATION RESULT",
+      JSON.stringify(result, null, 2)
+    )
 
-      return isValid
-    } catch (error) {
-      //console.log('InsideErrrorvalidateForm', error)
+    if (!result.success) {
+
+      console.log(
+        "ISSUES",
+        result.error.issues
+      )
+
+      result.error.issues.forEach((issue: any) => {
+
+        const path = issue.path.join('.')
+
+        if (!errors[path])
+          errors[path] = []
+
+        errors[path].push(issue.message)
+
+      })
+
+      return false
     }
+
+    return true
   }
 
   return { buildZodSchema, validateField, validateData, validateForm, errors, clearErrors };

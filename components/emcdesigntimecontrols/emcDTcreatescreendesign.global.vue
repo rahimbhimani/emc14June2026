@@ -106,6 +106,7 @@ function deleteControl(v1, v2, v3) {
           <Emcdesigncreatecomponent
             v-if="screenDesignStore.board.length !== 0"
             :group-object="screenDesignStore.board[0].Controls"
+            :parent-id="screenDesignStore.board[0]?.id"
             :is-this-run-time="false"
             class="ma-0 pa-0"
           />

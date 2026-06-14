@@ -3,6 +3,10 @@ const props = defineProps({
   groupObject: {
     type: Object,
   },
+  parentId: {
+    type: String,
+    default: '',
+  },
 })
 
 const loading = defineModel('loading')
@@ -19,7 +23,7 @@ const loading = defineModel('loading')
   >
     <VRow>
       
-      <EmcDTcontrolwithingroups :group-object="props.groupObject" />
+      <EmcDTcontrolwithingroups :group-object="props.groupObject" :parent-id="props.parentId" />
     </VRow>
   </VContainer>
   <VContainer
